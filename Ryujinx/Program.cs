@@ -165,7 +165,7 @@ namespace Ryujinx
             });
 
             string localConfigurationPath   = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Config.json");
-            string appDataConfigurationPath = Path.Combine(AppDataManager.BaseDirPath,            "Config.json");
+            string appDataConfigurationPath = Path.Combine(AppDataManager.BaseDirPath,            "LDNConfig.json");
 
             // Now load the configuration as the other subsystems are now registered
             ConfigurationPath = File.Exists(localConfigurationPath)

@@ -1,8 +1,9 @@
-﻿using Ryujinx.Common;
+using Ryujinx.Common;
 using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Types;
 using Ryujinx.Memory;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Net;

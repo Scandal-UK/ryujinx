@@ -27,6 +27,8 @@
     <PackageReference Include="SixLabors.ImageSharp" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="NetCoreServer" />
+    <PackageReference Include="Open.NAT.Core" />
   </ItemGroup>
 
   <!-- Due to Concentus. -->

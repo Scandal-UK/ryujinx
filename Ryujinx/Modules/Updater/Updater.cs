@@ -1,3 +1,5 @@
+#define DISABLE_UPDATER
+
 using Gtk;
 using ICSharpCode.SharpZipLib.GZip;
 using ICSharpCode.SharpZipLib.Tar;
