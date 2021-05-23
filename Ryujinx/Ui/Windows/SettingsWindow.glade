@@ -2903,6 +2903,33 @@
                                 <property name="margin-right">10</property>
                                 <property name="orientation">vertical</property>
                                 <child>
+                                  <object class="GtkBox" id="MultiTextBox">
+                                    <property name="visible">True</property>
+                                    <property name="can-focus">False</property>
+                                    <child>
+                                      <object class="GtkLabel">
+                                        <property name="visible">True</property>
+                                        <property name="can-focus">False</property>
+                                        <property name="wrap">True</property>
+                                        <property name="halign">start</property>
+                                        <property name="margin-bottom">5</property>
+                                        <property name="label" translatable="yes">Before going online, make sure to configure your user profile under Options > Manage User Profiles, as other players will see your profile name and image.</property>
+                                      </object>
+                                      <packing>
+                                        <property name="expand">False</property>
+                                        <property name="fill">True</property>
+                                        <property name="position">1</property>
+                                      </packing>
+                                    </child>
+                                  </object>
+                                  <packing>
+                                    <property name="expand">False</property>
+                                    <property name="fill">True</property>
+                                    <property name="padding">5</property>
+                                    <property name="position">0</property>
+                                  </packing>
+                                </child>
+                                <child>
                                   <object class="GtkBox" id="ModeBox">
                                     <property name="visible">True</property>
                                     <property name="can-focus">False</property>
@@ -2962,7 +2989,7 @@
                                     <property name="expand">False</property>
                                     <property name="fill">True</property>
                                     <property name="padding">5</property>
-                                    <property name="position">0</property>
+                                    <property name="position">1</property>
                                   </packing>
                                 </child>
                                 <child>
