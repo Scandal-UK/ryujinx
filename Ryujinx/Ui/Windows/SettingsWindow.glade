@@ -2957,6 +2957,7 @@
                                         <items>
                                           <item id="Disabled" translatable="yes">Disabled</item>
                                           <item id="RyuLdn" translatable="yes">Ryujinx Ldn</item>
+                                          <item id="Spacemeowx2Ldn" translatable="yes">Spacemeowx2 Ldn</item>
                                         </items>
                                       </object>
                                       <packing>
