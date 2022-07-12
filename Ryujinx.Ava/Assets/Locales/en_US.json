@@ -641,5 +641,20 @@
   "UserEditorTitleCreate" : "Create User",
   "SettingsTabNetworkInterface": "Network Interface:",
   "NetworkInterfaceTooltip": "The network interface used for LAN features",
-  "NetworkInterfaceDefault": "Default"
+  "NetworkInterfaceDefault": "Default",
+  "SettingsTabNetworkMultiplayer": "Multiplayer",
+  "MultiplayerInformation": "Before going online, make sure to configure your user profile under Options > Manage User Profiles, as other players will see your profile name and image.",
+  "MultiplayerMode": "Mode:",
+  "MultiplayerModeTooltip": "Change multiplayer mode",
+  "MultiplayerDisableP2P": "Disable P2P Network Hosting (may increase latency)",
+  "MultiplayerDisableP2PTooltip": "Disable P2P networking, instead proxying through the master server instead of directly to the host.",
+  "LdnPassphrase": "Network Passphrase:",
+  "LdnPassphraseTooltip": "You will only be able to see hosted games with the same passphrase as you.",
+  "LdnPassphraseInputTooltip": "Enter a passphrase in the format Ryujinx-<8 hex chars>. You will only be able to see hosted games with the same passphrase as you.",
+  "LdnPassphraseInputPublic": "(public)",
+  "GenLdnPass": "Generate Random",
+  "GenLdnPassTooltip": "Generates a new passphrase, which can be shared with other players.",
+  "ClearLdnPass": "Clear",
+  "ClearLdnPassTooltip": "Clears the current passphrase, returning to the public network.",
+  "InvalidLdnPassphrase": "Invalid Passphrase! Must be in the format \"Ryujinx-<8 hex chars>\""
 }

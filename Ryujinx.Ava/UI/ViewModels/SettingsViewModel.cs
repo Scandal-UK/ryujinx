@@ -11,6 +11,7 @@ using Ryujinx.Ava.UI.Helpers;
 using Ryujinx.Ava.UI.Windows;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Configuration.Hid;
+using Ryujinx.Common.Configuration.Multiplayer;
 using Ryujinx.Common.GraphicsDriver;
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.Vulkan;
@@ -24,6 +25,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Net.NetworkInformation;
+using System.Text.RegularExpressions;
 using TimeZone = Ryujinx.Ava.UI.Models.TimeZone;
 
 namespace Ryujinx.Ava.UI.ViewModels
@@ -54,6 +56,8 @@ namespace Ryujinx.Ava.UI.ViewModels
         public event Action CloseWindow;
         public event Action SaveSettingsEvent;
         private int _networkInterfaceIndex;
+        private int _multiplayerModeIndex;
+        private string _ldnPassphrase;
 
         public int ResolutionScale
         {
@@ -163,6 +167,7 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public bool IsVulkanSelected => GraphicsBackendIndex == 0;
         public bool UseHypervisor { get; set; }
+        public bool DisableP2P { get; set; }
 
         public string TimeZone { get; set; }
         public string ShaderDumpPath { get; set; }
@@ -178,6 +183,17 @@ namespace Ryujinx.Ava.UI.ViewModels
                 _customThemePath = value;
 
                 OnPropertyChanged();
+            }
+        }
+        public string LdnPassphrase
+        {
+            get => _ldnPassphrase;
+            set
+            {
+                _ldnPassphrase = value;
+                IsInvalidLdnPassphraseVisible = !ValidateLdnPassphrase(value);
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsInvalidLdnPassphraseVisible));
             }
         }
 
@@ -249,6 +265,11 @@ namespace Ryujinx.Ava.UI.ViewModels
             get => new AvaloniaList<string>(_networkInterfaces.Keys);
         }
 
+        public AvaloniaList<string> MultiplayerModes
+        {
+            get => new AvaloniaList<string>(Enum.GetNames<MultiplayerMode>());
+        }
+
         public KeyboardHotkeys KeyboardHotkeys
         {
             get => _keyboardHotkeys;
@@ -269,6 +290,18 @@ namespace Ryujinx.Ava.UI.ViewModels
                 ConfigurationState.Instance.Multiplayer.LanInterfaceId.Value = _networkInterfaces[NetworkInterfaceList[_networkInterfaceIndex]];
             }
         }
+
+        public int MultiplayerModeIndex
+        {
+            get => _multiplayerModeIndex;
+            set
+            {
+                _multiplayerModeIndex = value;
+                ConfigurationState.Instance.Multiplayer.Mode.Value = (MultiplayerMode)_multiplayerModeIndex;
+            }
+        }
+
+        public bool IsInvalidLdnPassphraseVisible { get; set; }
 
         public SettingsViewModel(VirtualFileSystem virtualFileSystem, ContentManager contentManager) : this()
         {
@@ -357,6 +390,12 @@ namespace Ryujinx.Ava.UI.ViewModels
             {
                 _networkInterfaces.Add(networkInterface.Name, networkInterface.Id);
             }
+        }
+
+        private bool ValidateLdnPassphrase(string passphrase)
+        {
+            Regex match = new Regex("Ryujinx-[0-9a-f]{8}");
+            return string.IsNullOrEmpty(passphrase) || (passphrase.Length == 16 && match.IsMatch(passphrase));
         }
 
         public void ValidateAndSetTimeZone(string location)
@@ -448,6 +487,9 @@ namespace Ryujinx.Ava.UI.ViewModels
             OpenglDebugLevel = (int)config.Logger.GraphicsDebugLevel.Value;
 
             NetworkInterfaceIndex = _networkInterfaces.Values.ToList().IndexOf(config.Multiplayer.LanInterfaceId.Value);
+            MultiplayerModeIndex = (int)config.Multiplayer.Mode.Value;
+            DisableP2P = config.Multiplayer.DisableP2p.Value;
+            LdnPassphrase = config.Multiplayer.LdnPassphrase.Value;
         }
 
         public void SaveSettings()
@@ -550,6 +592,9 @@ namespace Ryujinx.Ava.UI.ViewModels
             config.Logger.GraphicsDebugLevel.Value = (GraphicsDebugLevel)OpenglDebugLevel;
 
             config.Multiplayer.LanInterfaceId.Value = _networkInterfaces[NetworkInterfaceList[NetworkInterfaceIndex]];
+            config.Multiplayer.Mode.Value = (MultiplayerMode)MultiplayerModeIndex;
+            config.Multiplayer.DisableP2p.Value = DisableP2P;
+            config.Multiplayer.LdnPassphrase.Value = LdnPassphrase;
 
             config.ToFileFormat().SaveConfig(Program.ConfigurationPath);
 

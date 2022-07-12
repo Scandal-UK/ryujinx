@@ -24,21 +24,79 @@
                 HorizontalAlignment="Stretch"
                 Orientation="Vertical"
                 Spacing="10">
+                <TextBlock Classes="h1" Text="{locale:Locale SettingsTabNetworkMultiplayer}" />
+                <TextBlock VerticalAlignment="Center"
+                    Text="{locale:Locale MultiplayerInformation}"/>
+                <StackPanel Margin="10,0,0,0" Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center"
+                        Text="{locale:Locale MultiplayerMode}"
+                        ToolTip.Tip="{locale:Locale MultiplayerModeTooltip}"
+                        Width="200" />
+                    <ComboBox SelectedIndex="{Binding MultiplayerModeIndex}"
+                        ToolTip.Tip="{locale:Locale MultiplayerModeTooltip}"
+                        HorizontalContentAlignment="Left"
+                        Items="{Binding MultiplayerModes}"
+                        Width="250" />
+                    <CheckBox Margin="10,0,0,0" IsChecked="{Binding DisableP2P}">
+                        <TextBlock Text="{locale:Locale MultiplayerDisableP2P}"
+                            ToolTip.Tip="{locale:Locale MultiplayerDisableP2PTooltip}" />
+                    </CheckBox>
+                </StackPanel>
+                <StackPanel Margin="10,0,0,0" Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center"
+                        Text="{locale:Locale LdnPassphrase}"
+                        ToolTip.Tip="{locale:Locale LdnPassphraseTooltip}"
+                        Width="200" />
+                    <TextBox Name="LdnPassphrase"
+                        Text="{Binding LdnPassphrase}"
+                        Width="250"
+                        MaxLength="16"
+                        ToolTip.Tip="{locale:Locale LdnPassphraseInputTooltip}"
+                        Watermark="{locale:Locale LdnPassphraseInputPublic}" />
+                    <Button
+                        Name="GenLdnPassButton"
+                        Grid.Column="1"
+                        MinWidth="90"
+                        Margin="10,0,0,0"
+                        ToolTip.Tip="{locale:Locale GenLdnPassTooltip}"
+                        Click="GenLdnPassButton_OnClick">
+                        <TextBlock HorizontalAlignment="Center"
+                                    Text="{locale:Locale GenLdnPass}" />
+                    </Button>
+                    <Button
+                        Name="ClearLdnPassButton"
+                        Grid.Column="1"
+                        MinWidth="90"
+                        Margin="10,0,0,0"
+                        ToolTip.Tip="{locale:Locale ClearLdnPassTooltip}"
+                        Click="ClearLdnPassButton_OnClick">
+                        <TextBlock HorizontalAlignment="Center"
+                                    Text="{locale:Locale ClearLdnPass}" />
+                    </Button>
+                </StackPanel>
+                <TextBlock  Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    Name="InvalidLdnPassphraseBlock"
+                    FontStyle="Italic"
+                    IsVisible="{Binding IsInvalidLdnPassphraseVisible}"
+                    Focusable="False"
+                    Text="{locale:Locale InvalidLdnPassphrase}" />
+                <Separator Height="1" />
                 <TextBlock Classes="h1" Text="{locale:Locale SettingsTabNetworkConnection}" />
                 <CheckBox Margin="10,0,0,0" IsChecked="{Binding EnableInternetAccess}">
                     <TextBlock Text="{locale:Locale SettingsTabSystemEnableInternetAccess}"
-                               ToolTip.Tip="{locale:Locale EnableInternetAccessTooltip}" />
+                        ToolTip.Tip="{locale:Locale EnableInternetAccessTooltip}" />
                 </CheckBox>
                 <StackPanel Margin="10,0,0,0" Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center"
-                               Text="{locale:Locale SettingsTabNetworkInterface}"
-                               ToolTip.Tip="{locale:Locale NetworkInterfaceTooltip}"
-                               Width="200" />
+                        Text="{locale:Locale SettingsTabNetworkInterface}"
+                        ToolTip.Tip="{locale:Locale NetworkInterfaceTooltip}"
+                        Width="200" />
                     <ComboBox SelectedIndex="{Binding NetworkInterfaceIndex}"
-                              ToolTip.Tip="{locale:Locale NetworkInterfaceTooltip}"
-                              HorizontalContentAlignment="Left"
-                              Items="{Binding NetworkInterfaceList}"
-                              Width="250" />
+                        ToolTip.Tip="{locale:Locale NetworkInterfaceTooltip}"
+                        HorizontalContentAlignment="Left"
+                        Items="{Binding NetworkInterfaceList}"
+                        Width="250" />
                 </StackPanel>
             </StackPanel>
         </Border>
