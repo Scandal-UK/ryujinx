@@ -717,7 +717,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
                     if (rhs.Target == Target.Cubemap || rhs.Target == Target.CubemapArray)
                     {
-                        return caps.SupportsCubemapView ? TextureViewCompatibility.Full : TextureViewCompatibility.CopyOnly;
+                        return (caps.SupportsCubemapView || lhs.DepthOrLayers == 6) ? TextureViewCompatibility.Full : TextureViewCompatibility.CopyOnly;
                     }
                     break;
                 case Target.Cubemap:
@@ -727,7 +727,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
                     if (rhs.Target == Target.Texture2D || rhs.Target == Target.Texture2DArray)
                     {
-                        return caps.SupportsCubemapView ? TextureViewCompatibility.Full : TextureViewCompatibility.CopyOnly;
+                        return (caps.SupportsCubemapView || rhs.DepthOrLayers == 6) ? TextureViewCompatibility.Full : TextureViewCompatibility.CopyOnly;
                     }
                     break;
                 case Target.Texture2DMultisample:
