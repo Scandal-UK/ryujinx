@@ -18,13 +18,13 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn.Proxy
 
         public LdnProxyUdpServer(LanProtocol protocol, IPAddress address, int port) : base(address, port)
         {
-            _protocol = protocol;
-            _protocol.Scan += HandleScan;
-            _protocol.ScanResponse += HandleScanResponse;
-            _buffer = new byte[LanProtocol.BufferSize];
-            OptionReuseAddress = true;
+            _protocol               = protocol;
+            _protocol.Scan          += HandleScan;
+            _protocol.ScanResponse  += HandleScanResponse;
+            _buffer                 = new byte[LanProtocol.BufferSize];
+            OptionReuseAddress      = true;
             OptionReceiveBufferSize = LanProtocol.BufferSize;
-            OptionSendBufferSize = LanProtocol.BufferSize;
+            OptionSendBufferSize    = LanProtocol.BufferSize;
 
             Start();
         }
@@ -53,7 +53,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn.Proxy
 
         protected override void OnError(SocketError error)
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LdnProxyUdpServer caught an error with code {error}");
+            Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"LdnProxyUdpServer caught an error with code {error}");
         }
 
         protected override void Dispose(bool disposingManagedResources)

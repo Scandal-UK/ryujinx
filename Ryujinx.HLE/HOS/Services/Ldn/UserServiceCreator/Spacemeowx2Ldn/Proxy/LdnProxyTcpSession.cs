@@ -18,19 +18,19 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn.Proxy
         private int               _bufferEnd;
 
         public LdnProxyTcpSession(LdnProxyTcpServer server, LanProtocol protocol) : base(server) {
-            _parent = server;
-            _protocol = protocol;
-            _protocol.Connect += OnConnect;
-            _buffer = new byte[LanProtocol.BufferSize];
+            _parent                 = server;
+            _protocol               = protocol;
+            _protocol.Connect       += OnConnect;
+            _buffer                 = new byte[LanProtocol.BufferSize];
             OptionReceiveBufferSize = LanProtocol.BufferSize;
-            OptionSendBufferSize = LanProtocol.BufferSize;
+            OptionSendBufferSize    = LanProtocol.BufferSize;
             Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LdnProxyTCPSession created!");
         }
 
         public void OverrideInfo()
         {
             Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LdnProxyTCPSession overriding info!");
-            nodeInfo.NodeId = (byte)nodeId;
+            nodeInfo.NodeId      = (byte)nodeId;
             nodeInfo.IsConnected = (byte)(IsConnected ? 1 : 0);
         }
 
