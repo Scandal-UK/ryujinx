@@ -5,12 +5,12 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.Spacemeowx2Ldn.Types
     [StructLayout(LayoutKind.Sequential, Size = 12)]
     internal struct LanPacketHeader
     {
-        public uint Magic;
+        public uint          Magic;
         public LanPacketType Type;
-        public byte Compressed;
-        public ushort Length;
-        public ushort DecompressLength;
+        public byte          Compressed;
+        public ushort        Length;
+        public ushort        DecompressLength;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-        public byte[] _reserved;
+        public byte[]        Reserved;
     }
 }
