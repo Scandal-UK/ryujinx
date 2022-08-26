@@ -192,6 +192,7 @@ namespace Ryujinx.Ava.UI.ViewModels
             {
                 _ldnPassphrase = value;
                 IsInvalidLdnPassphraseVisible = !ValidateLdnPassphrase(value);
+
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsInvalidLdnPassphraseVisible));
             }
@@ -394,8 +395,7 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         private bool ValidateLdnPassphrase(string passphrase)
         {
-            Regex match = new Regex("Ryujinx-[0-9a-f]{8}");
-            return string.IsNullOrEmpty(passphrase) || (passphrase.Length == 16 && match.IsMatch(passphrase));
+            return string.IsNullOrEmpty(passphrase) || (passphrase.Length == 16 && new Regex("Ryujinx-[0-9a-f]{8}").IsMatch(passphrase));
         }
 
         public void ValidateAndSetTimeZone(string location)

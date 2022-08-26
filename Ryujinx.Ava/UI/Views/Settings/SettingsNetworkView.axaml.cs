@@ -16,11 +16,9 @@ namespace Ryujinx.Ava.UI.Views.Settings
 
         private void GenLdnPassButton_OnClick(object sender, RoutedEventArgs e)
         {
-            Random random = new Random();
             byte[] code = new byte[4];
-            random.NextBytes(code);
-            uint codeUint = BitConverter.ToUInt32(code);
-            ViewModel.LdnPassphrase = $"Ryujinx-{codeUint:x8}";
+            new Random().NextBytes(code);
+            ViewModel.LdnPassphrase = $"Ryujinx-{BitConverter.ToUInt32(code):x8}";
         }
 
         private void ClearLdnPassButton_OnClick(object sender, RoutedEventArgs e)
