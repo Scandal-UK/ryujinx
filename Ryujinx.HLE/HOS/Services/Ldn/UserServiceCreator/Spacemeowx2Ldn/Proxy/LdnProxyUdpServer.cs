@@ -80,7 +80,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn.Proxy
 
             info.Common.MacAddress.AsSpan().CopyTo(mac);
 
-            scanResults.Add(BitConverter.ToUInt64(mac), info);
+            scanResults[BitConverter.ToUInt64(mac)] = info;
         }
     }
 }
