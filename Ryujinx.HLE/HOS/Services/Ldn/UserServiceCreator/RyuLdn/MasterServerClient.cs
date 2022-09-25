@@ -20,6 +20,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn
 {
     class MasterServerClient : TcpClient, INetworkClient, IProxyClient
     {
+        public bool NeedsRealId => true;
+
         private static InitializeMessage InitializeMemory = new InitializeMessage() { Id = new byte[0x10], MacAddress = new byte[0x6] };
 
         private const int InactiveTimeout = 6000;

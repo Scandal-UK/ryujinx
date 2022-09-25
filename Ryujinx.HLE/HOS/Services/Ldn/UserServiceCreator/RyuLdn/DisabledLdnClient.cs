@@ -7,6 +7,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn
     class DisabledLdnClient : INetworkClient
     {
         public ProxyConfig Config { get; }
+        public bool NeedsRealId => true;
 
         public event EventHandler<NetworkChangeEventArgs> NetworkChange;
 

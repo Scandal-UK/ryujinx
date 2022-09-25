@@ -11,6 +11,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn
     internal class Spacemeowx2LdnClient : INetworkClient
     {
         public ProxyConfig Config { get; }
+        public bool NeedsRealId => false;
 
         public event EventHandler<NetworkChangeEventArgs> NetworkChange;
 

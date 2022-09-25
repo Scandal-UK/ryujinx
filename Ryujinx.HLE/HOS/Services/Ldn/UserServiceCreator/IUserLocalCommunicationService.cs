@@ -415,7 +415,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                             }
                             else
                             {
-                                if (scanFilter.NetworkId.IntentId.LocalCommunicationId == -1)
+                                if (scanFilter.NetworkId.IntentId.LocalCommunicationId == -1 && NetworkClient.NeedsRealId)
                                 {
                                     // TODO: Call nn::arp::GetApplicationControlProperty here when implemented.
                                     ApplicationControlProperty controlProperty = context.Device.Processes.ActiveApplication.ApplicationControlProperties;
@@ -567,7 +567,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             uint          unknown       = context.RequestData.ReadUInt32(); // Alignment?
             NetworkConfig networkConfig = context.RequestData.ReadStruct<NetworkConfig>();
 
-            if (networkConfig.IntentId.LocalCommunicationId == -1)
+            if (networkConfig.IntentId.LocalCommunicationId == -1 && NetworkClient.NeedsRealId)
             {
                 // TODO: Call nn::arp::GetApplicationControlProperty here when implemented.
                 ApplicationControlProperty controlProperty = context.Device.Processes.ActiveApplication.ApplicationControlProperties;
@@ -576,7 +576,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             }
 
             bool isLocalCommunicationIdValid = CheckLocalCommunicationIdPermission(context, (ulong)networkConfig.IntentId.LocalCommunicationId);
-            if (!isLocalCommunicationIdValid)
+            if (!isLocalCommunicationIdValid && NetworkClient.NeedsRealId)
             {
                 return ResultCode.InvalidObject;
             }
@@ -870,7 +870,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                 networkInfo = LdnHelper.FromBytes<NetworkInfo>(networkInfoBytes);
             }
 
-            if (networkInfo.NetworkId.IntentId.LocalCommunicationId == -1)
+            if (networkInfo.NetworkId.IntentId.LocalCommunicationId == -1 && NetworkClient.NeedsRealId)
             {
                 // TODO: Call nn::arp::GetApplicationControlProperty here when implemented.
                 ApplicationControlProperty controlProperty = context.Device.Processes.ActiveApplication.ApplicationControlProperties;
@@ -879,7 +879,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             }
 
             bool isLocalCommunicationIdValid = CheckLocalCommunicationIdPermission(context, (ulong)networkInfo.NetworkId.IntentId.LocalCommunicationId);
-            if (!isLocalCommunicationIdValid)
+            if (!isLocalCommunicationIdValid && NetworkClient.NeedsRealId)
             {
                 return ResultCode.InvalidObject;
             }
