@@ -4,6 +4,6 @@
     {
         Disabled,
         RyuLdn,
-        Spacemeowx2Ldn
+        LdnMitm
     }
 }
