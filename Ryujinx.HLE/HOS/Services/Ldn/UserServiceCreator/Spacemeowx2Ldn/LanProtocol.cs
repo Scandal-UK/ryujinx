@@ -40,7 +40,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn
 
         public LanProtocol(LanDiscovery parent)
         {
-            _discovery          = parent;
+            _discovery = parent;
         }
 
         public void InvokeAccept(LdnProxyTcpSession session)
@@ -196,7 +196,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn
         private byte[] PreparePacket(LanPacketType type, byte[] data)
         {
             LanPacketHeader header        = PrepareHeader(new(), type);
-                            header.Length = (ushort)data.Length;
+            header.Length = (ushort)data.Length;
 
             byte[] buf;
 
