@@ -188,7 +188,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         private byte[] PreparePacket(LanPacketType type, byte[] data)
         {
-            LanPacketHeader header        = PrepareHeader(new(), type);
+            LanPacketHeader header = PrepareHeader(new(), type);
             header.Length = (ushort)data.Length;
 
             byte[] buf;
