@@ -1,4 +1,4 @@
-﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Proxy;
+﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
 using System;
 using System.Collections.Generic;
 using System.Linq;

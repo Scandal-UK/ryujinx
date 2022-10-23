@@ -4,7 +4,7 @@ using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Types;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;

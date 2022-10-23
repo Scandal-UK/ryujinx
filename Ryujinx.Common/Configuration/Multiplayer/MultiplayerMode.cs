@@ -3,7 +3,7 @@
     public enum MultiplayerMode
     {
         Disabled,
-        RyuLdn,
+        LdnRyu,
         LdnMitm
     }
 }

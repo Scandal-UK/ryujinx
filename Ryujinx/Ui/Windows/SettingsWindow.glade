@@ -2956,7 +2956,7 @@
                                         <property name="active-id">RyuLdn</property>
                                         <items>
                                           <item id="Disabled" translatable="yes">Disabled</item>
-                                          <item id="RyuLdn" translatable="yes">Ryujinx Ldn</item>
+                                          <item id="LdnRyu" translatable="yes">Ryujinx Ldn</item>
                                           <item id="LdnMitm" translatable="yes">ldn_mitm</item>
                                         </items>
                                       </object>
