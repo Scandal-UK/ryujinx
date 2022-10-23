@@ -46,11 +46,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Proxy
 
         private uint _broadcastAddress;
 
-        private MasterServerClient _master;
+        private LdnMasterProxyClient _master;
         private RyuLdnProtocol     _masterProtocol;
         private RyuLdnProtocol     _protocol;
 
-        public P2pProxyServer(MasterServerClient master, ushort port, RyuLdnProtocol masterProtocol) : base(IPAddress.Any, port)
+        public P2pProxyServer(LdnMasterProxyClient master, ushort port, RyuLdnProtocol masterProtocol) : base(IPAddress.Any, port)
         {
             if (ProxyHelpers.SupportsNoDelay())
             {

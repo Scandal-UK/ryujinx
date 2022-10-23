@@ -1,10 +1,11 @@
 ﻿using Ryujinx.HLE.HOS.Services.Ldn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Types;
 using System;
 
-namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn
+namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 {
-    class DisabledLdnClient : INetworkClient
+    class LdnDisabledClient : INetworkClient
     {
         public ProxyConfig Config { get; }
         public bool NeedsRealId => true;

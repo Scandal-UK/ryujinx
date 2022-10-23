@@ -8,9 +8,9 @@ using Ryujinx.Cpu;
 using Ryujinx.HLE.HOS.Ipc;
 using Ryujinx.HLE.HOS.Kernel.Threading;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Types;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Spacemeowx2Ldn;
 using Ryujinx.Memory;
 using Ryujinx.Horizon.Common;
 using System;
@@ -1083,19 +1083,19 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                                     {
                                         ipAddress = Dns.GetHostEntry(LanPlayHost).AddressList[0];
                                     }
-                                    NetworkClient = new MasterServerClient(ipAddress.ToString(), LanPlayPort, context.Device.Configuration);
+                                    NetworkClient = new LdnMasterProxyClient(ipAddress.ToString(), LanPlayPort, context.Device.Configuration);
                                 }
                                 catch (Exception)
                                 {
                                     Logger.Error?.Print(LogClass.ServiceLdn, "Could not locate RyuLdn server. Defaulting to stubbed wireless.");
-                                    NetworkClient = new DisabledLdnClient();
+                                    NetworkClient = new LdnDisabledClient();
                                 }
                                 break;
                             case MultiplayerMode.LdnMitm:
-                                NetworkClient = new Spacemeowx2LdnClient(context.Device.Configuration);
+                                NetworkClient = new LdnMitmClient(context.Device.Configuration);
                                 break;
                             case MultiplayerMode.Disabled:
-                                NetworkClient = new DisabledLdnClient();
+                                NetworkClient = new LdnDisabledClient();
                                 break;
                         }
 

@@ -18,7 +18,7 @@ using TcpClient = NetCoreServer.TcpClient;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn
 {
-    class MasterServerClient : TcpClient, INetworkClient, IProxyClient
+    class LdnMasterProxyClient : TcpClient, INetworkClient, IProxyClient
     {
         public bool NeedsRealId => true;
 
@@ -57,7 +57,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn
 
         public ProxyConfig Config { get; private set; }
 
-        public MasterServerClient(string address, int port, HLEConfiguration config) : base(address, port)
+        public LdnMasterProxyClient(string address, int port, HLEConfiguration config) : base(address, port)
         {
             if (ProxyHelpers.SupportsNoDelay())
             {
