@@ -22,7 +22,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
         private const int FailureTimeout = 4000;
 
-        private LdnMitmClient     _parent;
+        private LdnMitmClient            _parent;
         private LanProtocol              _protocol;
         private bool                     _initialized;
         private readonly Ssid            _fakeSsid;
