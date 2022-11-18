@@ -41,6 +41,8 @@ namespace Ryujinx.Graphics.Shader.Translation
                         }
                         else if (HasConstantBufferDrawParameters(operation))
                         {
+                            ReplaceVertexBaseWithDrawParameters(operation);
+
                             config.SetUsedFeature(FeatureFlags.DrawParameters);
                         }
                     }
@@ -737,6 +739,54 @@ namespace Ryujinx.Graphics.Shader.Translation
             }
 
             return modified;
+        }
+
+        private static void ReplaceVertexBaseWithDrawParameters(Operation operation)
+        {
+            for (int srcIndex = 0; srcIndex < operation.SourcesCount; srcIndex++)
+            {
+                Operand src = operation.GetSource(srcIndex);
+
+                if (src.Type == OperandType.ConstantBuffer && src.GetCbufSlot() == 0)
+                {
+                    switch (src.GetCbufOffset())
+                    {
+                        case Constants.NvnBaseVertexByteOffset / 4:
+                            if (operation.Inst == Instruction.Add)
+                            {
+                                Operand otherSrc = operation.GetSource(1 - srcIndex);
+
+                                if (otherSrc.Type == OperandType.Attribute && otherSrc.Value == AttributeConsts.VertexIndex)
+                                {
+                                    operation.SetSource(srcIndex, Attribute(AttributeConsts.BaseVertex));
+                                }
+                            }
+
+                            break;
+                        case Constants.NvnBaseInstanceByteOffset / 4:
+                            if (operation.Inst == Instruction.Add)
+                            {
+                                Operand otherSrc = operation.GetSource(1 - srcIndex);
+
+                                if (otherSrc.Type == OperandType.LocalVariable && otherSrc.AsgOp is Operation instanceOp && instanceOp.Inst == Instruction.Subtract)
+                                {
+                                    Operand instanceSrc0 = instanceOp.GetSource(0);
+                                    Operand instanceSrc1 = instanceOp.GetSource(1);
+
+                                    if (instanceSrc0.Type == OperandType.Attribute &&
+                                        instanceSrc1.Type == OperandType.Attribute &&
+                                        instanceSrc0.Value == AttributeConsts.InstanceIndex &&
+                                        instanceSrc1.Value == AttributeConsts.BaseInstance)
+                                    {
+                                        operation.SetSource(srcIndex, Attribute(AttributeConsts.BaseInstance));
+                                    }
+                                }
+                            }
+
+                            break;
+                    }
+                }
+            }
         }
 
         private static bool HasConstantBufferDrawParameters(Operation operation)
