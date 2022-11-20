@@ -31,6 +31,11 @@ on:
         default: "1.1.0"
         required: false
         type: string
+      addSourceRevision:
+        description: "Add commit hash as 'SourceRevisionId'"
+        default: false
+        required: true
+        type: boolean
       name:
         description: "Github release name"
         required: false
@@ -88,11 +93,18 @@ jobs:
           echo "git_short_hash=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
       - name: Create output dir
         run: mkdir output
-      - name: Publish
+      - name: Publish (with SourceRevision)
+        if: ${{ inputs.addSourceRevision }}
         shell: bash
         run: |
           dotnet publish -c "${{ inputs.configuration }}" -r "${{ matrix.DOTNET_RUNTIME_IDENTIFIER }}" -o ./gtk/publish -p:Version="${{ inputs.buildVersion }}" -p:SourceRevisionId="${{ steps.version_info.outputs.git_short_hash }}" -p:DebugType="${{ inputs.debugType }}" --self-contained true Ryujinx ${{ inputs.extraOptions }}
           dotnet publish -c "${{ inputs.configuration }}" -r "${{ matrix.DOTNET_RUNTIME_IDENTIFIER }}" -o ./ava/publish -p:Version="${{ inputs.buildVersion }}" -p:SourceRevisionId="${{ steps.version_info.outputs.git_short_hash }}" -p:DebugType="${{ inputs.debugType }}" --self-contained true Ryujinx.Ava ${{ inputs.extraOptions }}
+      - name: Publish (without SourceRevision)
+        if: ${{ ! inputs.addSourceRevision }}
+        shell: bash
+        run: |
+          dotnet publish -c "${{ inputs.configuration }}" -r "${{ matrix.DOTNET_RUNTIME_IDENTIFIER }}" -o ./gtk/publish -p:Version="${{ inputs.buildVersion }}" -p:DebugType="${{ inputs.debugType }}" --self-contained true Ryujinx ${{ inputs.extraOptions }}
+          dotnet publish -c "${{ inputs.configuration }}" -r "${{ matrix.DOTNET_RUNTIME_IDENTIFIER }}" -o ./ava/publish -p:Version="${{ inputs.buildVersion }}" -p:DebugType="${{ inputs.debugType }}" --self-contained true Ryujinx.Ava ${{ inputs.extraOptions }}
       - name: Package release
         shell: bash
         env:
