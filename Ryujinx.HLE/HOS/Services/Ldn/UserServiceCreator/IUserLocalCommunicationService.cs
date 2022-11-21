@@ -753,7 +753,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                 return _nifmResultCode;
             }
 
-            throw new NotImplementedException();
+            // TODO
+
+            return ResultCode.Success;
         }
 
         [CommandCmif(209)]
@@ -765,7 +767,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                 return _nifmResultCode;
             }
 
-            throw new NotImplementedException();
+            // TODO
+
+            return ResultCode.Success;
         }
 
         [CommandCmif(300)]
