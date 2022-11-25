@@ -651,4 +651,33 @@ namespace Ryujinx.Common.Memory
         public ref T this[int index] => ref AsSpan()[index];
         public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref _e0, 73);
     }
+
+    public struct Array140<T> : IArray<T> where T : unmanaged
+    {
+#pragma warning disable CS0169
+        T _e0;
+        Array64<T> _other;
+        Array64<T> _other2;
+        Array11<T> _other3;
+#pragma warning restore CS0169
+        public int Length => 140;
+        public ref T this[int index] => ref AsSpan()[index];
+        public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref _e0, Length);
+    }
+
+    public struct Array384<T> : IArray<T> where T : unmanaged
+    {
+#pragma warning disable CS0169
+        T _e0;
+        Array64<T> _other;
+        Array64<T> _other2;
+        Array64<T> _other3;
+        Array64<T> _other4;
+        Array64<T> _other5;
+        Array63<T> _other6;
+#pragma warning restore CS0169
+        public int Length => 384;
+        public ref T this[int index] => ref AsSpan()[index];
+        public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref _e0, Length);
+    }
 }

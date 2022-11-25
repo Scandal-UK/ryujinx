@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Ryujinx.Common.Memory;
+using System.Runtime.InteropServices;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.Types
 {
@@ -7,11 +8,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.Types
     {
         public NetworkId      NetworkId;
         public NetworkType    NetworkType;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 6)]
-        public byte[]         MacAddress;
+        public Array6<byte>   MacAddress;
         public Ssid           Ssid;
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[]         Reserved;
+        public Array16<byte>  Reserved;
         public ScanFilterFlag Flag;
     }
 }

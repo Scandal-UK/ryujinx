@@ -43,6 +43,5 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy
         void Shutdown(SocketShutdown how);
         void Disconnect(bool reuseSocket);
         void Close();
-        void Dispose();
     }
 }

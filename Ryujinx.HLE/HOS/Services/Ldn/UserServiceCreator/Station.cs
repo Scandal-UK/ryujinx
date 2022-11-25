@@ -1,4 +1,5 @@
-﻿using Ryujinx.HLE.HOS.Services.Ldn.Types;
+﻿using Ryujinx.Common.Memory;
+using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.RyuLdn.Types;
 using System;
 
@@ -7,7 +8,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
     class Station : IDisposable
     {
         public NetworkInfo NetworkInfo;
-        public NodeLatestUpdate[] LatestUpdates = new NodeLatestUpdate[8];
+        public Array8<NodeLatestUpdate> LatestUpdates = new();
 
         private IUserLocalCommunicationService _parent;
 
