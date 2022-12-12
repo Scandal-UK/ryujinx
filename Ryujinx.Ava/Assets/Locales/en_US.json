@@ -640,7 +640,7 @@
   "UserEditorTitle" : "Edit User",
   "UserEditorTitleCreate" : "Create User",
   "SettingsTabNetworkInterface": "Network Interface:",
-  "NetworkInterfaceTooltip": "The network interface used for LAN features",
+  "NetworkInterfaceTooltip": "The network interface used for LAN/LDN features",
   "NetworkInterfaceDefault": "Default",
   "SettingsTabNetworkMultiplayer": "Multiplayer",
   "MultiplayerInformation": "Before going online, make sure to configure your user profile under Options > Manage User Profiles, as other players will see your profile name and image.",
