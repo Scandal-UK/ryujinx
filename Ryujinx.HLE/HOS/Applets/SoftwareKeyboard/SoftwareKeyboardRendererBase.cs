@@ -311,7 +311,7 @@ namespace Ryujinx.HLE.HOS.Applets.SoftwareKeyboard
         private static RectangleF MeasureString(ReadOnlySpan<char> text, Font font)
         {
             RendererOptions options = new RendererOptions(font);
-            
+
             if (text == "")
             {
                 FontRectangle emptyRectangle = TextMeasurer.Measure(" ", options);
