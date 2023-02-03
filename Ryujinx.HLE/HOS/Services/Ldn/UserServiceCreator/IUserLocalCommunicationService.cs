@@ -199,7 +199,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                         Logger.Info?.Print(LogClass.ServiceLdn, $"Console's LDN IP is \"{unicastAddress.Address}\".");
 
                         context.ResponseData.Write(NetworkHelpers.ConvertIpv4Address(unicastAddress.Address));
-                        context.ResponseData.Write(NetworkHelpers.ConvertIpv4Address(DEFAULT_SUBNET_MASK));
+                        context.ResponseData.Write(NetworkHelpers.ConvertIpv4Address(unicastAddress.IPv4Mask));
                     }
                 }
                 else
