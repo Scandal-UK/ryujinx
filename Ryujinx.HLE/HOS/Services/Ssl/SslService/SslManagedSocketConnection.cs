@@ -1,5 +1,6 @@
 ﻿using Ryujinx.HLE.HOS.Services.Sockets.Bsd;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.HLE.HOS.Services.Ssl.Types;
 using System;
 using System.IO;
@@ -92,7 +93,7 @@ namespace Ryujinx.HLE.HOS.Services.Ssl.SslService
         public ResultCode Handshake(string hostName)
         {
             StartSslOperation();
-            _stream = new SslStream(new NetworkStream(((ManagedSocket)Socket).Socket, false), false, null, null);
+            _stream = new SslStream(new NetworkStream(((DefaultSocket)((ManagedSocket)Socket).Socket).BaseSocket, false), false, null, null);
             _stream.AuthenticateAsClient(hostName, null, TranslateSslVersion(_sslVersion), false);
             EndSslOperation();
 

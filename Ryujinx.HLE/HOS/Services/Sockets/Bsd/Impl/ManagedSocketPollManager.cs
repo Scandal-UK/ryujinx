@@ -1,4 +1,5 @@
 ﻿using Ryujinx.Common.Logging;
+using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Types;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -37,37 +38,38 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             foreach (PollEvent evnt in events)
             {
-                ManagedSocket socket = (ManagedSocket)evnt.FileDescriptor;
-
-                bool isValidEvent = evnt.Data.InputEvents == 0;
-
-                errorEvents.Add(socket.Socket);
-
-                if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
+                if ((evnt.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
                 {
-                    readEvents.Add(socket.Socket);
+                    bool isValidEvent = evnt.Data.InputEvents == 0;
 
-                    isValidEvent = true;
-                }
+                    errorEvents.Add(ds.BaseSocket);
 
-                if ((evnt.Data.InputEvents & PollEventTypeMask.UrgentInput) != 0)
-                {
-                    readEvents.Add(socket.Socket);
+                    if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
+                    {
+                        readEvents.Add(ds.BaseSocket);
 
-                    isValidEvent = true;
-                }
+                        isValidEvent = true;
+                    }
 
-                if ((evnt.Data.InputEvents & PollEventTypeMask.Output) != 0)
-                {
-                    writeEvents.Add(socket.Socket);
+                    if ((evnt.Data.InputEvents & PollEventTypeMask.UrgentInput) != 0)
+                    {
+                        readEvents.Add(ds.BaseSocket);
 
-                    isValidEvent = true;
-                }
+                        isValidEvent = true;
+                    }
 
-                if (!isValidEvent)
-                {
-                    Logger.Warning?.Print(LogClass.ServiceBsd, $"Unsupported Poll input event type: {evnt.Data.InputEvents}");
-                    return LinuxError.EINVAL;
+                    if ((evnt.Data.InputEvents & PollEventTypeMask.Output) != 0)
+                    {
+                        writeEvents.Add(ds.BaseSocket);
+
+                        isValidEvent = true;
+                    }
+
+                    if (!isValidEvent)
+                    {
+                        Logger.Warning?.Print(LogClass.ServiceBsd, $"Unsupported Poll input event type: {evnt.Data.InputEvents}");
+                        return LinuxError.EINVAL;
+                    }
                 }
             }
 
@@ -84,34 +86,37 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             foreach (PollEvent evnt in events)
             {
-                Socket socket = ((ManagedSocket)evnt.FileDescriptor).Socket;
-
-                PollEventTypeMask outputEvents = evnt.Data.OutputEvents & ~evnt.Data.InputEvents;
-
-                if (errorEvents.Contains(socket))
+                if ((evnt.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
                 {
-                    outputEvents |= PollEventTypeMask.Error;
+                    Socket socket = ds.BaseSocket;
 
-                    if (!socket.Connected || !socket.IsBound)
+                    PollEventTypeMask outputEvents = evnt.Data.OutputEvents & ~evnt.Data.InputEvents;
+
+                    if (errorEvents.Contains(socket))
                     {
-                        outputEvents |= PollEventTypeMask.Disconnected;
-                    }
-                }
+                        outputEvents |= PollEventTypeMask.Error;
 
-                if (readEvents.Contains(socket))
-                {
-                    if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
+                        if (!socket.Connected || !socket.IsBound)
+                        {
+                            outputEvents |= PollEventTypeMask.Disconnected;
+                        }
+                    }
+
+                    if (readEvents.Contains(socket))
                     {
-                        outputEvents |= PollEventTypeMask.Input;
+                        if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
+                        {
+                            outputEvents |= PollEventTypeMask.Input;
+                        }
                     }
-                }
 
-                if (writeEvents.Contains(socket))
-                {
-                    outputEvents |= PollEventTypeMask.Output;
-                }
+                    if (writeEvents.Contains(socket))
+                    {
+                        outputEvents |= PollEventTypeMask.Output;
+                    }
 
-                evnt.Data.OutputEvents = outputEvents;
+                    evnt.Data.OutputEvents = outputEvents;
+                }
             }
 
             updatedCount = readEvents.Count + writeEvents.Count + errorEvents.Count;
@@ -129,21 +134,22 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             foreach (PollEvent pollEvent in events)
             {
-                ManagedSocket socket = (ManagedSocket)pollEvent.FileDescriptor;
-
-                if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Input))
+                if ((pollEvent.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
                 {
-                    readEvents.Add(socket.Socket);
-                }
+                    if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Input))
+                    {
+                        readEvents.Add(ds.BaseSocket);
+                    }
 
-                if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Output))
-                {
-                    writeEvents.Add(socket.Socket);
-                }
+                    if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Output))
+                    {
+                        writeEvents.Add(ds.BaseSocket);
+                    }
 
-                if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Error))
-                {
-                    errorEvents.Add(socket.Socket);
+                    if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Error))
+                    {
+                        errorEvents.Add(ds.BaseSocket);
+                    }
                 }
             }
 
@@ -153,21 +159,22 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             foreach (PollEvent pollEvent in events)
             {
-                ManagedSocket socket = (ManagedSocket)pollEvent.FileDescriptor;
-
-                if (readEvents.Contains(socket.Socket))
+                if ((pollEvent.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
                 {
-                    pollEvent.Data.OutputEvents |= PollEventTypeMask.Input;
-                }
+                    if (readEvents.Contains(ds.BaseSocket))
+                    {
+                        pollEvent.Data.OutputEvents |= PollEventTypeMask.Input;
+                    }
 
-                if (writeEvents.Contains(socket.Socket))
-                {
-                    pollEvent.Data.OutputEvents |= PollEventTypeMask.Output;
-                }
+                    if (writeEvents.Contains(ds.BaseSocket))
+                    {
+                        pollEvent.Data.OutputEvents |= PollEventTypeMask.Output;
+                    }
 
-                if (errorEvents.Contains(socket.Socket))
-                {
-                    pollEvent.Data.OutputEvents |= PollEventTypeMask.Error;
+                    if (errorEvents.Contains(ds.BaseSocket))
+                    {
+                        pollEvent.Data.OutputEvents |= PollEventTypeMask.Error;
+                    }
                 }
             }
 
