@@ -30,37 +30,37 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
         public LinuxError Poll(List<PollEvent> events, int timeoutMilliseconds, out int updatedCount)
         {
-            List<Socket> readEvents = new List<Socket>();
-            List<Socket> writeEvents = new List<Socket>();
-            List<Socket> errorEvents = new List<Socket>();
+            List<ISocketImpl> readEvents = new List<ISocketImpl>();
+            List<ISocketImpl> writeEvents = new List<ISocketImpl>();
+            List<ISocketImpl> errorEvents = new List<ISocketImpl>();
 
             updatedCount = 0;
 
             foreach (PollEvent evnt in events)
             {
-                if ((evnt.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
+                if (evnt.FileDescriptor is ManagedSocket ms)
                 {
                     bool isValidEvent = evnt.Data.InputEvents == 0;
 
-                    errorEvents.Add(ds.BaseSocket);
+                    errorEvents.Add(ms.Socket);
 
                     if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
                     {
-                        readEvents.Add(ds.BaseSocket);
+                        readEvents.Add(ms.Socket);
 
                         isValidEvent = true;
                     }
 
                     if ((evnt.Data.InputEvents & PollEventTypeMask.UrgentInput) != 0)
                     {
-                        readEvents.Add(ds.BaseSocket);
+                        readEvents.Add(ms.Socket);
 
                         isValidEvent = true;
                     }
 
                     if ((evnt.Data.InputEvents & PollEventTypeMask.Output) != 0)
                     {
-                        writeEvents.Add(ds.BaseSocket);
+                        writeEvents.Add(ms.Socket);
 
                         isValidEvent = true;
                     }
@@ -77,7 +77,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             {
                 int actualTimeoutMicroseconds = timeoutMilliseconds == -1 ? -1 : timeoutMilliseconds * 1000;
 
-                Socket.Select(readEvents, writeEvents, errorEvents, actualTimeoutMicroseconds);
+                SocketHelpers.Select(readEvents, writeEvents, errorEvents, actualTimeoutMicroseconds);
             }
             catch (SocketException exception)
             {
@@ -86,13 +86,13 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
             foreach (PollEvent evnt in events)
             {
-                if ((evnt.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
+                if (evnt.FileDescriptor is ManagedSocket ms)
                 {
-                    Socket socket = ds.BaseSocket;
+                    ISocketImpl socket = ms.Socket;
 
                     PollEventTypeMask outputEvents = evnt.Data.OutputEvents & ~evnt.Data.InputEvents;
 
-                    if (errorEvents.Contains(socket))
+                    if (errorEvents.Contains(ms.Socket))
                     {
                         outputEvents |= PollEventTypeMask.Error;
 
@@ -102,7 +102,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                         }
                     }
 
-                    if (readEvents.Contains(socket))
+                    if (readEvents.Contains(ms.Socket))
                     {
                         if ((evnt.Data.InputEvents & PollEventTypeMask.Input) != 0)
                         {
@@ -110,7 +110,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
                         }
                     }
 
-                    if (writeEvents.Contains(socket))
+                    if (writeEvents.Contains(ms.Socket))
                     {
                         outputEvents |= PollEventTypeMask.Output;
                     }
@@ -126,52 +126,52 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
         public LinuxError Select(List<PollEvent> events, int timeout, out int updatedCount)
         {
-            List<Socket> readEvents = new();
-            List<Socket> writeEvents = new();
-            List<Socket> errorEvents = new();
+            List<ISocketImpl> readEvents = new();
+            List<ISocketImpl> writeEvents = new();
+            List<ISocketImpl> errorEvents = new();
 
             updatedCount = 0;
 
             foreach (PollEvent pollEvent in events)
             {
-                if ((pollEvent.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
+                if (pollEvent.FileDescriptor is ManagedSocket ms)
                 {
                     if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Input))
                     {
-                        readEvents.Add(ds.BaseSocket);
+                        readEvents.Add(ms.Socket);
                     }
 
                     if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Output))
                     {
-                        writeEvents.Add(ds.BaseSocket);
+                        writeEvents.Add(ms.Socket);
                     }
 
                     if (pollEvent.Data.InputEvents.HasFlag(PollEventTypeMask.Error))
                     {
-                        errorEvents.Add(ds.BaseSocket);
+                        errorEvents.Add(ms.Socket);
                     }
                 }
             }
 
-            Socket.Select(readEvents, writeEvents, errorEvents, timeout);
+            SocketHelpers.Select(readEvents, writeEvents, errorEvents, timeout);
 
             updatedCount = readEvents.Count + writeEvents.Count + errorEvents.Count;
 
             foreach (PollEvent pollEvent in events)
             {
-                if ((pollEvent.FileDescriptor is ManagedSocket ms) && (ms.Socket is DefaultSocket ds))
+                if (pollEvent.FileDescriptor is ManagedSocket ms)
                 {
-                    if (readEvents.Contains(ds.BaseSocket))
+                    if (readEvents.Contains(ms.Socket))
                     {
                         pollEvent.Data.OutputEvents |= PollEventTypeMask.Input;
                     }
 
-                    if (writeEvents.Contains(ds.BaseSocket))
+                    if (writeEvents.Contains(ms.Socket))
                     {
                         pollEvent.Data.OutputEvents |= PollEventTypeMask.Output;
                     }
 
-                    if (errorEvents.Contains(ds.BaseSocket))
+                    if (errorEvents.Contains(ms.Socket))
                     {
                         pollEvent.Data.OutputEvents |= PollEventTypeMask.Error;
                     }
