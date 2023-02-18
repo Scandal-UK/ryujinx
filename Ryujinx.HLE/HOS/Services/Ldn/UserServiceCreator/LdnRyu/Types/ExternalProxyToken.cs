@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using Ryujinx.Common.Memory;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
@@ -13,11 +14,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     {
         public uint VirtualIp;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[] Token;
+        public Array16<byte> Token;
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[] PhysicalIp;
+        public Array16<byte> PhysicalIp;
         public AddressFamily AddressFamily;
     }
 }

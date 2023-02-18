@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using Ryujinx.Common.Memory;
+using System.Runtime.InteropServices;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
 {
@@ -11,11 +12,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     struct InitializeMessage
     {
         // All 0 if we don't have an ID yet.
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[] Id;
+        public Array16<byte> Id;
 
         // All 0 if we don't have a mac yet.
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x6)]
-        public byte[] MacAddress;
+        public Array6<byte> MacAddress;
     }
 }

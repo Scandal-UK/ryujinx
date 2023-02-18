@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using Ryujinx.Common.Memory;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
@@ -6,8 +7,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     [StructLayout(LayoutKind.Sequential, Size = 0x28, Pack = 1)]
     struct RyuNetworkConfig
     {
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[] GameVersion;
+        public Array16<byte> GameVersion;
 
         // PrivateIp is included for external proxies for the case where a client attempts to join from
         // their own LAN. UPnP forwarding can fail when connecting devices on the same network over the public IP,
@@ -15,8 +15,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
 
         // The fields below are 0 if not hosting a p2p proxy.
 
-        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 0x10)]
-        public byte[] PrivateIp;
+        public Array16<byte> PrivateIp;
         public AddressFamily AddressFamily;
         public ushort ExternalProxyPort;
         public ushort InternalProxyPort;

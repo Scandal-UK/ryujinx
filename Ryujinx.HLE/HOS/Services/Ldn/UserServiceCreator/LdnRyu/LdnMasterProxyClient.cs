@@ -22,7 +22,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
     {
         public bool NeedsRealId => true;
 
-        private static InitializeMessage InitializeMemory = new InitializeMessage() { Id = new byte[0x10], MacAddress = new byte[0x6] };
+        private static InitializeMessage InitializeMemory = new InitializeMessage();
 
         private const int InactiveTimeout = 6000;
         private const int FailureTimeout  = 4000;
@@ -200,7 +200,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return; // Invalid external proxy.
             }
 
-            IPAddress      address = new IPAddress(config.ProxyIp.Take(length).ToArray());
+            IPAddress      address = new IPAddress(config.ProxyIp.AsSpan()[..length].ToArray());
             P2pProxyClient proxy   = new P2pProxyClient(address.ToString(), config.ProxyPort);
 
             _connectedProxy = proxy;
@@ -375,7 +375,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         private void ConfigureAccessPoint(ref RyuNetworkConfig request)
         {
-            request.GameVersion = _gameVersion;
+            _gameVersion.AsSpan().CopyTo(request.GameVersion.AsSpan());
 
             if (_useP2pProxy)
             {
@@ -434,7 +434,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
                         (_, UnicastIPAddressInformation unicastAddress) = NetworkHelpers.GetLocalInterface();
 
-                        request.PrivateIp = ProxyHelpers.AddressTo16Byte(unicastAddress.Address);
+                        ProxyHelpers.AddressTo16Byte(unicastAddress.Address).AsSpan().CopyTo(request.PrivateIp.AsSpan());
                         request.InternalProxyPort = _hostedProxy.PrivatePort;
                         request.AddressFamily = unicastAddress.Address.AddressFamily;
                     }
