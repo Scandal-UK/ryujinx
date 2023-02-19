@@ -553,10 +553,13 @@ namespace Ryujinx.Ui.Common.Configuration
             public MultiplayerSection()
             {
                 LanInterfaceId = new ReactiveObject<string>();
-                Mode           = new ReactiveObject<MultiplayerMode>();
-                DisableP2p     = new ReactiveObject<bool>();
-                Username       = new ReactiveObject<string>();
-                LdnPassphrase  = new ReactiveObject<string>();
+                Mode             = new ReactiveObject<MultiplayerMode>();
+                Mode.Event       += static (sender, e) => LogValueChange(sender, e, nameof(MultiplayerMode));
+                DisableP2p       = new ReactiveObject<bool>();
+                DisableP2p.Event += static (sender, e) => LogValueChange(sender, e, nameof(DisableP2p));
+                Username         = new ReactiveObject<string>();
+                LdnPassphrase    = new ReactiveObject<string>();
+
             }
         }
 
