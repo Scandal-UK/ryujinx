@@ -1108,6 +1108,14 @@ namespace Ryujinx.Ui
             Graphics.Gpu.GraphicsConfig.EnableMacroHLE             = ConfigurationState.Instance.Graphics.EnableMacroHLE;
         }
 
+        public void UpdateInternetAccess()
+        {
+            if (_gameLoaded)
+            {
+                _emulationContext.Configuration.EnableInternetAccess = ConfigurationState.Instance.System.EnableInternetAccess.Value;
+            }
+        }
+
         public void SaveConfig()
         {
             ConfigurationState.Instance.ToFileFormat().SaveConfig(Program.ConfigurationPath);
