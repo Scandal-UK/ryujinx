@@ -1,4 +1,5 @@
-﻿using Ryujinx.HLE.HOS.Services.Ldn.Types;
+﻿using Ryujinx.Common.Utilities;
+using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using System;
 using System.Runtime.InteropServices;
@@ -81,7 +82,7 @@ class RyuLdnProtocol
                 {
                     // The header is available. Make sure we received all the data (size specified in the header)
 
-                    LdnHeader ldnHeader = LdnHelper.FromBytes<LdnHeader>(_buffer);
+                    LdnHeader ldnHeader = MemoryMarshal.Cast<byte, LdnHeader>(_buffer)[0];
 
                     if (ldnHeader.Magic != Magic)
                     {
@@ -123,14 +124,9 @@ class RyuLdnProtocol
             }
         }
 
-        private T ParseDefault<T>(byte[] data)
+        private (T, byte[]) ParseWithData<T>(byte[] data) where T : struct
         {
-            return LdnHelper.FromBytes<T>(data);
-        }
-
-        private (T, byte[]) ParseWithData<T>(byte[] data)
-        {
-            T   str  = default;
+            T str = default;
             int size = Marshal.SizeOf(str);
 
             byte[] remainder = new byte[data.Length - size];
@@ -140,7 +136,7 @@ class RyuLdnProtocol
                 Array.Copy(data, size, remainder, 0, remainder.Length);
             }
 
-            return (LdnHelper.FromBytes<T>(data), remainder);
+            return (MemoryMarshal.Read<T>(data), remainder);
         }
 
         private void DecodeAndHandle(LdnHeader header, byte[] data)
@@ -150,31 +146,31 @@ class RyuLdnProtocol
                 // Client Packets.
                 case PacketId.Initialize:
                     {
-                        Initialize?.Invoke(header, ParseDefault<InitializeMessage>(data));
+                        Initialize?.Invoke(header, MemoryMarshal.Cast<byte, InitializeMessage>(data)[0]);
 
                         break;
                     }
                 case PacketId.Passphrase:
                     {
-                        Passphrase?.Invoke(header, ParseDefault<PassphraseMessage>(data));
+                        Passphrase?.Invoke(header, MemoryMarshal.Cast<byte, PassphraseMessage>(data)[0]);
 
                         break;
                     }
                 case PacketId.Connected:
                     {
-                        Connected?.Invoke(header, ParseDefault<NetworkInfo>(data));
+                        Connected?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
 
                         break;
                     }
                 case PacketId.SyncNetwork:
                     {
-                        SyncNetwork?.Invoke(header, ParseDefault<NetworkInfo>(data));
+                        SyncNetwork?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
 
                         break;
                     }
                 case PacketId.ScanReply:
                     {
-                        ScanReply?.Invoke(header, ParseDefault<NetworkInfo>(data));
+                        ScanReply?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
 
                         break;
                     }
@@ -187,7 +183,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.Disconnect:
                     {
-                        Disconnected?.Invoke(header, ParseDefault<DisconnectMessage>(data));
+                        Disconnected?.Invoke(header, MemoryMarshal.Cast<byte, DisconnectMessage>(data)[0]);
 
                         break;
                     }
@@ -195,19 +191,19 @@ class RyuLdnProtocol
                 // External Proxy Packets.
                 case PacketId.ExternalProxy:
                     {
-                        ExternalProxy?.Invoke(header, ParseDefault<ExternalProxyConfig>(data));
+                        ExternalProxy?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyConfig>(data)[0]);
 
                         break;
                     }
                 case PacketId.ExternalProxyState:
                     {
-                        ExternalProxyState?.Invoke(header, ParseDefault<ExternalProxyConnectionState>(data));
+                        ExternalProxyState?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyConnectionState>(data)[0]);
 
                         break;
                     }
                 case PacketId.ExternalProxyToken:
                     {
-                        ExternalProxyToken?.Invoke(header, ParseDefault<ExternalProxyToken>(data));
+                        ExternalProxyToken?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyToken>(data)[0]);
 
                         break;
                     }
@@ -227,7 +223,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.Reject:
                     {
-                        Reject?.Invoke(header, ParseDefault<RejectRequest>(data));
+                        Reject?.Invoke(header, MemoryMarshal.Cast<byte, RejectRequest>(data)[0]);
 
                         break;
                     }
@@ -239,7 +235,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.SetAcceptPolicy:
                     {
-                        SetAcceptPolicy?.Invoke(header, ParseDefault<SetAcceptPolicyRequest>(data));
+                        SetAcceptPolicy?.Invoke(header, MemoryMarshal.Cast<byte, SetAcceptPolicyRequest>(data)[0]);
 
                         break;
                     }
@@ -251,19 +247,19 @@ class RyuLdnProtocol
                     }
                 case PacketId.Connect:
                     {
-                        Connect?.Invoke(header, ParseDefault<ConnectRequest>(data));
+                        Connect?.Invoke(header, MemoryMarshal.Cast<byte, ConnectRequest>(data)[0]);
 
                         break;
                     }
                 case PacketId.ConnectPrivate:
                     {
-                        ConnectPrivate?.Invoke(header, ParseDefault<ConnectPrivateRequest>(data));
+                        ConnectPrivate?.Invoke(header, MemoryMarshal.Cast<byte, ConnectPrivateRequest>(data)[0]);
 
                         break;
                     }
                 case PacketId.Scan:
                     {
-                        Scan?.Invoke(header, ParseDefault<ScanFilter>(data));
+                        Scan?.Invoke(header, MemoryMarshal.Cast<byte, ScanFilter>(data)[0]);
 
                         break;
                     }
@@ -271,19 +267,19 @@ class RyuLdnProtocol
                 // Proxy Packets
                 case PacketId.ProxyConfig:
                     {
-                        ProxyConfig?.Invoke(header, ParseDefault<ProxyConfig>(data));
+                        ProxyConfig?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConfig>(data)[0]);
 
                         break;
                     }
                 case PacketId.ProxyConnect:
                     {
-                        ProxyConnect?.Invoke(header, ParseDefault<ProxyConnectRequest>(data));
+                        ProxyConnect?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConnectRequest>(data)[0]);
 
                         break;
                     }
                 case PacketId.ProxyConnectReply:
                     {
-                        ProxyConnectReply?.Invoke(header, ParseDefault<ProxyConnectResponse>(data));
+                        ProxyConnectReply?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConnectResponse>(data)[0]);
 
                         break;
                     }
@@ -297,7 +293,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.ProxyDisconnect:
                     {
-                        ProxyDisconnect?.Invoke(header, ParseDefault<ProxyDisconnectMessage>(data));
+                        ProxyDisconnect?.Invoke(header, MemoryMarshal.Cast<byte, ProxyDisconnectMessage>(data)[0]);
 
                         break;
                     }
@@ -305,13 +301,13 @@ class RyuLdnProtocol
                 // Lifecycle Packets.
                 case PacketId.Ping:
                     {
-                        Ping?.Invoke(header, ParseDefault<PingMessage>(data));
+                        Ping?.Invoke(header, MemoryMarshal.Cast<byte, PingMessage>(data)[0]);
 
                         break;
                     }
                 case PacketId.NetworkError:
                     {
-                        NetworkError?.Invoke(header, ParseDefault<NetworkErrorMessage>(data));
+                        NetworkError?.Invoke(header, MemoryMarshal.Cast<byte, NetworkErrorMessage>(data)[0]);
 
                         break;
                     }
@@ -335,43 +331,44 @@ class RyuLdnProtocol
         {
             LdnHeader header = GetHeader(type, 0);
 
-            byte[] result = LdnHelper.StructureToByteArray(header);
-
-            return result;
+            return SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
         }
 
         public byte[] Encode(PacketId type, byte[] data)
         {
             LdnHeader header = GetHeader(type, data.Length);
+            
+            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
 
-            byte[] result = LdnHelper.StructureToByteArray(header, data.Length);
-
+            Array.Resize(ref result, result.Length + data.Length);
             Array.Copy(data, 0, result, Marshal.SizeOf<LdnHeader>(), data.Length);
 
             return result;
         }
 
-        public byte[] Encode<T>(PacketId type, T packet)
+        public byte[] Encode<T>(PacketId type, T packet) where T : unmanaged
         {
-            byte[] packetData = LdnHelper.StructureToByteArray(packet);
+            byte[] packetData = SpanHelpers.AsSpan<T, byte>(ref packet).ToArray();
 
             LdnHeader header = GetHeader(type, packetData.Length);
 
-            byte[] result = LdnHelper.StructureToByteArray(header, packetData.Length);
+            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
 
+            Array.Resize(ref result, result.Length + packetData.Length);
             Array.Copy(packetData, 0, result, Marshal.SizeOf<LdnHeader>(), packetData.Length);
 
             return result;
         }
 
-        public byte[] Encode<T>(PacketId type, T packet, byte[] data)
+        public byte[] Encode<T>(PacketId type, T packet, byte[] data) where T : unmanaged
         {
-            byte[] packetData = LdnHelper.StructureToByteArray(packet);
+            byte[] packetData = SpanHelpers.AsSpan<T, byte>(ref packet).ToArray();
 
             LdnHeader header = GetHeader(type, packetData.Length + data.Length);
 
-            byte[] result = LdnHelper.StructureToByteArray(header, packetData.Length + data.Length);
+            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
 
+            Array.Resize(ref result, result.Length + packetData.Length + data.Length);
             Array.Copy(packetData, 0, result, Marshal.SizeOf<LdnHeader>(), packetData.Length);
             Array.Copy(data, 0, result, Marshal.SizeOf<LdnHeader>() + packetData.Length, data.Length);
 

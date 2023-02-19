@@ -606,9 +606,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 
                                     byte[] addressListBytes = new byte[bufferSize];
 
-                                    context.Memory.Read((ulong)bufferPosition, addressListBytes);
+                                    context.Memory.Read(bufferPosition, addressListBytes);
 
-                                    AddressList addressList = LdnHelper.FromBytes<AddressList>(addressListBytes);
+                                    AddressList addressList = MemoryMarshal.Cast<byte, AddressList>(addressListBytes)[0];
 
                                     _accessPoint.CreateNetworkPrivate(securityConfig, securityParameter, userConfig, networkConfig, addressList);
                                 }
@@ -865,13 +865,13 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             else
             {
                 ulong bufferPosition = context.Request.PtrBuff[0].Position;
-                ulong bufferSize     = context.Request.PtrBuff[0].Size;
+                ulong bufferSize = context.Request.PtrBuff[0].Size;
 
                 byte[] networkInfoBytes = new byte[bufferSize];
 
-                context.Memory.Read((ulong)bufferPosition, networkInfoBytes);
+                context.Memory.Read(bufferPosition, networkInfoBytes);
 
-                networkInfo = LdnHelper.FromBytes<NetworkInfo>(networkInfoBytes);
+                networkInfo = MemoryMarshal.Cast<byte, NetworkInfo>(networkInfoBytes)[0];
             }
 
             if (networkInfo.NetworkId.IntentId.LocalCommunicationId == -1 && NetworkClient.NeedsRealId)

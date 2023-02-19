@@ -12,10 +12,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     [StructLayout(LayoutKind.Sequential, Size = 0x28)]
     struct ExternalProxyToken
     {
-        public uint VirtualIp;
-
+        public uint          VirtualIp;
         public Array16<byte> Token;
-
         public Array16<byte> PhysicalIp;
         public AddressFamily AddressFamily;
     }

@@ -1,4 +1,5 @@
 ﻿using Ryujinx.Common.Logging;
+using Ryujinx.Common.Memory;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
@@ -200,8 +201,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return; // Invalid external proxy.
             }
 
-            IPAddress      address = new IPAddress(config.ProxyIp.AsSpan()[..length].ToArray());
-            P2pProxyClient proxy   = new P2pProxyClient(address.ToString(), config.ProxyPort);
+            IPAddress      address = new(config.ProxyIp.AsSpan()[..length].ToArray());
+            P2pProxyClient proxy   = new(address.ToString(), config.ProxyPort);
 
             _connectedProxy = proxy;
 

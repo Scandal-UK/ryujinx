@@ -13,9 +13,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     {
         public Array16<byte> ProxyIp;
         public AddressFamily AddressFamily;
-
-        public ushort ProxyPort;
-
+        public ushort        ProxyPort;
         public Array16<byte> Token;
     }
 }
