@@ -61,15 +61,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
                     break;
                 case LanPacketType.ScanResponse:
                     // UDP
-                    ScanResponse?.Invoke(MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
+                    ScanResponse?.Invoke(MemoryMarshal.Read<NetworkInfo>(data));
                     break;
                 case LanPacketType.SyncNetwork:
                     // TCP
-                    SyncNetwork?.Invoke(MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
+                    SyncNetwork?.Invoke(MemoryMarshal.Read<NetworkInfo>(data));
                     break;
                 case LanPacketType.Connect:
                     // TCP Session / Station
-                    Connect?.Invoke(MemoryMarshal.Cast<byte, NodeInfo>(data)[0], endPoint);
+                    Connect?.Invoke(MemoryMarshal.Read<NodeInfo>(data), endPoint);
                     break;
                 default:
                     Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Decode error: Unhandled type {header.Type}");
@@ -99,7 +99,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
 
                 if (bufferEnd >= _headerSize)
                 {
-                    LanPacketHeader header = MemoryMarshal.Cast<byte, LanPacketHeader>(buffer)[0];
+                    LanPacketHeader header = MemoryMarshal.Read<LanPacketHeader>(buffer);
                     if (header.Magic != LanMagic)
                     {
                         bufferEnd = 0;
@@ -176,7 +176,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             return s.SendAsync(buf) ? 0 : -1;
         }
 
-        private LanPacketHeader PrepareHeader(LanPacketHeader header, LanPacketType type)
+        private static LanPacketHeader PrepareHeader(LanPacketHeader header, LanPacketType type)
         {
             header.Magic            = LanMagic;
             header.Type             = type;
@@ -227,7 +227,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             return buf;
         }
 
-        private int Compress(byte[] input, out byte[] output)
+        private static int Compress(byte[] input, out byte[] output)
         {
             List<byte> outputList = new();
             int i = 0;
@@ -271,7 +271,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm
             return i == input.Length ? 0 : -1;
         }
 
-        private int Decompress(byte[] input, out byte[] output)
+        private static int Decompress(byte[] input, out byte[] output)
         {
             List<byte> outputList = new();
             int i = 0;

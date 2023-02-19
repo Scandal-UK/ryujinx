@@ -435,7 +435,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
                         (_, UnicastIPAddressInformation unicastAddress) = NetworkHelpers.GetLocalInterface();
 
-                        ProxyHelpers.AddressTo16Byte(unicastAddress.Address).AsSpan().CopyTo(request.PrivateIp.AsSpan());
+                        unicastAddress.Address.GetAddressBytes().AsSpan().CopyTo(request.PrivateIp.AsSpan());
                         request.InternalProxyPort = _hostedProxy.PrivatePort;
                         request.AddressFamily = unicastAddress.Address.AddressFamily;
                     }

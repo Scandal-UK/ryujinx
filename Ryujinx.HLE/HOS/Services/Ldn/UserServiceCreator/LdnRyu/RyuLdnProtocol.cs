@@ -146,31 +146,31 @@ class RyuLdnProtocol
                 // Client Packets.
                 case PacketId.Initialize:
                     {
-                        Initialize?.Invoke(header, MemoryMarshal.Cast<byte, InitializeMessage>(data)[0]);
+                        Initialize?.Invoke(header, MemoryMarshal.Read<InitializeMessage>(data));
 
                         break;
                     }
                 case PacketId.Passphrase:
                     {
-                        Passphrase?.Invoke(header, MemoryMarshal.Cast<byte, PassphraseMessage>(data)[0]);
+                        Passphrase?.Invoke(header, MemoryMarshal.Read<PassphraseMessage>(data));
 
                         break;
                     }
                 case PacketId.Connected:
                     {
-                        Connected?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
+                        Connected?.Invoke(header, MemoryMarshal.Read<NetworkInfo>(data));
 
                         break;
                     }
                 case PacketId.SyncNetwork:
                     {
-                        SyncNetwork?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
+                        SyncNetwork?.Invoke(header, MemoryMarshal.Read<NetworkInfo>(data));
 
                         break;
                     }
                 case PacketId.ScanReply:
                     {
-                        ScanReply?.Invoke(header, MemoryMarshal.Cast<byte, NetworkInfo>(data)[0]);
+                        ScanReply?.Invoke(header, MemoryMarshal.Read<NetworkInfo>(data));
 
                         break;
                     }
@@ -183,7 +183,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.Disconnect:
                     {
-                        Disconnected?.Invoke(header, MemoryMarshal.Cast<byte, DisconnectMessage>(data)[0]);
+                        Disconnected?.Invoke(header, MemoryMarshal.Read<DisconnectMessage>(data));
 
                         break;
                     }
@@ -191,19 +191,19 @@ class RyuLdnProtocol
                 // External Proxy Packets.
                 case PacketId.ExternalProxy:
                     {
-                        ExternalProxy?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyConfig>(data)[0]);
+                        ExternalProxy?.Invoke(header, MemoryMarshal.Read<ExternalProxyConfig>(data));
 
                         break;
                     }
                 case PacketId.ExternalProxyState:
                     {
-                        ExternalProxyState?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyConnectionState>(data)[0]);
+                        ExternalProxyState?.Invoke(header, MemoryMarshal.Read<ExternalProxyConnectionState>(data));
 
                         break;
                     }
                 case PacketId.ExternalProxyToken:
                     {
-                        ExternalProxyToken?.Invoke(header, MemoryMarshal.Cast<byte, ExternalProxyToken>(data)[0]);
+                        ExternalProxyToken?.Invoke(header, MemoryMarshal.Read<ExternalProxyToken>(data));
 
                         break;
                     }
@@ -223,7 +223,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.Reject:
                     {
-                        Reject?.Invoke(header, MemoryMarshal.Cast<byte, RejectRequest>(data)[0]);
+                        Reject?.Invoke(header, MemoryMarshal.Read<RejectRequest>(data));
 
                         break;
                     }
@@ -235,7 +235,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.SetAcceptPolicy:
                     {
-                        SetAcceptPolicy?.Invoke(header, MemoryMarshal.Cast<byte, SetAcceptPolicyRequest>(data)[0]);
+                        SetAcceptPolicy?.Invoke(header, MemoryMarshal.Read<SetAcceptPolicyRequest>(data));
 
                         break;
                     }
@@ -247,19 +247,19 @@ class RyuLdnProtocol
                     }
                 case PacketId.Connect:
                     {
-                        Connect?.Invoke(header, MemoryMarshal.Cast<byte, ConnectRequest>(data)[0]);
+                        Connect?.Invoke(header, MemoryMarshal.Read<ConnectRequest>(data));
 
                         break;
                     }
                 case PacketId.ConnectPrivate:
                     {
-                        ConnectPrivate?.Invoke(header, MemoryMarshal.Cast<byte, ConnectPrivateRequest>(data)[0]);
+                        ConnectPrivate?.Invoke(header, MemoryMarshal.Read<ConnectPrivateRequest>(data));
 
                         break;
                     }
                 case PacketId.Scan:
                     {
-                        Scan?.Invoke(header, MemoryMarshal.Cast<byte, ScanFilter>(data)[0]);
+                        Scan?.Invoke(header, MemoryMarshal.Read<ScanFilter>(data));
 
                         break;
                     }
@@ -267,19 +267,19 @@ class RyuLdnProtocol
                 // Proxy Packets
                 case PacketId.ProxyConfig:
                     {
-                        ProxyConfig?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConfig>(data)[0]);
+                        ProxyConfig?.Invoke(header, MemoryMarshal.Read<ProxyConfig>(data));
 
                         break;
                     }
                 case PacketId.ProxyConnect:
                     {
-                        ProxyConnect?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConnectRequest>(data)[0]);
+                        ProxyConnect?.Invoke(header, MemoryMarshal.Read<ProxyConnectRequest>(data));
 
                         break;
                     }
                 case PacketId.ProxyConnectReply:
                     {
-                        ProxyConnectReply?.Invoke(header, MemoryMarshal.Cast<byte, ProxyConnectResponse>(data)[0]);
+                        ProxyConnectReply?.Invoke(header, MemoryMarshal.Read<ProxyConnectResponse>(data));
 
                         break;
                     }
@@ -293,7 +293,7 @@ class RyuLdnProtocol
                     }
                 case PacketId.ProxyDisconnect:
                     {
-                        ProxyDisconnect?.Invoke(header, MemoryMarshal.Cast<byte, ProxyDisconnectMessage>(data)[0]);
+                        ProxyDisconnect?.Invoke(header, MemoryMarshal.Read<ProxyDisconnectMessage>(data));
 
                         break;
                     }
@@ -301,13 +301,13 @@ class RyuLdnProtocol
                 // Lifecycle Packets.
                 case PacketId.Ping:
                     {
-                        Ping?.Invoke(header, MemoryMarshal.Cast<byte, PingMessage>(data)[0]);
+                        Ping?.Invoke(header, MemoryMarshal.Read<PingMessage>(data));
 
                         break;
                     }
                 case PacketId.NetworkError:
                     {
-                        NetworkError?.Invoke(header, MemoryMarshal.Cast<byte, NetworkErrorMessage>(data)[0]);
+                        NetworkError?.Invoke(header, MemoryMarshal.Read<NetworkErrorMessage>(data));
 
                         break;
                     }
@@ -316,7 +316,7 @@ class RyuLdnProtocol
             }
         }
 
-        private LdnHeader GetHeader(PacketId type, int dataSize)
+        private static LdnHeader GetHeader(PacketId type, int dataSize)
         {
             return new LdnHeader()
             {

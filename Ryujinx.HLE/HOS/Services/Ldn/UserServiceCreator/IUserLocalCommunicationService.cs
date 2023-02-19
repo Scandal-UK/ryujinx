@@ -160,7 +160,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             }
             else
             {
-                return new NodeLatestUpdate[0];
+                return Array.Empty<NodeLatestUpdate>();
             }
         }
 
@@ -608,7 +608,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 
                                     context.Memory.Read(bufferPosition, addressListBytes);
 
-                                    AddressList addressList = MemoryMarshal.Cast<byte, AddressList>(addressListBytes)[0];
+                                    AddressList addressList = MemoryMarshal.Read<AddressList>(addressListBytes);
 
                                     _accessPoint.CreateNetworkPrivate(securityConfig, securityParameter, userConfig, networkConfig, addressList);
                                 }
@@ -708,7 +708,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
             {
                 byte[] advertiseData = new byte[bufferSize];
 
-                context.Memory.Read((ulong)bufferPosition, advertiseData);
+                context.Memory.Read(bufferPosition, advertiseData);
 
                 return _accessPoint.SetAdvertiseData(advertiseData);
             }
@@ -871,7 +871,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 
                 context.Memory.Read(bufferPosition, networkInfoBytes);
 
-                networkInfo = MemoryMarshal.Cast<byte, NetworkInfo>(networkInfoBytes)[0];
+                networkInfo = MemoryMarshal.Read<NetworkInfo>(networkInfoBytes);
             }
 
             if (networkInfo.NetworkId.IntentId.LocalCommunicationId == -1 && NetworkClient.NeedsRealId)
