@@ -2,6 +2,7 @@
 using Open.Nat;
 using Ryujinx.Common.Logging;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

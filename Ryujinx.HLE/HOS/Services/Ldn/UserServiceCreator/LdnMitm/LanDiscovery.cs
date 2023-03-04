@@ -1,11 +1,10 @@
-﻿using Microsoft.IdentityModel.Logging;
-using Ryujinx.Common.Logging;
+﻿using Ryujinx.Common.Logging;
 using Ryujinx.Common.Memory;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Proxy;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm.Types;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -11,6 +11,7 @@ using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnMitm;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using Ryujinx.Memory;
 using Ryujinx.Horizon.Common;
 using System;

@@ -1,6 +1,5 @@
 ﻿using Ryujinx.HLE.HOS.Services.Ldn.Types;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
