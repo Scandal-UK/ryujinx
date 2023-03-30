@@ -85,7 +85,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         private void HandleAny(IPEndPoint endpoint, LdnHeader header)
         {
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Received '{(PacketId)header.Type}' packet from: {endpoint}");
+            Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Received '{(PacketId)header.Type}' packet from: {endpoint}");
         }
 
         private void TimeoutConnection()
@@ -157,7 +157,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         protected override void OnSent(EndPoint endpoint, long sent)
         {
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Sent {sent} bytes to: {endpoint}");
+            Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Sent {sent} bytes to: {endpoint}");
         }
 
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
@@ -180,7 +180,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         protected override void OnError(SocketError error)
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server caught an error with code {error}");
+            Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server caught an error with code {error}");
         }
 
         private void HandleInitialize(IPEndPoint ipEndPoint, LdnHeader ldnHeader, InitializeMessage message)
@@ -607,14 +607,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             // TODO: Ensure this works
             if (_connectedProxy is not null)
             {
-                Logger.Warning?.PrintMsg(LogClass.ServiceLdn, "here");
+                Logger.Warning?.PrintMsg(LogClass.ServiceLdn, "HandleProxyConfig _connectedProxy");
                 _connectedProxy.HandleProxyConfig(header, config);
                 return;
             }
 
             Config = config;
 
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"HandleProxyConfig: {NetworkHelpers.ConvertUint(config.ProxyIp)}");
+            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"HandleProxyConfig: {NetworkHelpers.ConvertUint(config.ProxyIp)}");
 
             SocketHelpers.RegisterProxy(new LdnProxy(config, this, Protocol));
 

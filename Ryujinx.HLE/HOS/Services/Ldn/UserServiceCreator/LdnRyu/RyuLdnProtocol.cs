@@ -357,7 +357,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         public static byte[] Encode(PacketId type, byte[] data)
         {
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
+            Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
 
             LdnHeader header = GetHeader(type, data.Length);
 
@@ -371,7 +371,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         public static byte[] Encode<T>(PacketId type, T packet) where T : struct
         {
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
+            Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
 
             byte[] packetData = new byte[Marshal.SizeOf<T>()];
             MemoryMarshal.Write(packetData, ref packet);
@@ -388,7 +388,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         public static byte[] Encode<T>(PacketId type, T packet, byte[] data) where T : struct
         {
-            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
+            Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Encoding packet of type: {type}");
 
             byte[] packetData = new byte[Marshal.SizeOf<T>()];
             MemoryMarshal.Write(packetData, ref packet);
