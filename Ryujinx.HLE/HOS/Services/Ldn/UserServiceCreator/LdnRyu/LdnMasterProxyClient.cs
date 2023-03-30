@@ -155,6 +155,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             Dispose();
         }
 
+        protected override void OnSent(EndPoint endpoint, long sent)
+        {
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Sent {sent} bytes to: {endpoint}");
+        }
+
         protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
             if (_hostedProxy is not null && _hostedProxy.ReceivePlayerPacket((IPEndPoint)endpoint, buffer, (int)offset, (int)size))
