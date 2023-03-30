@@ -30,7 +30,8 @@
         SetAcceptPolicy,
         SetAdvertiseData,
 
-        Ping = 254,
+        Ping = 253,
+        TestPing = 254,
         NetworkError = 255
     }
 }

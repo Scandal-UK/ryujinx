@@ -1,5 +1,5 @@
-﻿using Ryujinx.Common.Logging;
-using Ryujinx.Common.Memory;
+﻿using NetCoreServer;
+using Ryujinx.Common.Logging;
 using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy;
@@ -9,22 +9,18 @@ using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
 using Ryujinx.HLE.Utilities;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using TcpClient = NetCoreServer.TcpClient;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 {
-    class LdnMasterProxyClient : TcpClient, INetworkClient, IProxyClient
+    class LdnMasterProxyClient : UdpServer, INetworkClient, IProxyClient
     {
         public bool NeedsRealId => true;
 
-        private static InitializeMessage InitializeMemory = new InitializeMessage();
+        private static InitializeMessage _initializeMemory;
 
         private const int InactiveTimeout = 6000;
         private const int FailureTimeout  = 4000;
@@ -33,16 +29,17 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         private bool         _useP2pProxy;
         private NetworkError _lastError;
 
-        private ManualResetEvent _connected   = new ManualResetEvent(false);
-        private ManualResetEvent _error       = new ManualResetEvent(false);
-        private ManualResetEvent _scan        = new ManualResetEvent(false);
-        private ManualResetEvent _reject      = new ManualResetEvent(false);
-        private AutoResetEvent   _apConnected = new AutoResetEvent(false);
+        private ManualResetEvent _connected   = new(false);
+        private ManualResetEvent _error       = new(false);
+        private ManualResetEvent _scan        = new(false);
+        private ManualResetEvent _reject      = new(false);
+        private AutoResetEvent   _apConnected = new(false);
 
-        private RyuLdnProtocol _protocol;
-        private NetworkTimeout _timeout;
+        internal readonly RyuLdnProtocol Protocol;
+        private readonly NetworkTimeout _timeout;
+        private readonly IPEndPoint _lanPlayHost;
 
-        private List<NetworkInfo> _availableGames = new List<NetworkInfo>();
+        private readonly List<NetworkInfo> _availableGames = new();
         private DisconnectReason  _disconnectReason;
 
         private P2pProxyServer _hostedProxy;
@@ -53,72 +50,68 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         private string _passphrase;
         private byte[] _gameVersion = new byte[0x10];
 
-        private HLEConfiguration _config;
+        private readonly HLEConfiguration _config;
 
         public event EventHandler<NetworkChangeEventArgs> NetworkChange;
 
         public ProxyConfig Config { get; private set; }
 
-        public LdnMasterProxyClient(string address, int port, HLEConfiguration config) : base(address, port)
+        public LdnMasterProxyClient(IPAddress address, int port, HLEConfiguration config) : base(NetworkHelpers.GetLocalInterface().Item2.Address, 0)
         {
-            if (ProxyHelpers.SupportsNoDelay())
-            {
-                OptionNoDelay = true;
-            }
-
-            _protocol = new RyuLdnProtocol();
+            _lanPlayHost = new IPEndPoint(address, port);
+            Protocol = new RyuLdnProtocol();
             _timeout  = new NetworkTimeout(InactiveTimeout, TimeoutConnection);
 
-            _protocol.Initialize   += HandleInitialize;
-            _protocol.Connected    += HandleConnected;
-            _protocol.Reject       += HandleReject;
-            _protocol.RejectReply  += HandleRejectReply;
-            _protocol.SyncNetwork  += HandleSyncNetwork;
-            _protocol.ProxyConfig  += HandleProxyConfig;
-            _protocol.Disconnected += HandleDisconnected;
+            Protocol.Initialize   += HandleInitialize;
+            Protocol.Connected    += HandleConnected;
+            Protocol.Reject       += HandleReject;
+            Protocol.RejectReply  += HandleRejectReply;
+            Protocol.SyncNetwork  += HandleSyncNetwork;
+            Protocol.ProxyConfig  += HandleProxyConfig;
+            Protocol.Disconnected += HandleDisconnected;
 
-            _protocol.ScanReply     += HandleScanReply;
-            _protocol.ScanReplyEnd  += HandleScanReplyEnd;
-            _protocol.ExternalProxy += HandleExternalProxy;
+            Protocol.ScanReply     += HandleScanReply;
+            Protocol.ScanReplyEnd  += HandleScanReplyEnd;
+            Protocol.ExternalProxy += HandleExternalProxy;
 
-            _protocol.Ping         += HandlePing;
-            _protocol.NetworkError += HandleNetworkError;
+            Protocol.Ping         += HandlePing;
+            Protocol.NetworkError += HandleNetworkError;
+
+            Protocol.Any          += HandleAny;
 
             _config = config;
             _useP2pProxy = !config.MultiplayerDisableP2p;
         }
 
+        private void HandleAny(IPEndPoint endpoint, LdnHeader header)
+        {
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Received '{(PacketId)header.Type}' packet from: {endpoint}");
+        }
+
         private void TimeoutConnection()
         {
-            _connected.Reset();
-
-            DisconnectAsync();
-
-            while (IsConnected)
-            {
-                Thread.Yield();
-            }
+            Stop();
         }
 
         private bool EnsureConnected()
         {
-            if (IsConnected)
+            if (IsStarted)
             {
                 return true;
             }
 
-            _error.Reset();
-
-            ConnectAsync();
+            Start();
 
             int index = WaitHandle.WaitAny(new WaitHandle[] { _connected, _error }, FailureTimeout);
 
-            if (IsConnected)
+            if (IsStarted && index == 0)
             {
-                SendAsync(_protocol.Encode(PacketId.Initialize, InitializeMemory));
+                UpdatePassphraseIfNeeded();
+
+                return true;
             }
 
-            return index == 0 && IsConnected;
+            return false;
         }
 
         private void UpdatePassphraseIfNeeded()
@@ -128,26 +121,24 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             {
                 _passphrase = passphrase;
 
-                SendAsync(_protocol.Encode(PacketId.Passphrase, StringUtils.GetFixedLengthBytes(passphrase, 0x80, Encoding.UTF8)));
+                SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Passphrase, StringUtils.GetFixedLengthBytes(passphrase, 0x80, Encoding.UTF8)));
             }
         }
 
-        protected override void OnConnected()
+        protected override void OnStarted()
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN TCP client connected a new session with Id {Id}");
+            ReceiveAsync();
 
-            UpdatePassphraseIfNeeded();
+            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server created a new session with Id {Id}");
 
-            _connected.Set();
+            SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Initialize, _initializeMemory));
         }
 
-        protected override void OnDisconnected()
+        protected override void OnStopped()
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN TCP client disconnected a session with Id {Id}");
+            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server closed a session with Id {Id}");
 
             _passphrase = null;
-
-            _connected.Reset();
 
             if (_networkConnected)
             {
@@ -159,36 +150,41 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _timeout.Dispose();
 
-            DisconnectAsync();
-
-            while (IsConnected)
-            {
-                Thread.Yield();
-            }
+            Stop();
 
             Dispose();
         }
 
-        protected override void OnReceived(byte[] buffer, long offset, long size)
+        protected override void OnReceived(EndPoint endpoint, byte[] buffer, long offset, long size)
         {
-            _protocol.Read(buffer, (int)offset, (int)size);
+            if (_hostedProxy is not null && _hostedProxy.ReceivePlayerPacket((IPEndPoint)endpoint, buffer, (int)offset, (int)size))
+            {
+                ReceiveAsync();
+
+                return;
+            }
+
+            Thread thread = new(() => Protocol.Read((IPEndPoint)endpoint, buffer, (int)offset, (int)size))
+            {
+                Name = "LdnReceivedThread"
+            };
+            thread.Start();
+
+            ReceiveAsync();
         }
 
         protected override void OnError(SocketError error)
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN TCP client caught an error with code {error}");
-
-            _error.Set();
+            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server caught an error with code {error}");
         }
 
-
-
-        private void HandleInitialize(LdnHeader header, InitializeMessage initialize)
+        private void HandleInitialize(IPEndPoint ipEndPoint, LdnHeader ldnHeader, InitializeMessage message)
         {
-            InitializeMemory = initialize;
+            _initializeMemory = message;
+            _connected.Set();
         }
 
-        private void HandleExternalProxy(LdnHeader header, ExternalProxyConfig config)
+        private void HandleExternalProxy(IPEndPoint endpoint, LdnHeader ldnHeader, ExternalProxyConfig config)
         {
             int length = config.AddressFamily switch
             {
@@ -203,7 +199,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             }
 
             IPAddress      address = new(config.ProxyIp.AsSpan()[..length].ToArray());
-            P2pProxyClient proxy   = new(address.ToString(), config.ProxyPort);
+            P2pProxyClient proxy   = new(this, new IPEndPoint(address, config.ProxyPort));
 
             _connectedProxy = proxy;
 
@@ -221,7 +217,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             {
                 // Send the ping message back.
 
-                SendAsync(_protocol.Encode(PacketId.Ping, ping));
+                SendAsync(RyuLdnProtocol.Encode(PacketId.Ping, ping));
             }
         }
 
@@ -248,6 +244,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         private void HandleSyncNetwork(LdnHeader header, NetworkInfo info)
         {
+            SendAsync(RyuLdnProtocol.Encode(PacketId.SyncNetwork, info));
             NetworkChange?.Invoke(this, new NetworkChangeEventArgs(info, true));
         }
 
@@ -255,6 +252,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _networkConnected = true;
             _disconnectReason = DisconnectReason.None;
+
+            foreach (var node in info.Ldn.Nodes.AsSpan())
+            {
+                Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Node: {NetworkHelpers.ConvertUint(node.Ipv4Address)}");
+            }
 
             _apConnected.Set();
 
@@ -293,20 +295,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             {
                 _networkConnected = false;
 
-                _hostedProxy?.Dispose();
+                // _hostedProxy?.Dispose();
                 _hostedProxy = null;
 
-                _connectedProxy?.Dispose();
+                // _connectedProxy?.Dispose();
                 _connectedProxy = null;
 
                 _apConnected.Reset();
 
                 NetworkChange?.Invoke(this, new NetworkChangeEventArgs(new NetworkInfo(), false, _disconnectReason));
-
-                if (IsConnected)
-                {
-                    _timeout.RefreshTimeout();
-                }
             }
         }
 
@@ -314,7 +311,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             if (_networkConnected)
             {
-                SendAsync(_protocol.Encode(PacketId.Disconnect, new DisconnectMessage()));
+                SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Disconnect, new DisconnectMessage()));
 
                 DisconnectInternal();
             }
@@ -326,7 +323,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             {
                 _reject.Reset();
 
-                SendAsync(_protocol.Encode(PacketId.Reject, new RejectRequest(disconnectReason, nodeId)));
+                SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Reject, new RejectRequest(disconnectReason, nodeId)));
 
                 int index = WaitHandle.WaitAny(new WaitHandle[] { _reject, _error }, InactiveTimeout);
 
@@ -344,7 +341,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             // TODO: validate we're the owner (the server will do this anyways tho)
             if (_networkConnected)
             {
-                SendAsync(_protocol.Encode(PacketId.SetAdvertiseData, data));
+                SendAsync(_lanPlayHost,RyuLdnProtocol.Encode(PacketId.SetAdvertiseData, data));
             }
         }
 
@@ -362,7 +359,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             // TODO: validate we're the owner (the server will do this anyways tho)
             if (_networkConnected)
             {
-                SendAsync(_protocol.Encode(PacketId.SetAcceptPolicy, new SetAcceptPolicyRequest
+                SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.SetAcceptPolicy, new SetAcceptPolicyRequest
                 {
                     StationAcceptPolicy = acceptPolicy
                 }));
@@ -371,86 +368,93 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         private void DisposeProxy()
         {
-            _hostedProxy?.Dispose();
+            // _hostedProxy?.Dispose();
             _hostedProxy = null;
         }
 
-        private void ConfigureAccessPoint(ref RyuNetworkConfig request)
+        private void ConfigureAccessPoint()
         {
-            _gameVersion.AsSpan().CopyTo(request.GameVersion.AsSpan());
-
-            if (_useP2pProxy)
-            {
-                // Before sending the request, attempt to set up a proxy server.
-                // This can be on a range of private ports, which can be exposed on a range of public
-                // ports via UPnP. If any of this fails, we just fall back to using the master server.
-
-                int i = 0;
-                for (; i < P2pProxyServer.PrivatePortRange; i++)
-                {
-                    _hostedProxy = new P2pProxyServer(this, (ushort)(P2pProxyServer.PrivatePortBase + i), _protocol);
-
-                    try
-                    {
-                        _hostedProxy.Start();
-
-                        break;
-                    }
-                    catch (SocketException e)
-                    {
-                        _hostedProxy.Dispose();
-                        _hostedProxy = null;
-
-                        if (e.SocketErrorCode != SocketError.AddressAlreadyInUse)
-                        {
-                            i = P2pProxyServer.PrivatePortRange; // Immediately fail.
-                        }
-                    }
-                }
-
-                bool openSuccess = i < P2pProxyServer.PrivatePortRange;
-
-                if (openSuccess)
-                {
-                    Task<ushort> natPunchResult = _hostedProxy.NatPunch();
-
-                    try
-                    {
-                        if (natPunchResult.Result != 0)
-                        {
-                            // Tell the server that we are hosting the proxy.
-                            request.ExternalProxyPort = natPunchResult.Result;
-                        }
-                    }
-                    catch (Exception) { }
-
-                    if (request.ExternalProxyPort == 0)
-                    {
-                        Logger.Warning?.Print(LogClass.ServiceLdn, "Failed to open a port with UPnP for P2P connection. Proxying through the master server instead. Expect higher latency.");
-                        _hostedProxy.Dispose();
-                    }
-                    else
-                    {
-                        Logger.Info?.Print(LogClass.ServiceLdn, $"Created a wireless P2P network on port {request.ExternalProxyPort}.");
-                        _hostedProxy.Start();
-
-                        (_, UnicastIPAddressInformation unicastAddress) = NetworkHelpers.GetLocalInterface();
-
-                        unicastAddress.Address.GetAddressBytes().AsSpan().CopyTo(request.PrivateIp.AsSpan());
-                        request.InternalProxyPort = _hostedProxy.PrivatePort;
-                        request.AddressFamily = unicastAddress.Address.AddressFamily;
-                    }
-                }
-                else
-                {
-                    Logger.Warning?.Print(LogClass.ServiceLdn, "Cannot create a P2P server. Proxying through the master server instead. Expect higher latency.");
-                }
-            }
+            _hostedProxy = new P2pProxyServer(this);
         }
+
+        // private void ConfigureAccessPoint(ref RyuNetworkConfig request)
+        // {
+        //     _gameVersion.AsSpan().CopyTo(request.GameVersion.AsSpan());
+        //
+        //     if (_useP2pProxy)
+        //     {
+        //         // Before sending the request, attempt to set up a proxy server.
+        //         // This can be on a range of private ports, which can be exposed on a range of public
+        //         // ports via UPnP. If any of this fails, we just fall back to using the master server.
+        //
+        //         int i = 0;
+        //         for (; i < P2pProxyServer.PrivatePortRange; i++)
+        //         {
+        //             _hostedProxy = new P2pProxyServer(this, (ushort)(P2pProxyServer.PrivatePortBase + i), _protocol);
+        //
+        //             try
+        //             {
+        //                 _hostedProxy.Start();
+        //
+        //                 break;
+        //             }
+        //             catch (SocketException e)
+        //             {
+        //                 _hostedProxy.Dispose();
+        //                 _hostedProxy = null;
+        //
+        //                 if (e.SocketErrorCode != SocketError.AddressAlreadyInUse)
+        //                 {
+        //                     i = P2pProxyServer.PrivatePortRange; // Immediately fail.
+        //                 }
+        //             }
+        //         }
+        //
+        //         bool openSuccess = i < P2pProxyServer.PrivatePortRange;
+        //
+        //         if (openSuccess)
+        //         {
+        //             Task<ushort> natPunchResult = _hostedProxy.NatPunch();
+        //
+        //             try
+        //             {
+        //                 if (natPunchResult.Result != 0)
+        //                 {
+        //                     // Tell the server that we are hosting the proxy.
+        //                     request.ExternalProxyPort = natPunchResult.Result;
+        //                 }
+        //             }
+        //             catch (Exception) { }
+        //
+        //             if (request.ExternalProxyPort == 0)
+        //             {
+        //                 Logger.Warning?.Print(LogClass.ServiceLdn, "Failed to open a port with UPnP for P2P connection. Proxying through the master server instead. Expect higher latency.");
+        //                 _hostedProxy.Dispose();
+        //             }
+        //             else
+        //             {
+        //                 Logger.Info?.Print(LogClass.ServiceLdn, $"Created a wireless P2P network on port {request.ExternalProxyPort}.");
+        //                 _hostedProxy.Start();
+        //
+        //                 (_, UnicastIPAddressInformation unicastAddress) = NetworkHelpers.GetLocalInterface();
+        //
+        //                 unicastAddress.Address.GetAddressBytes().AsSpan().CopyTo(request.PrivateIp.AsSpan());
+        //                 request.InternalProxyPort = _hostedProxy.PrivatePort;
+        //                 request.AddressFamily = unicastAddress.Address.AddressFamily;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             Logger.Warning?.Print(LogClass.ServiceLdn, "Cannot create a P2P server. Proxying through the master server instead. Expect higher latency.");
+        //         }
+        //     }
+        // }
 
         private bool CreateNetworkCommon()
         {
             bool signalled = _apConnected.WaitOne(FailureTimeout);
+
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"CreateNetworkCommon> signalled: {signalled}");
 
             if (!_useP2pProxy && _hostedProxy != null)
             {
@@ -477,7 +481,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _timeout.DisableTimeout();
 
-            ConfigureAccessPoint(ref request.RyuNetworkConfig);
+            ConfigureAccessPoint();
 
             if (!EnsureConnected())
             {
@@ -486,9 +490,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return false;
             }
 
-            UpdatePassphraseIfNeeded();
+            SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.CreateAccessPoint, request, advertiseData));
 
-            SendAsync(_protocol.Encode(PacketId.CreateAccessPoint, request, advertiseData));
+            UpdatePassphraseIfNeeded();
 
             return CreateNetworkCommon();
         }
@@ -497,7 +501,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _timeout.DisableTimeout();
 
-            ConfigureAccessPoint(ref request.RyuNetworkConfig);
+            ConfigureAccessPoint();
 
             if (!EnsureConnected())
             {
@@ -508,7 +512,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
             UpdatePassphraseIfNeeded();
 
-            SendAsync(_protocol.Encode(PacketId.CreateAccessPointPrivate, request, advertiseData));
+            SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.CreateAccessPointPrivate, request, advertiseData));
 
             return CreateNetworkCommon();
         }
@@ -530,7 +534,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
                 _scan.Reset();
 
-                SendAsync(_protocol.Encode(PacketId.Scan, scanFilter));
+                SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Scan, scanFilter));
 
                 index = WaitHandle.WaitAny(new WaitHandle[] { _scan, _error }, ScanTimeout);
             }
@@ -574,7 +578,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return NetworkError.Unknown;
             }
 
-            SendAsync(_protocol.Encode(PacketId.Connect, request));
+            SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Connect, request));
 
             return ConnectCommon();
         }
@@ -588,16 +592,33 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return NetworkError.Unknown;
             }
 
-            SendAsync(_protocol.Encode(PacketId.ConnectPrivate, request));
+            SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.ConnectPrivate, request));
 
             return ConnectCommon();
         }
 
-        private void HandleProxyConfig(LdnHeader header, ProxyConfig config)
+        private void HandleProxyConfig(IPEndPoint endpoint, LdnHeader header, ProxyConfig config)
         {
+            // TODO: Ensure this works
+            if (_connectedProxy is not null)
+            {
+                Logger.Warning?.PrintMsg(LogClass.ServiceLdn, "here");
+                _connectedProxy.HandleProxyConfig(header, config);
+                return;
+            }
+
             Config = config;
 
-            SocketHelpers.RegisterProxy(new LdnProxy(config, this, _protocol));
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"HandleProxyConfig: {NetworkHelpers.ConvertUint(config.ProxyIp)}");
+
+            SocketHelpers.RegisterProxy(new LdnProxy(config, this, Protocol));
+
+            SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConfig, config));
+        }
+
+        public bool SendAsync(byte[] buffer)
+        {
+            return SendAsync(_lanPlayHost, buffer);
         }
     }
 }

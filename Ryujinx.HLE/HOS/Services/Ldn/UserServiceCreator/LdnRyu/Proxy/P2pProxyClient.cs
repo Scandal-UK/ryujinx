@@ -1,72 +1,43 @@
-﻿using Ryujinx.Common.Logging;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using Ryujinx.HLE.HOS.Services.Sockets.Bsd.Proxy;
-using System.Net.Sockets;
+using System;
+using System.Net;
 using System.Threading;
-using TcpClient = NetCoreServer.TcpClient;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 {
-    class P2pProxyClient : TcpClient, IProxyClient
+    class P2pProxyClient : IProxyClient, IDisposable
     {
         private const int FailureTimeout = 4000;
 
         public ProxyConfig ProxyConfig { get; private set; }
 
-        private RyuLdnProtocol _protocol;
+        private LdnMasterProxyClient _master;
+        private IPEndPoint _endpoint;
 
-        private ManualResetEvent _connected = new ManualResetEvent(false);
-        private ManualResetEvent _ready     = new ManualResetEvent(false);
-        private AutoResetEvent  _error      = new AutoResetEvent(false);
+        private ManualResetEvent _ready     = new(false);
 
-        public P2pProxyClient(string address, int port) : base(address, port)
+        public P2pProxyClient(LdnMasterProxyClient master, IPEndPoint endpoint)
         {
-            if (ProxyHelpers.SupportsNoDelay())
-            {
-                OptionNoDelay = true;
-            }
+            _master = master;
+            _endpoint = endpoint;
 
-            _protocol = new RyuLdnProtocol();
-
-            _protocol.ProxyConfig += HandleProxyConfig;
-
-            ConnectAsync();
+            // ConnectAsync();
         }
 
-        protected override void OnConnected()
+        public void Dispose()
         {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Proxy TCP client connected a new session with Id {Id}");
-
-            _connected.Set();
-        }
-
-        protected override void OnDisconnected()
-        {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Proxy TCP client disconnected a session with Id {Id}");
-
             SocketHelpers.UnregisterProxy();
-
-            _connected.Reset();
         }
 
-        protected override void OnReceived(byte[] buffer, long offset, long size)
-        {
-            _protocol.Read(buffer, (int)offset, (int)size);
-        }
-
-        protected override void OnError(SocketError error)
-        {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Proxy TCP client caught an error with code {error}");
-
-            _error.Set();
-        }
-
-        private void HandleProxyConfig(LdnHeader header, ProxyConfig config)
+        internal void HandleProxyConfig(LdnHeader header, ProxyConfig config)
         {
             ProxyConfig = config;
 
-            SocketHelpers.RegisterProxy(new LdnProxy(config, this, _protocol));
+            SocketHelpers.RegisterProxy(new LdnProxy(config, this, _master.Protocol));
+
+            SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConfig, config));
 
             _ready.Set();
         }
@@ -78,16 +49,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
         public bool PerformAuth(ExternalProxyConfig config)
         {
-            bool signalled = _connected.WaitOne(FailureTimeout);
-
-            if (!signalled)
-            {
-                return false;
-            }
-
-            SendAsync(_protocol.Encode(PacketId.ExternalProxy, config));
+            SendAsync(RyuLdnProtocol.Encode(PacketId.ExternalProxy, config));
 
             return true;
+        }
+
+        public bool SendAsync(byte[] buffer)
+        {
+            return _master.SendAsync(_endpoint, buffer);
         }
     }
 }

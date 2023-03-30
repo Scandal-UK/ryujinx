@@ -1,38 +1,33 @@
-﻿using NetCoreServer;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using System;
+using System.Net;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 {
-    class P2pProxySession : TcpSession
+    class P2pProxySession
     {
         public uint VirtualIpAddress { get; private set; }
-        public RyuLdnProtocol Protocol { get; }
 
-        private P2pProxyServer _parent;
+        private readonly RyuLdnProtocol _protocol = new();
 
-        private bool _masterClosed;
+        private readonly P2pProxyServer _parent;
 
-        public P2pProxySession(P2pProxyServer server) : base(server)
+        internal readonly IPEndPoint Endpoint;
+
+        public P2pProxySession(P2pProxyServer parent, IPEndPoint endpoint)
         {
-            _parent = server;
+            _parent = parent;
+            Endpoint = endpoint;
 
-            Protocol = new RyuLdnProtocol();
-
-            Protocol.ProxyDisconnect   += HandleProxyDisconnect;
-            Protocol.ProxyData         += HandleProxyData;
-            Protocol.ProxyConnectReply += HandleProxyConnectReply;
-            Protocol.ProxyConnect      += HandleProxyConnect;
-
-            Protocol.ExternalProxy += HandleAuthentication;
+            _protocol.ProxyDisconnect   += HandleProxyDisconnect;
+            _protocol.ProxyData         += HandleProxyData;
+            _protocol.ProxyConnectReply += HandleProxyConnectReply;
+            _protocol.ProxyConnect      += HandleProxyConnect;
         }
 
-        private void HandleAuthentication(LdnHeader header, ExternalProxyConfig token)
+        public bool SendAsync(byte[] data)
         {
-            if (!_parent.TryRegisterUser(this, token))
-            {
-                Disconnect();
-            }
+            return _parent.Master.SendAsync(Endpoint, data);
         }
 
         public void SetIpv4(uint ip)
@@ -40,30 +35,15 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             VirtualIpAddress = ip;
         }
 
-        public void DisconnectAndStop()
-        {
-            _masterClosed = true;
-
-            Disconnect();
-        }
-
-        protected override void OnDisconnected()
-        {
-            if (!_masterClosed)
-            {
-                _parent.DisconnectProxyClient(this);
-            }
-        }
-
-        protected override void OnReceived(byte[] buffer, long offset, long size)
+        public void OnReceived(byte[] buffer, int offset, int size)
         {
             try
             {
-                Protocol.Read(buffer, (int)offset, (int)size);
+                _protocol.Read(Endpoint, buffer, offset, size);
             }
             catch (Exception)
             {
-                Disconnect();
+                _parent.DisconnectProxyClient(this);
             }
         }
 
@@ -82,7 +62,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             _parent.HandleProxyConnectReply(this, header, data);
         }
 
-        private void HandleProxyConnect(LdnHeader header, ProxyConnectRequest message)
+        private void HandleProxyConnect(IPEndPoint endpoint, LdnHeader header, ProxyConnectRequest message)
         {
             _parent.HandleProxyConnect(this, header, message);
         }

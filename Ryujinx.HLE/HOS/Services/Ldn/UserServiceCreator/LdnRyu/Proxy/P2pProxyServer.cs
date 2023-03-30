@@ -1,72 +1,56 @@
-﻿using NetCoreServer;
-using Open.Nat;
-using Ryujinx.Common.Logging;
-using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 {
-    class P2pProxyServer : TcpServer, IDisposable
+    class P2pProxyServer
     {
-        public const ushort PrivatePortBase  = 39990;
-        public const int    PrivatePortRange = 10;
-
-        private const ushort PublicPortBase  = 39990;
-        private const int    PublicPortRange = 10;
-
-        private const ushort PortLeaseLength = 60;
-        private const ushort PortLeaseRenew  = 50;
-
         private const ushort AuthWaitSeconds = 1;
 
-        private ReaderWriterLockSlim _lock = new ReaderWriterLockSlim(LockRecursionPolicy.SupportsRecursion);
-
-        public ushort PrivatePort { get; }
-
-        private ushort _publicPort;
-
-        private bool _disposed;
-        private CancellationTokenSource _disposedCancellation = new CancellationTokenSource();
-
-        private NatDevice _natDevice;
-        private Mapping   _portMapping;
+        private ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
 
         private ProxyConfig _config;
-        private List<P2pProxySession> _players = new List<P2pProxySession>();
+        private List<P2pProxySession> _players = new();
 
-        private List<ExternalProxyToken> _waitingTokens = new List<ExternalProxyToken>();
-        private AutoResetEvent _tokenEvent = new AutoResetEvent(false);
+        private List<ExternalProxyToken> _waitingTokens = new();
+        private AutoResetEvent _tokenEvent = new(false);
 
         private uint _broadcastAddress;
 
-        private LdnMasterProxyClient _master;
-        private RyuLdnProtocol     _masterProtocol;
-        private RyuLdnProtocol     _protocol;
+        internal LdnMasterProxyClient Master;
 
-        public P2pProxyServer(LdnMasterProxyClient master, ushort port, RyuLdnProtocol masterProtocol) : base(IPAddress.Any, port)
+        public P2pProxyServer(LdnMasterProxyClient master)
         {
-            if (ProxyHelpers.SupportsNoDelay())
+            Master = master;
+
+            Master.Protocol.ExternalProxyState += HandleStateChange;
+            Master.Protocol.ExternalProxyToken += HandleToken;
+            Master.Protocol.ExternalProxy      += TryRegisterUser;
+        }
+
+        public bool ReceivePlayerPacket(IPEndPoint endpoint, byte[] buffer, int size, int offset)
+        {
+            var player = _players.SingleOrDefault(player => Equals(player.Endpoint, endpoint), null);
+
+            if (player is null)
             {
-                OptionNoDelay = true;
+                return false;
             }
 
-            PrivatePort = port;
+            Thread thread = new(() => player.OnReceived(buffer, offset, size))
+            {
+                Name = "LdnPlayerReceivedThread"
+            };
+            thread.Start();
 
-            _master         = master;
-            _masterProtocol = masterProtocol;
+            return true;
 
-            _masterProtocol.ExternalProxyState += HandleStateChange;
-            _masterProtocol.ExternalProxyToken += HandleToken;
-
-            _protocol = new RyuLdnProtocol();
         }
 
         private void HandleToken(LdnHeader header, ExternalProxyToken token)
@@ -92,8 +76,6 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 {
                     if (player.VirtualIpAddress == state.IpAddress)
                     {
-                        player.DisconnectAndStop();
-
                         return true;
                     }
 
@@ -110,58 +92,58 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             _broadcastAddress = config.ProxyIp | (~config.ProxySubnetMask);
         }
 
-        public async Task<ushort> NatPunch()
-        {
-            NatDiscoverer           discoverer = new NatDiscoverer();
-            CancellationTokenSource cts        = new CancellationTokenSource(1000);
-
-            NatDevice device;
-
-            try
-            {
-                device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-            }
-            catch (NatDeviceNotFoundException)
-            {
-                return 0;
-            }
-
-            _publicPort = PublicPortBase;
-
-            for (int i = 0; i < PublicPortRange; i++)
-            {
-                try
-                {
-                    _portMapping = new Mapping(Protocol.Tcp, PrivatePort, _publicPort, PortLeaseLength, "Ryujinx Local Multiplayer");
-
-                    await device.CreatePortMapAsync(_portMapping);
-
-                    break;
-                }
-                catch (MappingException)
-                {
-                    _publicPort++;
-                }
-                catch (Exception)
-                {
-                    return 0;
-                }
-
-                if (i == PublicPortRange - 1)
-                {
-                    _publicPort = 0;
-                }
-            }
-
-            if (_publicPort != 0)
-            {
-                _ = Task.Delay(PortLeaseRenew * 1000, _disposedCancellation.Token).ContinueWith((task) => Task.Run(RefreshLease));
-            }
-
-            _natDevice = device;
-
-            return _publicPort;
-        }
+        // public async Task<ushort> NatPunch()
+        // {
+        //     NatDiscoverer           discoverer = new NatDiscoverer();
+        //     CancellationTokenSource cts        = new CancellationTokenSource(1000);
+        //
+        //     NatDevice device;
+        //
+        //     try
+        //     {
+        //         device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
+        //     }
+        //     catch (NatDeviceNotFoundException)
+        //     {
+        //         return 0;
+        //     }
+        //
+        //     _publicPort = PublicPortBase;
+        //
+        //     for (int i = 0; i < PublicPortRange; i++)
+        //     {
+        //         try
+        //         {
+        //             _portMapping = new Mapping(Protocol.Tcp, PrivatePort, _publicPort, PortLeaseLength, "Ryujinx Local Multiplayer");
+        //
+        //             await device.CreatePortMapAsync(_portMapping);
+        //
+        //             break;
+        //         }
+        //         catch (MappingException)
+        //         {
+        //             _publicPort++;
+        //         }
+        //         catch (Exception)
+        //         {
+        //             return 0;
+        //         }
+        //
+        //         if (i == PublicPortRange - 1)
+        //         {
+        //             _publicPort = 0;
+        //         }
+        //     }
+        //
+        //     if (_publicPort != 0)
+        //     {
+        //         _ = Task.Delay(PortLeaseRenew * 1000, _disposedCancellation.Token).ContinueWith((task) => Task.Run(RefreshLease));
+        //     }
+        //
+        //     _natDevice = device;
+        //
+        //     return _publicPort;
+        // }
 
         // Proxy handlers
 
@@ -191,10 +173,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
             if (isBroadcast)
             {
-                _players.ForEach(player =>
-                {
-                    action(player);
-                });
+                _players.ForEach(action);
             }
             else
             {
@@ -213,7 +192,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         {
             RouteMessage(sender, ref message.Info, (target) =>
             {
-                target.SendAsync(sender.Protocol.Encode(PacketId.ProxyDisconnect, message));
+                target.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyDisconnect, message));
             });
         }
 
@@ -221,7 +200,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         {
             RouteMessage(sender, ref message.Info, (target) =>
             {
-                target.SendAsync(sender.Protocol.Encode(PacketId.ProxyData, message, data));
+                target.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyData, message, data));
             });
         }
 
@@ -229,7 +208,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         {
             RouteMessage(sender, ref message.Info, (target) =>
             {
-                target.SendAsync(sender.Protocol.Encode(PacketId.ProxyConnectReply, message));
+                target.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConnectReply, message));
             });
         }
 
@@ -237,40 +216,42 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         {
             RouteMessage(sender, ref message.Info, (target) =>
             {
-                target.SendAsync(sender.Protocol.Encode(PacketId.ProxyConnect, message));
+                target.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConnect, message));
             });
         }
 
         // End proxy handlers
 
-        private async Task RefreshLease()
-        {
-            if (_disposed || _natDevice == null)
-            {
-                return;
-            }
+        // private async Task RefreshLease()
+        // {
+        //     if (_disposed || _natDevice == null)
+        //     {
+        //         return;
+        //     }
+        //
+        //     try
+        //     {
+        //         await _natDevice.CreatePortMapAsync(_portMapping);
+        //     }
+        //     catch (Exception)
+        //     {
+        //
+        //     }
+        //
+        //     _ = Task.Delay(PortLeaseRenew, _disposedCancellation.Token).ContinueWith((task) => Task.Run(RefreshLease));
+        // }
 
-            try
-            {
-                await _natDevice.CreatePortMapAsync(_portMapping);
-            }
-            catch (Exception)
-            {
-
-            }
-
-            _ = Task.Delay(PortLeaseRenew, _disposedCancellation.Token).ContinueWith((task) => Task.Run(RefreshLease));
-        }
-
-        public bool TryRegisterUser(P2pProxySession session, ExternalProxyConfig config)
+        private void TryRegisterUser(IPEndPoint endpoint, LdnHeader header, ExternalProxyConfig config)
         {
             _lock.EnterWriteLock();
 
             // Attempt to find matching configuration. If we don't find one, wait for a bit and try again.
             // Woken by new tokens coming in from the master server.
 
-            IPAddress address      = (session.Socket.RemoteEndPoint as IPEndPoint).Address;
+            IPAddress address      = endpoint.Address;
             byte[]    addressBytes = ProxyHelpers.AddressTo16Byte(address);
+
+            P2pProxySession session = new(this, endpoint);
 
             long time;
             long endTime = Stopwatch.GetTimestamp() + Stopwatch.Frequency * AuthWaitSeconds;
@@ -307,11 +288,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
                         _players.Add(session);
 
-                        session.SendAsync(_protocol.Encode(PacketId.ProxyConfig, pconfig));
+                        session.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConfig, pconfig));
 
                         _lock.ExitWriteLock();
-
-                        return true;
                     }
                 }
 
@@ -335,8 +314,6 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             } while (time < endTime);
 
             _lock.ExitWriteLock();
-
-            return false;
         }
 
         public void DisconnectProxyClient(P2pProxySession session)
@@ -347,7 +324,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
             if (removed)
             {
-                _master.SendAsync(_masterProtocol.Encode(PacketId.ExternalProxyState, new ExternalProxyConnectionState
+                Master.SendAsync(RyuLdnProtocol.Encode(PacketId.ExternalProxyState, new ExternalProxyConnectionState
                 {
                     IpAddress = session.VirtualIpAddress,
                     Connected = false
@@ -355,39 +332,6 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             }
 
             _lock.ExitWriteLock();
-        }
-
-        public new void Dispose()
-        {
-            base.Dispose();
-
-            _disposed = true;
-            _disposedCancellation.Cancel();
-
-            try
-            {
-                Task delete = _natDevice?.DeletePortMapAsync(new Mapping(Protocol.Tcp, PrivatePort, _publicPort, 60, "Ryujinx Local Multiplayer"));
-
-                if (delete != null)
-                {
-                    // Just absorb any exceptions.
-                    delete.ContinueWith((task) => { });
-                }
-            }
-            catch (Exception)
-            {
-                // Fail silently.
-            }
-        }
-
-        protected override TcpSession CreateSession()
-        {
-            return new P2pProxySession(this);
-        }
-
-        protected override void OnError(SocketError error)
-        {
-            Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"Proxy TCP server caught an error with code {error}");
         }
     }
 }

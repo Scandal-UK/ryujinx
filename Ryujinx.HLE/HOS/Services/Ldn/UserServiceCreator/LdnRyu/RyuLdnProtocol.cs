@@ -1,25 +1,27 @@
-﻿using Ryujinx.Common.Utilities;
+﻿using Ryujinx.Common.Logging;
+using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
+using System.Net;
 using System.Runtime.InteropServices;
 
 namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 {
-class RyuLdnProtocol
+    class RyuLdnProtocol
     {
-        private const byte CurrentProtocolVersion = 1;
-        private const int  Magic                  = ('R' << 0) | ('L' << 8) | ('D' << 16) | ('N' << 24);
+        private const byte CurrentProtocolVersion = 2;
+        private const uint Magic                  = ('R' << 0) | ('L' << 8) | ('D' << 16) | ('N' << 24);
         private const int  MaxPacketSize          = 131072;
 
         private readonly int _headerSize = Marshal.SizeOf<LdnHeader>();
 
-        private byte[] _buffer    = new byte[MaxPacketSize];
-        private int    _bufferEnd = 0;
+        private readonly byte[] _buffer    = new byte[MaxPacketSize];
+        private int    _bufferEnd;
 
         // Client Packets.
-        public event Action<LdnHeader, InitializeMessage> Initialize;
+        public event Action<IPEndPoint, LdnHeader, InitializeMessage> Initialize;
         public event Action<LdnHeader, PassphraseMessage> Passphrase;
         public event Action<LdnHeader, NetworkInfo> Connected;
         public event Action<LdnHeader, NetworkInfo> SyncNetwork;
@@ -28,7 +30,7 @@ class RyuLdnProtocol
         public event Action<LdnHeader, DisconnectMessage> Disconnected;
 
         // External Proxy Packets.
-        public event Action<LdnHeader, ExternalProxyConfig> ExternalProxy;
+        public event Action<IPEndPoint, LdnHeader, ExternalProxyConfig> ExternalProxy;
         public event Action<LdnHeader, ExternalProxyConnectionState> ExternalProxyState;
         public event Action<LdnHeader, ExternalProxyToken> ExternalProxyToken;
 
@@ -44,8 +46,8 @@ class RyuLdnProtocol
         public event Action<LdnHeader, ScanFilter> Scan;
 
         // Proxy Packets.
-        public event Action<LdnHeader, ProxyConfig> ProxyConfig;
-        public event Action<LdnHeader, ProxyConnectRequest> ProxyConnect;
+        public event Action<IPEndPoint, LdnHeader, ProxyConfig> ProxyConfig;
+        public event Action<IPEndPoint, LdnHeader, ProxyConnectRequest> ProxyConnect;
         public event Action<LdnHeader, ProxyConnectResponse> ProxyConnectReply;
         public event Action<LdnHeader, ProxyDataHeader, byte[]> ProxyData;
         public event Action<LdnHeader, ProxyDisconnectMessage> ProxyDisconnect;
@@ -53,15 +55,16 @@ class RyuLdnProtocol
         // Lifecycle Packets.
         public event Action<LdnHeader, NetworkErrorMessage> NetworkError;
         public event Action<LdnHeader, PingMessage> Ping;
+        public event Action<IPEndPoint, LdnHeader, PingMessage> TestPing;
 
-        public RyuLdnProtocol() { }
+        public event Action<IPEndPoint, LdnHeader> Any;
 
-        public void Reset()
+        private void Reset()
         {
             _bufferEnd = 0;
         }
 
-        public void Read(byte[] data, int offset, int size)
+        public void Read(IPEndPoint endpoint, byte[] data, int offset, int size)
         {
             int index = 0;
 
@@ -87,19 +90,28 @@ class RyuLdnProtocol
 
                     if (ldnHeader.Magic != Magic)
                     {
-                        throw new InvalidOperationException("Invalid magic number in received packet.");
+                        Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Invalid magic number in received packet: {ldnHeader.Magic}");
+                        Reset();
+
+                        return;
                     }
 
                     if (ldnHeader.Version != CurrentProtocolVersion)
                     {
-                        throw new InvalidOperationException($"Protocol version mismatch. Expected ${CurrentProtocolVersion}, was ${ldnHeader.Version}.");
+                        Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Protocol version mismatch. Expected ${CurrentProtocolVersion}, was ${ldnHeader.Version}.");
+                        Reset();
+
+                        return;
                     }
 
                     int finalSize = _headerSize + ldnHeader.DataSize;
 
                     if (finalSize >= MaxPacketSize)
                     {
-                        throw new InvalidOperationException($"Max packet size { MaxPacketSize } exceeded.");
+                        Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Max packet size { MaxPacketSize } exceeded.");
+                        Reset();
+
+                        return;
                     }
 
                     int copyable = Math.Min(size - index, Math.Min(size, finalSize - _bufferEnd));
@@ -117,7 +129,7 @@ class RyuLdnProtocol
 
                         Array.Copy(_buffer, _headerSize, ldnData, 0, ldnData.Length);
 
-                        DecodeAndHandle(ldnHeader, ldnData);
+                        DecodeAndHandle(endpoint, ldnHeader, ldnData);
 
                         Reset();
                     }
@@ -125,7 +137,7 @@ class RyuLdnProtocol
             }
         }
 
-        private (T, byte[]) ParseWithData<T>(byte[] data) where T : struct
+        private static (T, byte[]) ParseWithData<T>(byte[] data) where T : struct
         {
             T str = default;
             int size = Marshal.SizeOf(str);
@@ -140,14 +152,16 @@ class RyuLdnProtocol
             return (MemoryMarshal.Read<T>(data), remainder);
         }
 
-        private void DecodeAndHandle(LdnHeader header, byte[] data)
+        private void DecodeAndHandle(IPEndPoint endpoint, LdnHeader header, byte[] data)
         {
+            Any?.Invoke(endpoint, header);
+
             switch ((PacketId)header.Type)
             {
                 // Client Packets.
                 case PacketId.Initialize:
                     {
-                        Initialize?.Invoke(header, MemoryMarshal.Read<InitializeMessage>(data));
+                        Initialize?.Invoke(endpoint, header, MemoryMarshal.Read<InitializeMessage>(data));
 
                         break;
                     }
@@ -192,7 +206,7 @@ class RyuLdnProtocol
                 // External Proxy Packets.
                 case PacketId.ExternalProxy:
                     {
-                        ExternalProxy?.Invoke(header, MemoryMarshal.Read<ExternalProxyConfig>(data));
+                        ExternalProxy?.Invoke(endpoint, header, MemoryMarshal.Read<ExternalProxyConfig>(data));
 
                         break;
                     }
@@ -268,13 +282,13 @@ class RyuLdnProtocol
                 // Proxy Packets
                 case PacketId.ProxyConfig:
                     {
-                        ProxyConfig?.Invoke(header, MemoryMarshal.Read<ProxyConfig>(data));
+                        ProxyConfig?.Invoke(endpoint, header, MemoryMarshal.Read<ProxyConfig>(data));
 
                         break;
                     }
                 case PacketId.ProxyConnect:
                     {
-                        ProxyConnect?.Invoke(header, MemoryMarshal.Read<ProxyConnectRequest>(data));
+                        ProxyConnect?.Invoke(endpoint, header, MemoryMarshal.Read<ProxyConnectRequest>(data));
 
                         break;
                     }
@@ -306,14 +320,20 @@ class RyuLdnProtocol
 
                         break;
                     }
+                case PacketId.TestPing:
+                    {
+                        TestPing?.Invoke(endpoint, header, MemoryMarshal.Read<PingMessage>(data));
+
+                        break;
+                    }
                 case PacketId.NetworkError:
                     {
                         NetworkError?.Invoke(header, MemoryMarshal.Read<NetworkErrorMessage>(data));
 
                         break;
                     }
-
-                default: break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(header.Type));
             }
         }
 
@@ -328,17 +348,17 @@ class RyuLdnProtocol
             };
         }
 
-        public byte[] Encode(PacketId type)
+        public static byte[] Encode(PacketId type)
         {
             LdnHeader header = GetHeader(type, 0);
 
             return SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
         }
 
-        public byte[] Encode(PacketId type, byte[] data)
+        public static byte[] Encode(PacketId type, byte[] data)
         {
             LdnHeader header = GetHeader(type, data.Length);
-            
+
             byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
 
             Array.Resize(ref result, result.Length + data.Length);
@@ -347,9 +367,10 @@ class RyuLdnProtocol
             return result;
         }
 
-        public byte[] Encode<T>(PacketId type, T packet) where T : unmanaged
+        public static byte[] Encode<T>(PacketId type, T packet) where T : struct
         {
-            byte[] packetData = SpanHelpers.AsSpan<T, byte>(ref packet).ToArray();
+            byte[] packetData = new byte[Marshal.SizeOf<T>()];
+            MemoryMarshal.Write(packetData, ref packet);
 
             LdnHeader header = GetHeader(type, packetData.Length);
 
@@ -361,9 +382,10 @@ class RyuLdnProtocol
             return result;
         }
 
-        public byte[] Encode<T>(PacketId type, T packet, byte[] data) where T : unmanaged
+        public static byte[] Encode<T>(PacketId type, T packet, byte[] data) where T : struct
         {
-            byte[] packetData = SpanHelpers.AsSpan<T, byte>(ref packet).ToArray();
+            byte[] packetData = new byte[Marshal.SizeOf<T>()];
+            MemoryMarshal.Write(packetData, ref packet);
 
             LdnHeader header = GetHeader(type, packetData.Length + data.Length);
 

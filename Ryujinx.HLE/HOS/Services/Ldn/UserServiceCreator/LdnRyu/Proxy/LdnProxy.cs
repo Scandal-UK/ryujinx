@@ -13,8 +13,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         public EndPoint LocalEndpoint { get; }
         public IPAddress LocalAddress { get; }
 
-        private List<LdnProxySocket>                        _sockets        = new List<LdnProxySocket>();
-        private Dictionary<ProtocolType, EphemeralPortPool> _ephemeralPorts = new Dictionary<ProtocolType, EphemeralPortPool>();
+        private List<LdnProxySocket>                        _sockets        = new();
+        private Dictionary<ProtocolType, EphemeralPortPool> _ephemeralPorts = new();
 
         private IProxyClient   _parent;
         private RyuLdnProtocol _protocol;
@@ -114,7 +114,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             }
         }
 
-        public void HandleConnectionRequest(LdnHeader header, ProxyConnectRequest request)
+        public void HandleConnectionRequest(IPEndPoint ipEndPoint, LdnHeader ldnHeader, ProxyConnectRequest request)
         {
             ForRoutedSockets(request.Info, (socket) =>
             {
@@ -189,7 +189,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 Info = MakeInfo(localEp, remoteEp, type)
             };
 
-            _parent.SendAsync(_protocol.Encode(PacketId.ProxyConnect, request));
+            _parent.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConnect, request));
         }
 
         public void SignalConnected(IPEndPoint localEp, IPEndPoint remoteEp, ProtocolType type)
@@ -201,7 +201,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 Info = MakeInfo(localEp, remoteEp, type)
             };
 
-            _parent.SendAsync(_protocol.Encode(PacketId.ProxyConnectReply, request));
+            _parent.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConnectReply, request));
         }
 
         public void EndConnection(IPEndPoint localEp, IPEndPoint remoteEp, ProtocolType type)
@@ -214,7 +214,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 DisconnectReason = 0 // TODO
             };
 
-            _parent.SendAsync(_protocol.Encode(PacketId.ProxyDisconnect, request));
+            _parent.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyDisconnect, request));
         }
 
         public int SendTo(ReadOnlySpan<byte> buffer, SocketFlags flags, IPEndPoint localEp, IPEndPoint remoteEp, ProtocolType type)
@@ -228,7 +228,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 DataLength = (uint)buffer.Length
             };
 
-            _parent.SendAsync(_protocol.Encode(PacketId.ProxyData, request, buffer.ToArray()));
+            _parent.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyData, request, buffer.ToArray()));
 
             return buffer.Length;
         }
