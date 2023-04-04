@@ -49,6 +49,7 @@ namespace Ryujinx.Ui.App.Common
 
         private static readonly ApplicationJsonSerializerContext SerializerContext = new(JsonHelper.GetDefaultSerializerOptions());
         private static readonly TitleUpdateMetadataJsonSerializerContext TitleSerializerContext = new(JsonHelper.GetDefaultSerializerOptions());
+        private static readonly LdnGameDataSerializerContext LdnDataSerializerContext = new(JsonHelper.GetDefaultSerializerOptions());
 
         public ApplicationLibrary(VirtualFileSystem virtualFileSystem)
         {
@@ -159,7 +160,7 @@ namespace Ryujinx.Ui.App.Common
 
                         string ldnGameDataArrayString = await httpClient.GetStringAsync("https://ldn.ryujinx.org/api/public_games");
 
-                        ldnGameDataArray = JsonHelper.Deserialize<IEnumerable<LdnGameData>>(ldnGameDataArrayString);
+                        ldnGameDataArray = JsonHelper.Deserialize(ldnGameDataArrayString, LdnDataSerializerContext.IEnumerableLdnGameData);
                     }
                     catch
                     {
