@@ -1,4 +1,7 @@
-﻿using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
+﻿using Ryujinx.Common.Logging;
+using Ryujinx.Common.Utilities;
+using Ryujinx.HLE.HOS.Services.Ldn.Types;
+using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using System;
 using System.Collections.Generic;
@@ -13,17 +16,16 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
     {
         private const ushort AuthWaitSeconds = 1;
 
-        private ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
+        private readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.SupportsRecursion);
 
-        private ProxyConfig _config;
-        private List<P2pProxySession> _players = new();
+        private readonly List<P2pProxySession> _players = new();
 
-        private List<ExternalProxyToken> _waitingTokens = new();
-        private AutoResetEvent _tokenEvent = new(false);
+        private readonly List<ExternalProxyToken> _waitingTokens = new();
+        private readonly AutoResetEvent _tokenEvent = new(false);
 
         private uint _broadcastAddress;
 
-        internal LdnMasterProxyClient Master;
+        internal readonly LdnMasterProxyClient Master;
 
         public P2pProxyServer(LdnMasterProxyClient master)
         {
@@ -34,7 +36,20 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             Master.Protocol.ExternalProxy      += TryRegisterUser;
         }
 
-        public bool ReceivePlayerPacket(IPEndPoint endpoint, byte[] buffer, int size, int offset)
+        internal void HandleConnected(LdnHeader header, NetworkInfo info)
+        {
+            Master.HandleConnected(header, info);
+        }
+
+        internal void HandleProxyConfig(P2pProxySession session, IPEndPoint endpoint, LdnHeader header, ProxyConfig config)
+        {
+            if (_players.IndexOf(session) is 0 or 1)
+            {
+                Master.HandleProxyConfig(endpoint, header, config);
+            }
+        }
+
+        public bool ReceivePlayerPacket(IPEndPoint endpoint, byte[] buffer, int offset, int size)
         {
             var player = _players.SingleOrDefault(player => Equals(player.Endpoint, endpoint), null);
 
@@ -43,14 +58,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 return false;
             }
 
-            Thread thread = new(() => player.OnReceived(buffer, offset, size))
-            {
-                Name = "LdnPlayerReceivedThread"
-            };
-            thread.Start();
+            player.OnReceived(buffer, offset, size);
 
             return true;
-
         }
 
         private void HandleToken(LdnHeader header, ExternalProxyToken token)
@@ -76,6 +86,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                 {
                     if (player.VirtualIpAddress == state.IpAddress)
                     {
+                        player.Dispose();
                         return true;
                     }
 
@@ -88,7 +99,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
         public void Configure(ProxyConfig config)
         {
-            _config           = config;
+            Logger.Warning?.Print(LogClass.ServiceLdn, $"Triggered configuration: {NetworkHelpers.ConvertUint(config.ProxyIp)}");
+            Master.Config     = config;
             _broadcastAddress = config.ProxyIp | (~config.ProxySubnetMask);
         }
 
@@ -251,6 +263,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
             IPAddress address      = endpoint.Address;
             byte[]    addressBytes = ProxyHelpers.AddressTo16Byte(address);
 
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Creating session from endpoint: {address}");
+
             P2pProxySession session = new(this, endpoint);
 
             long time;
@@ -267,6 +281,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                     bool isPrivate = waitToken.PhysicalIp.AsSpan().SequenceEqual(new byte[16]);
                     bool ipEqual   = isPrivate || waitToken.AddressFamily == address.AddressFamily && waitToken.PhysicalIp.AsSpan().SequenceEqual(addressBytes);
 
+                    Logger.Warning?.Print(LogClass.ServiceLdn, $"RegisterUser: IPEqual> {ipEqual} - isPrivate> {isPrivate}");
+
                     if (ipEqual && waitToken.Token.AsSpan().SequenceEqual(config.Token.AsSpan()))
                     {
                         // This is a match.
@@ -281,6 +297,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                             ProxySubnetMask = 0xFFFF0000 // TODO: Use from server.
                         };
 
+                        Logger.Warning?.Print(LogClass.ServiceLdn, $"# of players: {_players.Count}");
+
                         if (_players.Count == 0)
                         {
                             Configure(pconfig);
@@ -291,6 +309,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                         session.SendAsync(RyuLdnProtocol.Encode(PacketId.ProxyConfig, pconfig));
 
                         _lock.ExitWriteLock();
+
+                        return;
                     }
                 }
 
@@ -329,6 +349,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
                     IpAddress = session.VirtualIpAddress,
                     Connected = false
                 }));
+
+                session.Dispose();
             }
 
             _lock.ExitWriteLock();

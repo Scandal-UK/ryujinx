@@ -20,20 +20,20 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
     {
         public bool NeedsRealId => true;
 
-        private static InitializeMessage _initializeMemory;
+        private InitializeMessage _initializeMemory;
 
         private const int InactiveTimeout = 6000;
-        private const int FailureTimeout  = 4000;
+        private const int FailureTimeout  = 5000;
         private const int ScanTimeout     = 1000;
 
         private bool         _useP2pProxy;
         private NetworkError _lastError;
 
-        private ManualResetEvent _connected   = new(false);
-        private ManualResetEvent _error       = new(false);
-        private ManualResetEvent _scan        = new(false);
-        private ManualResetEvent _reject      = new(false);
-        private AutoResetEvent   _apConnected = new(false);
+        private readonly ManualResetEvent _connected   = new(false);
+        private readonly ManualResetEvent _error       = new(false);
+        private readonly ManualResetEvent _scan        = new(false);
+        private readonly ManualResetEvent _reject      = new(false);
+        private readonly AutoResetEvent   _apConnected = new(false);
 
         internal readonly RyuLdnProtocol Protocol;
         private readonly NetworkTimeout _timeout;
@@ -54,13 +54,13 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         public event EventHandler<NetworkChangeEventArgs> NetworkChange;
 
-        public ProxyConfig Config { get; private set; }
+        public ProxyConfig Config { get; internal set; }
 
-        public LdnMasterProxyClient(IPAddress address, int port, HLEConfiguration config) : base(NetworkHelpers.GetLocalInterface().Item2.Address, 0)
+        public LdnMasterProxyClient(IPAddress hostAddress, int port, IPAddress localAddress, HLEConfiguration config) : base(localAddress, 0)
         {
-            _lanPlayHost = new IPEndPoint(address, port);
+            _lanPlayHost = new IPEndPoint(hostAddress, port);
             Protocol = new RyuLdnProtocol();
-            _timeout  = new NetworkTimeout(InactiveTimeout, TimeoutConnection);
+            _timeout = new NetworkTimeout(InactiveTimeout, TimeoutConnection);
 
             Protocol.Initialize   += HandleInitialize;
             Protocol.Connected    += HandleConnected;
@@ -86,6 +86,11 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         private void HandleAny(IPEndPoint endpoint, LdnHeader header)
         {
             Logger.Debug?.PrintMsg(LogClass.ServiceLdn, $"Received '{(PacketId)header.Type}' packet from: {endpoint}");
+
+            if (header.NeedsAck)
+            {
+                SendAsync(endpoint, RyuLdnProtocol.Encode(PacketId.Acknowledgement, header.Sequence));
+            }
         }
 
         private void TimeoutConnection()
@@ -99,6 +104,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             {
                 return true;
             }
+
+            Logger.Warning?.Print(LogClass.ServiceLdn, $"Starting UDPServer with Endpoint: {Endpoint} -- {Endpoint.AddressFamily}");
 
             Start();
 
@@ -130,6 +137,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             ReceiveAsync();
 
             Logger.Info?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server created a new session with Id {Id}");
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"LanPlayHost: {_lanPlayHost}");
 
             SendAsync(_lanPlayHost, RyuLdnProtocol.Encode(PacketId.Initialize, _initializeMemory));
         }
@@ -169,18 +177,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 return;
             }
 
-            Thread thread = new(() => Protocol.Read((IPEndPoint)endpoint, buffer, (int)offset, (int)size))
-            {
-                Name = "LdnReceivedThread"
-            };
-            thread.Start();
+            Protocol.Read((IPEndPoint)endpoint, buffer, (int)offset, (int)size);
 
             ReceiveAsync();
         }
 
         protected override void OnError(SocketError error)
         {
-            Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server caught an error with code {error}");
+            Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"LDN UDP server caught an error with code {error}\n{Environment.StackTrace}");
         }
 
         private void HandleInitialize(IPEndPoint ipEndPoint, LdnHeader ldnHeader, InitializeMessage message)
@@ -253,7 +257,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             NetworkChange?.Invoke(this, new NetworkChangeEventArgs(info, true));
         }
 
-        private void HandleConnected(LdnHeader header, NetworkInfo info)
+        internal void HandleConnected(LdnHeader header, NetworkInfo info)
         {
             _networkConnected = true;
             _disconnectReason = DisconnectReason.None;
@@ -303,7 +307,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 // _hostedProxy?.Dispose();
                 _hostedProxy = null;
 
-                // _connectedProxy?.Dispose();
+                _connectedProxy?.Dispose();
                 _connectedProxy = null;
 
                 _apConnected.Reset();
@@ -377,9 +381,18 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             _hostedProxy = null;
         }
 
-        private void ConfigureAccessPoint()
+        private void ConfigureAccessPoint(ref RyuNetworkConfig request)
         {
-            _hostedProxy = new P2pProxyServer(this);
+            if (_useP2pProxy)
+            {
+                _hostedProxy = new P2pProxyServer(this);
+            }
+
+            _gameVersion.AsSpan().CopyTo(request.GameVersion.AsSpan());
+            request.AddressFamily = Endpoint.AddressFamily;
+            IPAddress.Parse(Address).GetAddressBytes().AsSpan().CopyTo(request.PrivateIp.AsSpan());
+            request.InternalProxyPort = (ushort)((IPEndPoint)Endpoint).Port;
+            request.ExternalProxyPort = _initializeMemory.Port;
         }
 
         // private void ConfigureAccessPoint(ref RyuNetworkConfig request)
@@ -486,7 +499,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _timeout.DisableTimeout();
 
-            ConfigureAccessPoint();
+            ConfigureAccessPoint(ref request.RyuNetworkConfig);
 
             if (!EnsureConnected())
             {
@@ -506,7 +519,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             _timeout.DisableTimeout();
 
-            ConfigureAccessPoint();
+            ConfigureAccessPoint(ref request.RyuNetworkConfig);
 
             if (!EnsureConnected())
             {
@@ -557,6 +570,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         {
             bool signalled = _apConnected.WaitOne(FailureTimeout);
 
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"ConnectCommon> signalled: {signalled}");
+
             NetworkError error = ConsumeNetworkError();
 
             if (error != NetworkError.None)
@@ -602,7 +617,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             return ConnectCommon();
         }
 
-        private void HandleProxyConfig(IPEndPoint endpoint, LdnHeader header, ProxyConfig config)
+        internal void HandleProxyConfig(IPEndPoint endpoint, LdnHeader header, ProxyConfig config)
         {
             // TODO: Ensure this works
             if (_connectedProxy is not null)

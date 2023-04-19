@@ -1,5 +1,4 @@
 ﻿using Ryujinx.Common.Logging;
-using Ryujinx.Common.Utilities;
 using Ryujinx.HLE.HOS.Services.Ldn.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types;
 using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
@@ -19,6 +18,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
         private readonly byte[] _buffer    = new byte[MaxPacketSize];
         private int    _bufferEnd;
+
+        public static uint Sequence = 0;
 
         // Client Packets.
         public event Action<IPEndPoint, LdnHeader, InitializeMessage> Initialize;
@@ -53,9 +54,9 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
         public event Action<LdnHeader, ProxyDisconnectMessage> ProxyDisconnect;
 
         // Lifecycle Packets.
+        public event Action<LdnHeader> Acknowledgement;
         public event Action<LdnHeader, NetworkErrorMessage> NetworkError;
         public event Action<LdnHeader, PingMessage> Ping;
-        public event Action<IPEndPoint, LdnHeader, PingMessage> TestPing;
 
         public event Action<IPEndPoint, LdnHeader> Any;
 
@@ -74,7 +75,12 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                 {
                     // Assemble the header first.
 
+                    Logger.Warning?.PrintMsg(LogClass.ServiceLdn,
+                        $"Offset: {offset} | Size: {size} | Index: {index} | headerSize: {_headerSize} | bufferEnd: {_bufferEnd}");
+
                     int copyable = Math.Min(size - index, Math.Min(size, _headerSize - _bufferEnd));
+
+                    Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Copyable: {copyable}");
 
                     Array.Copy(data, index + offset, _buffer, _bufferEnd, copyable);
 
@@ -108,7 +114,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
                     if (finalSize >= MaxPacketSize)
                     {
-                        Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Max packet size { MaxPacketSize } exceeded.");
+                        Logger.Error?.PrintMsg(LogClass.ServiceLdn, $"Max packet size {MaxPacketSize} exceeded.");
                         Reset();
 
                         return;
@@ -314,15 +320,14 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
                     }
 
                 // Lifecycle Packets.
+                case PacketId.Acknowledgement:
+                    {
+                        Acknowledgement?.Invoke(header);
+                        break;
+                    }
                 case PacketId.Ping:
                     {
                         Ping?.Invoke(header, MemoryMarshal.Read<PingMessage>(data));
-
-                        break;
-                    }
-                case PacketId.TestPing:
-                    {
-                        TestPing?.Invoke(endpoint, header, MemoryMarshal.Read<PingMessage>(data));
 
                         break;
                     }
@@ -337,22 +342,34 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
             }
         }
 
-        private static LdnHeader GetHeader(PacketId type, int dataSize)
+        private static LdnHeader GetHeader(PacketId type, int dataSize, uint overrideSeq = 0)
         {
+            Logger.Warning?.PrintMsg(LogClass.ServiceLdn, $"Building packet of type: {type}");
+
+            if (overrideSeq == 0)
+            {
+                Sequence = Sequence + 1 == 0 ? 1 : Sequence + 1;
+            }
+
             return new LdnHeader()
             {
                 Magic    = Magic,
+                Sequence = overrideSeq != 0 ? overrideSeq : Sequence,
+                NeedsAck = false,
                 Version  = CurrentProtocolVersion,
                 Type     = (byte)type,
                 DataSize = dataSize
             };
         }
 
-        public static byte[] Encode(PacketId type)
+        public static byte[] Encode(PacketId type, uint acknowledgementSeq=0)
         {
-            LdnHeader header = GetHeader(type, 0);
+            LdnHeader header = GetHeader(type, 0, acknowledgementSeq);
+            byte[] result = new byte[Marshal.SizeOf<LdnHeader>()];
 
-            return SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
+            MemoryMarshal.Write(result, ref header);
+
+            return result;
         }
 
         public static byte[] Encode(PacketId type, byte[] data)
@@ -361,7 +378,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
             LdnHeader header = GetHeader(type, data.Length);
 
-            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
+            byte[] result = new byte[Marshal.SizeOf<LdnHeader>()];
+            MemoryMarshal.Write(result, ref header);
 
             Array.Resize(ref result, result.Length + data.Length);
             Array.Copy(data, 0, result, Marshal.SizeOf<LdnHeader>(), data.Length);
@@ -378,7 +396,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
             LdnHeader header = GetHeader(type, packetData.Length);
 
-            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
+            byte[] result = new byte[Marshal.SizeOf<LdnHeader>()];
+            MemoryMarshal.Write(result, ref header);
 
             Array.Resize(ref result, result.Length + packetData.Length);
             Array.Copy(packetData, 0, result, Marshal.SizeOf<LdnHeader>(), packetData.Length);
@@ -395,7 +414,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu
 
             LdnHeader header = GetHeader(type, packetData.Length + data.Length);
 
-            byte[] result = SpanHelpers.AsSpan<LdnHeader, byte>(ref header).ToArray();
+            byte[] result = new byte[Marshal.SizeOf<LdnHeader>()];
+            MemoryMarshal.Write(result, ref header);
 
             Array.Resize(ref result, result.Length + packetData.Length + data.Length);
             Array.Copy(packetData, 0, result, Marshal.SizeOf<LdnHeader>(), packetData.Length);

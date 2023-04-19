@@ -8,7 +8,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
     /// If the server has a token+mac combo that matches the submission, then they are returned their new ID and mac address. (the mac is also reassigned to the new id)
     /// Otherwise, they are returned a random mac address.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential, Size = 0x16)]
+    [StructLayout(LayoutKind.Sequential, Size = 0x18)]
     struct InitializeMessage
     {
         // All 0 if we don't have an ID yet.
@@ -16,5 +16,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Types
 
         // All 0 if we don't have a mac yet.
         public Array6<byte> MacAddress;
+
+        // All 0 if we don't have a port yet.
+        public ushort Port;
     }
 }

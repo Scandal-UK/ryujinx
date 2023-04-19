@@ -14,6 +14,7 @@ using Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.Types;
 using Ryujinx.Memory;
 using Ryujinx.Horizon.Common;
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
@@ -22,7 +23,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 {
     class IUserLocalCommunicationService : IpcService, IDisposable
     {
-        public static string LanPlayHost = "ldn.ryujinx.org";
+        public static string LanPlayHost = "ryujinx.org";
         public static short  LanPlayPort = 30567;
 
         public INetworkClient NetworkClient { get; private set; }
@@ -1086,11 +1087,13 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
                             case MultiplayerMode.LdnRyu:
                                 try
                                 {
+                                    IPAddress localAddress = NetworkHelpers.GetLocalInterface(context.Device.Configuration.MultiplayerLanInterfaceId).Item2.Address;
+
                                     if (!IPAddress.TryParse(LanPlayHost, out IPAddress ipAddress))
                                     {
-                                        ipAddress = Dns.GetHostEntry(LanPlayHost).AddressList[0];
+                                        ipAddress = Dns.GetHostEntry(LanPlayHost).AddressList.First(addr => localAddress.AddressFamily == addr.AddressFamily);
                                     }
-                                    NetworkClient = new LdnMasterProxyClient(ipAddress, LanPlayPort, context.Device.Configuration);
+                                    NetworkClient = new LdnMasterProxyClient(ipAddress, LanPlayPort, localAddress, context.Device.Configuration);
                                 }
                                 catch (Exception)
                                 {
@@ -1130,6 +1133,8 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator
 
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
+
             if (NetworkClient != null)
             {
                 _station?.Dispose();

@@ -16,7 +16,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
         private LdnMasterProxyClient _master;
         private IPEndPoint _endpoint;
 
-        private ManualResetEvent _ready     = new(false);
+        private readonly ManualResetEvent _ready     = new(false);
 
         public P2pProxyClient(LdnMasterProxyClient master, IPEndPoint endpoint)
         {
@@ -28,6 +28,7 @@ namespace Ryujinx.HLE.HOS.Services.Ldn.UserServiceCreator.LdnRyu.Proxy
 
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             SocketHelpers.UnregisterProxy();
         }
 
