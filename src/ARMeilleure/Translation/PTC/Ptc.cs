@@ -414,7 +414,10 @@ namespace ARMeilleure.Translation.PTC
             {
                 ResetCarriersIfNeeded();
 
-                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                if (!OperatingSystem.IsAndroid())
+                {
+                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                }
             }
 
             _waitEvent.Set();
@@ -790,7 +793,10 @@ namespace ARMeilleure.Translation.PTC
             {
                 ResetCarriersIfNeeded();
 
-                GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                if (!OperatingSystem.IsAndroid())
+                {
+                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+                }
 
                 return;
             }
