@@ -8,6 +8,7 @@ namespace Ryujinx.Memory
 {
     [SupportedOSPlatform("linux")]
     [SupportedOSPlatform("macos")]
+    [SupportedOSPlatform("android")]
     static class MemoryManagementUnix
     {
         private static readonly ConcurrentDictionary<IntPtr, ulong> _allocations = new();
@@ -155,6 +156,22 @@ namespace Ryujinx.Memory
                         throw new SystemException(Marshal.GetLastPInvokeErrorMessage());
                     }
                 }
+            }
+            else if (OperatingSystem.IsAndroid())
+            {
+                byte[] memName = Encoding.ASCII.GetBytes("Ryujinx-XXXXXX");
+
+                fixed (byte* pMemName = memName)
+                {
+                    fd = ASharedMemory_create((IntPtr)pMemName, (nuint)size);
+                    if (fd <= 0)
+                    {
+                        throw new OutOfMemoryException();
+                    }
+                }
+
+                // ASharedMemory_create handle ftruncate for us.
+                return (IntPtr)fd;
             }
             else
             {
