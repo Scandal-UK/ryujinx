@@ -111,7 +111,7 @@ namespace ARMeilleure.Signal
                     return context.BitwiseAnd(err, Const(2ul));
                 }
             }
-            else if (OperatingSystem.IsLinux())
+            else if (OperatingSystem.IsLinux() || OperatingSystem.IsAndroid())
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
