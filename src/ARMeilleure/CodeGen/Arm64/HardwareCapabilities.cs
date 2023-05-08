@@ -14,7 +14,7 @@ namespace ARMeilleure.CodeGen.Arm64
                 return;
             }
 
-            if (OperatingSystem.IsLinux())
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsAndroid())
             {
                 LinuxFeatureInfoHwCap = (LinuxFeatureFlagsHwCap)getauxval(AT_HWCAP);
                 LinuxFeatureInfoHwCap2 = (LinuxFeatureFlagsHwCap2)getauxval(AT_HWCAP2);
