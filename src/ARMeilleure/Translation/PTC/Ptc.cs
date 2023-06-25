@@ -1016,7 +1016,7 @@ namespace ARMeilleure.Translation.PTC
             osPlatform |= (OperatingSystem.IsLinux()   ? 1u : 0u) << 1;
             osPlatform |= (OperatingSystem.IsMacOS()   ? 1u : 0u) << 2;
             osPlatform |= (OperatingSystem.IsWindows() ? 1u : 0u) << 3;
-            osPlatform |= (OperatingSystem.IsAndroid() ? 1u : 0u) << 4;
+            osPlatform |= (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid() ? 1u : 0u) << 4;
 #pragma warning restore IDE0055
 
             return osPlatform;
