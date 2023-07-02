@@ -10,6 +10,7 @@ using Ryujinx.HLE.Loaders.Processes;
 using Ryujinx.HLE.UI;
 using Ryujinx.Memory;
 using System;
+using System.IO;
 
 namespace Ryujinx.HLE
 {
@@ -91,6 +92,26 @@ namespace Ryujinx.HLE
         public bool LoadProgram(string fileName)
         {
             return Processes.LoadNxo(fileName);
+        }
+
+        public bool LoadXci(Stream xciStream)
+        {
+            return Processes.LoadXci(xciStream);
+        }
+
+        public bool LoadNca(Stream ncaStream)
+        {
+            return Processes.LoadNca(ncaStream);
+        }
+
+        public bool LoadNsp(Stream nspStream)
+        {
+            return Processes.LoadNsp(nspStream);
+        }
+
+        public bool LoadProgram(Stream stream, bool isNro, string name)
+        {
+            return Processes.LoadNxo(stream, isNro, name);
         }
 
         public bool WaitFifo()

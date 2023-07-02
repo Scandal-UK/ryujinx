@@ -35,6 +35,12 @@ namespace Ryujinx.HLE.Loaders.Processes
         public bool LoadXci(string path, ulong applicationId)
         {
             FileStream stream = new(path, FileMode.Open, FileAccess.Read);
+
+            return LoadXci(stream, applicationId);
+        }
+
+        public bool LoadXci(Stream stream, ulong applicationId)
+        {
             Xci xci = new(_device.Configuration.VirtualFileSystem.KeySet, stream.AsStorage());
 
             if (!xci.HasPartition(XciPartitionType.Secure))
@@ -44,7 +50,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 return false;
             }
 
-            (bool success, ProcessResult processResult) = xci.OpenPartition(XciPartitionType.Secure).TryLoad(_device, path, applicationId, out string errorMessage);
+            (bool success, ProcessResult processResult) = xci.OpenPartition(XciPartitionType.Secure).TryLoad(_device, stream, applicationId, out string errorMessage, "xci");
 
             if (!success)
             {
@@ -69,10 +75,16 @@ namespace Ryujinx.HLE.Loaders.Processes
         public bool LoadNsp(string path, ulong applicationId)
         {
             FileStream file = new(path, FileMode.Open, FileAccess.Read);
-            PartitionFileSystem partitionFileSystem = new();
-            partitionFileSystem.Initialize(file.AsStorage()).ThrowIfFailure();
 
-            (bool success, ProcessResult processResult) = partitionFileSystem.TryLoad(_device, path, applicationId, out string errorMessage);
+            return LoadNsp(file, applicationId);
+        }
+
+        public bool LoadNsp(Stream stream, ulong applicationId)
+        {
+            PartitionFileSystem partitionFileSystem = new();
+            partitionFileSystem.Initialize(stream.AsStorage()).ThrowIfFailure();
+
+            (bool success, ProcessResult processResult) = partitionFileSystem.TryLoad(_device, stream, applicationId, out string errorMessage, "nsp");
 
             if (processResult.ProcessId == 0)
             {
@@ -101,7 +113,13 @@ namespace Ryujinx.HLE.Loaders.Processes
         public bool LoadNca(string path)
         {
             FileStream file = new(path, FileMode.Open, FileAccess.Read);
-            Nca nca = new(_device.Configuration.VirtualFileSystem.KeySet, file.AsStorage(false));
+
+            return LoadNca(file);
+        }
+
+        public bool LoadNca(Stream ncaStream)
+        {
+            Nca nca = new(_device.Configuration.VirtualFileSystem.KeySet, ncaStream.AsStorage(false));
 
             ProcessResult processResult = nca.Load(_device, null, null);
 
@@ -242,5 +260,108 @@ namespace Ryujinx.HLE.Loaders.Processes
 
             return false;
         }
+
+        public bool LoadNxo(Stream stream, bool isNro, string name)
+        {
+            var nacpData = new BlitStruct<ApplicationControlProperty>(1);
+            IFileSystem dummyExeFs = null;
+            Stream romfsStream = null;
+
+            string programName = "";
+            ulong programId = 0000000000000000;
+
+            // Load executable.
+            IExecutable executable;
+
+            if (isNro)
+            {
+                NroExecutable nro = new(stream.AsStorage());
+
+                executable = nro;
+
+                // Open RomFS if exists.
+                IStorage romFsStorage = nro.OpenNroAssetSection(LibHac.Tools.Ro.NroAssetType.RomFs, false);
+                romFsStorage.GetSize(out long romFsSize).ThrowIfFailure();
+                if (romFsSize != 0)
+                {
+                    romfsStream = romFsStorage.AsStream();
+                }
+
+                // Load Nacp if exists.
+                IStorage nacpStorage = nro.OpenNroAssetSection(LibHac.Tools.Ro.NroAssetType.Nacp, false);
+                nacpStorage.GetSize(out long nacpSize).ThrowIfFailure();
+                if (nacpSize != 0)
+                {
+                    nacpStorage.Read(0, nacpData.ByteSpan);
+
+                    programName = nacpData.Value.Title[(int)_device.System.State.DesiredTitleLanguage].NameString.ToString();
+
+                    if (string.IsNullOrWhiteSpace(programName))
+                    {
+                        programName = Array.Find(nacpData.Value.Title.ItemsRo.ToArray(), x => x.Name[0] != 0).NameString.ToString();
+                    }
+
+                    if (nacpData.Value.PresenceGroupId != 0)
+                    {
+                        programId = nacpData.Value.PresenceGroupId;
+                    }
+                    else if (nacpData.Value.SaveDataOwnerId != 0)
+                    {
+                        programId = nacpData.Value.SaveDataOwnerId;
+                    }
+                    else if (nacpData.Value.AddOnContentBaseId != 0)
+                    {
+                        programId = nacpData.Value.AddOnContentBaseId - 0x1000;
+                    }
+                }
+
+                // TODO: Add icon maybe ?
+            }
+            else
+            {
+                executable = new NsoExecutable(new LocalStorage(name, FileAccess.Read), programName);
+            }
+
+            // Explicitly null TitleId to disable the shader cache.
+            Graphics.Gpu.GraphicsConfig.TitleId = null;
+            _device.Gpu.HostInitalized.Set();
+
+            ProcessResult processResult = ProcessLoaderHelper.LoadNsos(_device,
+                                                                       _device.System.KernelContext,
+                                                                       dummyExeFs.GetNpdm(),
+                                                                       nacpData,
+                                                                       diskCacheEnabled: false,
+                                                                       allowCodeMemoryForJit: true,
+                                                                       programName,
+                                                                       programId,
+                                                                       0,
+                                                                       null,
+                                                                       executable);
+
+            // Make sure the process id is valid.
+            if (processResult.ProcessId != 0)
+            {
+                // Load RomFS.
+                if (romfsStream != null)
+                {
+                    _device.Configuration.VirtualFileSystem.SetRomFs(processResult.ProcessId, romfsStream);
+                }
+
+                // Start process.
+                if (_processesByPid.TryAdd(processResult.ProcessId, processResult))
+                {
+                    if (processResult.Start(_device))
+                    {
+                        _latestPid = processResult.ProcessId;
+
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
     }
 }
