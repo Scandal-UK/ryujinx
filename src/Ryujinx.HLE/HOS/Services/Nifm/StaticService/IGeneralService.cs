@@ -24,8 +24,11 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
                 ClientId = GeneralServiceManager.Count,
                 IsAnyInternetRequestAccepted = true, // NOTE: Why not accept any internet request?
             };
-
-            NetworkChange.NetworkAddressChanged += LocalInterfaceCacheHandler;
+            
+            if (!Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+            {
+                NetworkChange.NetworkAddressChanged += LocalInterfaceCacheHandler;
+            }
 
             GeneralServiceManager.Add(_generalServiceDetail);
         }
@@ -196,7 +199,10 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
         {
             if (isDisposing)
             {
-                NetworkChange.NetworkAddressChanged -= LocalInterfaceCacheHandler;
+                if (!Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+                {
+                    NetworkChange.NetworkAddressChanged -= LocalInterfaceCacheHandler;
+                }
 
                 GeneralServiceManager.Remove(_generalServiceDetail.ClientId);
             }
