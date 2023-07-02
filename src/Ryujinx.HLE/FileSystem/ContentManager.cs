@@ -40,12 +40,14 @@ namespace Ryujinx.HLE.FileSystem
 
         private readonly struct AocItem
         {
-            public readonly string ContainerPath;
+            public readonly Stream ContainerStream;
             public readonly string NcaPath;
+            public readonly string Extension;
 
-            public AocItem(string containerPath, string ncaPath)
+            public AocItem(Stream containerStream, string ncaPath, string extension)
             {
-                ContainerPath = containerPath;
+                ContainerStream = containerStream;
+                Extension = extension;
                 NcaPath = ncaPath;
             }
         }
@@ -185,10 +187,10 @@ namespace Ryujinx.HLE.FileSystem
             }
         }
 
-        public void AddAocItem(ulong titleId, string containerPath, string ncaPath, bool mergedToContainer = false)
+        public void AddAocItem(ulong titleId, Stream containerStream, string ncaPath, string extension, bool mergedToContainer = false)
         {
             // TODO: Check Aoc version.
-            if (!AocData.TryAdd(titleId, new AocItem(containerPath, ncaPath)))
+            if (!AocData.TryAdd(titleId, new AocItem(containerStream, ncaPath, extension)))
             {
                 Logger.Warning?.Print(LogClass.Application, $"Duplicate AddOnContent detected. TitleId {titleId:X16}");
             }
@@ -198,12 +200,20 @@ namespace Ryujinx.HLE.FileSystem
 
                 if (!mergedToContainer)
                 {
-                    using var pfs = PartitionFileSystemUtils.OpenApplicationFileSystem(containerPath, _virtualFileSystem);
+                    using var pfs = PartitionFileSystemUtils.OpenApplicationFileSystem(containerStream, extension == ".xci", _virtualFileSystem);
                 }
             }
         }
 
-        public void ClearAocData() => AocData.Clear();
+        public void ClearAocData()
+        {
+            foreach (var aoc in AocData)
+            {
+                aoc.Value.ContainerStream?.Dispose();
+            }
+
+            AocData.Clear();
+        }
 
         public int GetAocCount() => AocData.Count;
 
@@ -215,18 +225,17 @@ namespace Ryujinx.HLE.FileSystem
 
             if (AocData.TryGetValue(aocTitleId, out AocItem aoc))
             {
-                var file = new FileStream(aoc.ContainerPath, FileMode.Open, FileAccess.Read);
                 using var ncaFile = new UniqueRef<IFile>();
 
-                switch (Path.GetExtension(aoc.ContainerPath))
+                switch (aoc.Extension)
                 {
                     case ".xci":
-                        var xci = new Xci(_virtualFileSystem.KeySet, file.AsStorage()).OpenPartition(XciPartitionType.Secure);
-                        xci.OpenFile(ref ncaFile.Ref, aoc.NcaPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
+                        var xci = new Xci(_virtualFileSystem.KeySet, aoc.ContainerStream.AsStorage()).OpenPartition(XciPartitionType.Secure);
+                        xci.OpenFile(ref ncaFile.Ref, aoc.NcaPath.ToU8Span(), OpenMode.Read);
                         break;
                     case ".nsp":
                         var pfs = new PartitionFileSystem();
-                        pfs.Initialize(file.AsStorage());
+                        pfs.Initialize(aoc.ContainerStream.AsStorage());
                         pfs.OpenFile(ref ncaFile.Ref, aoc.NcaPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
                         break;
                     default:
