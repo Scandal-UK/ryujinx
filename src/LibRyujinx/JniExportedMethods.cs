@@ -40,13 +40,13 @@ namespace LibRyujinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_initialize")]
-        public static JBoolean JniInitialize(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef jpath)
+        public static JBoolean JniInitialize(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef jpath, JBoolean enableDebugLogs)
         {
             var path = GetString(jEnv, jpath);
 
             Ryujinx.Common.SystemInfo.SystemInfo.IsBionic = true;
 
-            var init = Initialize(path);
+            var init = Initialize(path, enableDebugLogs);
 
             AudioDriver = new OboeHardwareDeviceDriver();
 
@@ -92,6 +92,43 @@ namespace LibRyujinx
         public static JBoolean JniInitializeDeviceNative(JEnvRef jEnv, JObjectLocalRef jObj, JBoolean isHostMapped)
         {
             return InitializeDevice(isHostMapped);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameStats")]
+        public static JObjectLocalRef JniGetGameStats(JEnvRef jEnv, JObjectLocalRef jObj)
+        {
+            var stats = GetGameStats();
+
+            var javaClassName = GetCCharSequence("org/ryujinx/android/viewmodels/GameStats");
+
+            JEnvValue value = jEnv.Environment;
+            ref JNativeInterface jInterface = ref value.Functions;
+            IntPtr findClassPtr = jInterface.FindClassPointer;
+            IntPtr newGlobalRefPtr = jInterface.NewGlobalRefPointer;
+            IntPtr getFieldIdPtr = jInterface.GetFieldIdPointer;
+            IntPtr getMethodPtr = jInterface.GetMethodIdPointer;
+            IntPtr newObjectPtr = jInterface.NewObjectPointer;
+            IntPtr setDoubleFieldPtr = jInterface.SetDoubleFieldPointer;
+
+
+            var findClass = findClassPtr.GetUnsafeDelegate<FindClassDelegate>();
+            var newGlobalRef = newGlobalRefPtr.GetUnsafeDelegate<NewGlobalRefDelegate>();
+            var getFieldId = getFieldIdPtr.GetUnsafeDelegate<GetFieldIdDelegate>();
+            var getMethod = getMethodPtr.GetUnsafeDelegate<GetMethodIdDelegate>();
+            var newObject = newObjectPtr.GetUnsafeDelegate<NewObjectDelegate>();
+            var setDoubleField = setDoubleFieldPtr.GetUnsafeDelegate<SetDoubleFieldDelegate>();
+
+            var javaClass = findClass(jEnv, javaClassName);
+            var newGlobal = newGlobalRef(jEnv, javaClass._value);
+            var constructor = getMethod(jEnv, javaClass, GetCCharSequence("<init>"), GetCCharSequence("()V"));
+            var newObj = newObject(jEnv, javaClass, constructor, 0);
+
+
+            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Fifo"), GetCCharSequence("D")), stats.Fifo);
+            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("GameFps"), GetCCharSequence("D")), stats.GameFps);
+            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("GameTime"), GetCCharSequence("D")), stats.GameTime);
+
+            return newObj;
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceLoad")]
@@ -376,7 +413,7 @@ namespace LibRyujinx
         {
             var safeHandle = new SafeFileHandle(descriptor, false);
 
-            return new FileStream(safeHandle, FileAccess.Read);
+            return new FileStream(safeHandle, FileAccess.ReadWrite);
         }
     }
 
