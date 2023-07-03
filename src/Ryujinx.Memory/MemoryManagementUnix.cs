@@ -16,15 +16,15 @@ namespace Ryujinx.Memory
 
         public static IntPtr Allocate(ulong size, bool forJit)
         {
-            return AllocateInternal(size, MmapProts.PROT_READ | MmapProts.PROT_WRITE, forJit);
+            return AllocateInternal(size, MmapProts.PROT_READ | MmapProts.PROT_WRITE, forJit, false);
         }
 
         public static IntPtr Reserve(ulong size, bool forJit)
         {
-            return AllocateInternal(size, MmapProts.PROT_NONE, forJit);
+            return AllocateInternal(size, MmapProts.PROT_NONE, forJit, false);
         }
 
-        private static IntPtr AllocateInternal(ulong size, MmapProts prot, bool forJit, bool shared = false)
+        private static IntPtr AllocateInternal(ulong size, MmapProts prot, bool forJit, bool shared)
         {
             MmapFlags flags = MmapFlags.MAP_ANONYMOUS;
 

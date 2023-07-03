@@ -82,7 +82,7 @@ namespace Ryujinx.Cpu.Signal
             return old;
         }
 
-        public static SigAction RegisterExceptionHandler(IntPtr action)
+        public static SigAction RegisterExceptionHandler(IntPtr action, int userSignal = -1)
         {
             int result;
             SigAction old;
@@ -146,6 +146,21 @@ namespace Ryujinx.Cpu.Signal
                     if (result != 0)
                     {
                         throw new InvalidOperationException($"Could not register SIGBUS sigaction. Error: {result}");
+                    }
+                }
+
+                if (userSignal != -1)
+                {
+                    result = sigaction(userSignal, ref sig, out SigAction oldu);
+
+                    if (oldu.sa_handler != IntPtr.Zero)
+                    {
+                        throw new InvalidOperationException($"SIG{userSignal} is already in use.");
+                    }
+
+                    if (result != 0)
+                    {
+                        throw new InvalidOperationException($"Could not register SIG{userSignal} sigaction. Error: {result}");
                     }
                 }
             }

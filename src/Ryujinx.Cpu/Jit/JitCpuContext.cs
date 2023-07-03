@@ -47,6 +47,11 @@ namespace Ryujinx.Cpu.Jit
         }
 
         /// <inheritdoc/>
+        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
+        {
+        }
+
+        /// <inheritdoc/>
         public IDiskCacheLoadState LoadDiskCache(string titleIdText, string displayVersion, bool enabled)
         {
             return new JitDiskCacheLoadState(_translator.LoadDiskCache(titleIdText, displayVersion, enabled));

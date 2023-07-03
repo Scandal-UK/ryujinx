@@ -16,12 +16,14 @@ namespace Ryujinx.HLE.HOS
             ulong codeSize);
     }
 
-    class ArmProcessContext<T> : IArmProcessContext where T : class, IVirtualMemoryManagerTracked, IMemoryManager
+    class ArmProcessContext<T> : IArmProcessContext where T : class, IVirtualMemoryManagerTracked, ICpuMemoryManager
     {
         private readonly ulong _pid;
         private readonly GpuContext _gpuContext;
         private readonly ICpuContext _cpuContext;
         private T _memoryManager;
+
+        public ulong ReservedSize { get; }
 
         public IVirtualMemoryManager AddressSpace => _memoryManager;
 
@@ -33,7 +35,8 @@ namespace Ryujinx.HLE.HOS
             GpuContext gpuContext,
             T memoryManager,
             ulong addressSpaceSize,
-            bool for64Bit)
+            bool for64Bit,
+            ulong reservedSize = 0UL)
         {
             if (memoryManager is IRefCounted rc)
             {
@@ -46,8 +49,8 @@ namespace Ryujinx.HLE.HOS
             _gpuContext = gpuContext;
             _cpuContext = cpuEngine.CreateCpuContext(memoryManager, for64Bit);
             _memoryManager = memoryManager;
-
             AddressSpaceSize = addressSpaceSize;
+            ReservedSize = reservedSize;
         }
 
         public IExecutionContext CreateExecutionContext(ExceptionCallbacks exceptionCallbacks)
@@ -76,6 +79,11 @@ namespace Ryujinx.HLE.HOS
         public void InvalidateCacheRegion(ulong address, ulong size)
         {
             _cpuContext.InvalidateCacheRegion(address, size);
+        }
+
+        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
+        {
+            _cpuContext.PatchCodeForNce(textAddress, textSize, patchRegionAddress, patchRegionSize);
         }
 
         public void Dispose()

@@ -133,6 +133,8 @@ namespace Ryujinx.HLE.Loaders.Processes
             return resultCode;
         }
 
+        private const int ReservedPatchSize = 0x100000;
+
         public static bool LoadKip(KernelContext context, KipExecutable kip)
         {
             uint endOffset = kip.DataOffset + (uint)kip.Data.Length;
@@ -197,7 +199,9 @@ namespace Ryujinx.HLE.Loaders.Processes
                 return false;
             }
 
-            result = LoadIntoMemory(process, kip, codeBaseAddress);
+            // TODO: Support NCE of KIPs too.
+            result = LoadIntoMemory(process, kip, codeBaseAddress, 0UL);
+
             if (result != Result.Success)
             {
                 Logger.Error?.Print(LogClass.Loader, $"Process initialization returned error \"{result}\".");
@@ -258,6 +262,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 _ => "",
             }).ToUpper());
 
+            ulong[] nsoPatch = new ulong[executables.Length];
             ulong[] nsoBase = new ulong[executables.Length];
 
             for (int index = 0; index < executables.Length; index++)
@@ -282,6 +287,10 @@ namespace Ryujinx.HLE.Loaders.Processes
 
                 nsoSize = BitUtils.AlignUp<uint>(nsoSize, KPageTableBase.PageSize);
 
+                nsoPatch[index] = codeStart + codeSize;
+
+                codeSize += ReservedPatchSize;
+
                 nsoBase[index] = codeStart + codeSize;
 
                 codeSize += nsoSize;
@@ -305,7 +314,7 @@ namespace Ryujinx.HLE.Loaders.Processes
                 programId,
                 codeStart,
                 codePagesCount,
-                (ProcessCreationFlags)meta.Flags | ProcessCreationFlags.IsApplication,
+                (ProcessCreationFlags)meta.Flags,
                 0,
                 personalMmHeapPagesCount);
 
@@ -382,7 +391,8 @@ namespace Ryujinx.HLE.Loaders.Processes
                 MemoryMarshal.Cast<byte, uint>(npdm.KernelCapabilityData),
                 resourceLimit,
                 memoryRegion,
-                processContextFactory);
+                processContextFactory,
+                entrypointOffset: ReservedPatchSize);
 
             if (result != Result.Success)
             {
@@ -393,9 +403,13 @@ namespace Ryujinx.HLE.Loaders.Processes
 
             for (int index = 0; index < executables.Length; index++)
             {
-                Logger.Info?.Print(LogClass.Loader, $"Loading image {index} at 0x{nsoBase[index]:x16}...");
+                ulong nsoPatchAddress = process.Context.ReservedSize + nsoPatch[index];
+                ulong nsoBaseAddress = process.Context.ReservedSize + nsoBase[index];
 
-                result = LoadIntoMemory(process, executables[index], nsoBase[index]);
+                Logger.Info?.Print(LogClass.Loader, $"Loading image {index} at 0x{nsoBaseAddress:x16}...");
+
+                result = LoadIntoMemory(process, executables[index], nsoBaseAddress, nsoPatchAddress);
+
                 if (result != Result.Success)
                 {
                     Logger.Error?.Print(LogClass.Loader, $"Process initialization returned error \"{result}\".");
@@ -453,7 +467,7 @@ namespace Ryujinx.HLE.Loaders.Processes
             return processResult;
         }
 
-        public static Result LoadIntoMemory(KProcess process, IExecutable image, ulong baseAddress)
+        private static Result LoadIntoMemory(KProcess process, IExecutable image, ulong baseAddress, ulong patchAddress)
         {
             ulong textStart = baseAddress + image.TextOffset;
             ulong roStart = baseAddress + image.RoOffset;
@@ -472,6 +486,8 @@ namespace Ryujinx.HLE.Loaders.Processes
             process.CpuMemory.Write(dataStart, image.Data);
 
             process.CpuMemory.Fill(bssStart, image.BssSize, 0);
+
+            process.Context.PatchCodeForNce(textStart, (ulong)image.Text.Length, patchAddress, ReservedPatchSize);
 
             Result SetProcessMemoryPermission(ulong address, ulong size, KMemoryPermission permission)
             {

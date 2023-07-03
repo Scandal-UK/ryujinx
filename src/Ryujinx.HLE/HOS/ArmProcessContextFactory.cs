@@ -4,6 +4,7 @@ using Ryujinx.Cpu;
 using Ryujinx.Cpu.AppleHv;
 using Ryujinx.Cpu.Jit;
 using Ryujinx.Cpu.LightningJit;
+using Ryujinx.Cpu.Nce;
 using Ryujinx.Graphics.Gpu;
 using Ryujinx.HLE.HOS.Kernel;
 using Ryujinx.HLE.HOS.Kernel.Process;
@@ -46,14 +47,31 @@ namespace Ryujinx.HLE.HOS
         public IProcessContext Create(KernelContext context, ulong pid, ulong addressSpaceSize, InvalidAccessHandler invalidAccessHandler, bool for64Bit)
         {
             IArmProcessContext processContext;
+            AddressSpace addressSpace = null;
 
             bool isArm64Host = RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
 
-            if (OperatingSystem.IsMacOS() && isArm64Host && for64Bit && context.Device.Configuration.UseHypervisor)
+            if (isArm64Host && for64Bit && context.Device.Configuration.UseHypervisor)
             {
-                var cpuEngine = new HvEngine(_tickSource);
-                var memoryManager = new HvMemoryManager(context.Memory, addressSpaceSize, invalidAccessHandler);
-                processContext = new ArmProcessContext<HvMemoryManager>(pid, cpuEngine, _gpu, memoryManager, addressSpaceSize, for64Bit);
+                if (OperatingSystem.IsMacOS())
+                {
+                    var cpuEngine = new HvEngine(_tickSource);
+                    var memoryManager = new HvMemoryManager(context.Memory, addressSpaceSize, invalidAccessHandler);
+                    processContext = new ArmProcessContext<HvMemoryManager>(pid, cpuEngine, _gpu, memoryManager, addressSpaceSize, for64Bit);
+                }
+                else
+                {
+                    if (!AddressSpace.TryCreate(context.Memory, addressSpaceSize, out addressSpace))
+                    {
+                        throw new Exception("Address space creation failed");
+                    }
+
+                    Logger.Info?.Print(LogClass.Cpu, $"NCE Base AS Address: 0x{addressSpace.Base.Pointer.ToInt64():X} Size: 0x{addressSpace.AddressSpaceSize:X}");
+
+                    var cpuEngine = new NceEngine(_tickSource);
+                    var memoryManager = new MemoryManagerNative(addressSpace, context.Memory, addressSpaceSize, invalidAccessHandler);
+                    processContext = new ArmProcessContext<MemoryManagerNative>(pid, cpuEngine, _gpu, memoryManager, addressSpace.AddressSpaceSize, for64Bit, memoryManager.ReservedSize);
+                }
             }
             else
             {
@@ -69,8 +87,6 @@ namespace Ryujinx.HLE.HOS
                 ICpuEngine cpuEngine = isArm64Host && (mode == MemoryManagerMode.HostMapped || mode == MemoryManagerMode.HostMappedUnsafe)
                     ? new LightningJitEngine(_tickSource)
                     : new JitEngine(_tickSource);
-
-                AddressSpace addressSpace = null;
 
                 // We want to use host tracked mode if the host page size is > 4KB.
                 if ((mode == MemoryManagerMode.HostMapped || mode == MemoryManagerMode.HostMappedUnsafe) && MemoryBlock.GetPageSize() <= 0x1000)
