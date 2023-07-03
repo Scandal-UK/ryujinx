@@ -7,6 +7,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
     class ProcessContext : IProcessContext
     {
         public IVirtualMemoryManager AddressSpace { get; }
+        public ulong ReservedSize => 0UL;
 
         public ulong AddressSpaceSize { get; }
 
@@ -27,6 +28,10 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         }
 
         public void InvalidateCacheRegion(ulong address, ulong size)
+        {
+        }
+
+        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
         {
         }
 

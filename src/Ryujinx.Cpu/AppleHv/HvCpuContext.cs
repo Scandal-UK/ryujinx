@@ -32,6 +32,11 @@ namespace Ryujinx.Cpu.AppleHv
         {
         }
 
+        /// <inheritdoc/>
+        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
+        {
+        }
+
         public IDiskCacheLoadState LoadDiskCache(string titleIdText, string displayVersion, bool enabled)
         {
             return new DummyDiskCacheLoadState();

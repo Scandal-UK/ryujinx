@@ -113,7 +113,7 @@ namespace Ryujinx.Ava.UI.ViewModels
 
         public bool IsOpenGLAvailable => !OperatingSystem.IsMacOS();
 
-        public bool IsHypervisorAvailable => OperatingSystem.IsMacOS() && RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
+        public bool IsHypervisorAvailable => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
 
         public bool DirectoryChanged
         {

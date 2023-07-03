@@ -55,6 +55,21 @@ namespace Ryujinx.Cpu
             }
         }
 
+        public MemoryEhMeilleure(ulong asSize, MemoryTracking tracking)
+        {
+            _tracking = tracking;
+            _baseAddress = 0UL;
+            ulong endAddress = asSize;
+
+            _trackingEvent = VirtualMemoryEvent;
+            bool added = NativeSignalHandler.AddTrackedRegion((nuint)_baseAddress, (nuint)endAddress, Marshal.GetFunctionPointerForDelegate(_trackingEvent));
+
+            if (!added)
+            {
+                throw new InvalidOperationException("Number of allowed tracked regions exceeded.");
+            }
+        }
+
         private ulong VirtualMemoryEvent(ulong address, ulong size, bool write)
         {
             ulong pageSize = _pageSize;

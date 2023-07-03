@@ -104,6 +104,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             MemoryRegion memRegion,
             ulong address,
             ulong size,
+            ulong reservedSize,
             KMemoryBlockSlabManager slabManager)
         {
             _contextId = Context.ContextIdManager.GetId();
@@ -119,6 +120,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                 memRegion,
                 address,
                 size,
+                reservedSize,
                 slabManager);
 
             if (result != Result.Success)
@@ -161,6 +163,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
             MemoryRegion memRegion,
             ulong address,
             ulong size,
+            ulong reservedSize,
             KMemoryBlockSlabManager slabManager)
         {
             ulong endAddr = address + size;
@@ -186,7 +189,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     CodeRegionStart = 0x200000;
                     codeRegionSize = 0x3fe00000;
                     AslrRegionStart = 0x200000;
-                    AslrRegionEnd = AslrRegionStart + 0xffe00000;
+                    AslrRegionEnd = 0x100000000;
                     stackAndTlsIoStart = 0x200000;
                     stackAndTlsIoEnd = 0x40000000;
                     break;
@@ -199,7 +202,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     CodeRegionStart = 0x8000000;
                     codeRegionSize = 0x78000000;
                     AslrRegionStart = 0x8000000;
-                    AslrRegionEnd = AslrRegionStart + 0xff8000000;
+                    AslrRegionEnd = 0x1000000000;
                     stackAndTlsIoStart = 0x8000000;
                     stackAndTlsIoEnd = 0x80000000;
                     break;
@@ -212,7 +215,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     CodeRegionStart = 0x200000;
                     codeRegionSize = 0x3fe00000;
                     AslrRegionStart = 0x200000;
-                    AslrRegionEnd = AslrRegionStart + 0xffe00000;
+                    AslrRegionEnd = 0x100000000;
                     stackAndTlsIoStart = 0x200000;
                     stackAndTlsIoEnd = 0x40000000;
                     break;
@@ -230,8 +233,8 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                         codeRegionSize = BitUtils.AlignUp(endAddr, RegionAlignment) - CodeRegionStart;
                         stackAndTlsIoStart = 0;
                         stackAndTlsIoEnd = 0;
-                        AslrRegionStart = 0x8000000;
-                        addrSpaceEnd = 1UL << addressSpaceWidth;
+                        AslrRegionStart = reservedSize + 0x8000000;
+                        addrSpaceEnd = reservedSize + (1UL << addressSpaceWidth);
                         AslrRegionEnd = addrSpaceEnd;
                     }
                     else
@@ -242,8 +245,8 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                         tlsIoRegion.Size = 0x1000000000;
                         CodeRegionStart = BitUtils.AlignDown(address, RegionAlignment);
                         codeRegionSize = BitUtils.AlignUp(endAddr, RegionAlignment) - CodeRegionStart;
-                        AslrRegionStart = 0x8000000;
-                        AslrRegionEnd = AslrRegionStart + 0x7ff8000000;
+                        AslrRegionStart = reservedSize + 0x8000000;
+                        AslrRegionEnd = 0x8000000000;
                         stackAndTlsIoStart = 0;
                         stackAndTlsIoEnd = 0;
                     }

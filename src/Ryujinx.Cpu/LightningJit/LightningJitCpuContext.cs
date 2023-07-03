@@ -40,6 +40,11 @@ namespace Ryujinx.Cpu.LightningJit
         }
 
         /// <inheritdoc/>
+        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
+        {
+        }
+
+        /// <inheritdoc/>
         public IDiskCacheLoadState LoadDiskCache(string titleIdText, string displayVersion, bool enabled)
         {
             return new DummyDiskCacheLoadState();

@@ -16,7 +16,7 @@ namespace Ryujinx.Cpu.Jit
     /// <summary>
     /// Represents a CPU memory manager which maps guest virtual memory directly onto a host virtual region.
     /// </summary>
-    public sealed class MemoryManagerHostTracked : VirtualMemoryManagerRefCountedBase, IMemoryManager, IVirtualMemoryManagerTracked
+    public sealed class MemoryManagerHostTracked : VirtualMemoryManagerRefCountedBase, ICpuMemoryManager, IVirtualMemoryManagerTracked
     {
         private readonly InvalidAccessHandler _invalidAccessHandler;
         private readonly bool _unsafeMode;
