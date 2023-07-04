@@ -11,7 +11,7 @@ namespace Ryujinx.Cpu.Nce
 
         public static IntPtr GetCurrentThreadHandle()
         {
-            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsAndroid())
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
             {
                 return NceThreadPalUnix.GetCurrentThreadHandle();
             }
@@ -23,13 +23,13 @@ namespace Ryujinx.Cpu.Nce
 
         public static void SuspendThread(IntPtr handle)
         {
-            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-            {
-                NceThreadPalUnix.SuspendThread(handle);
-            }
-            else if (OperatingSystem.IsAndroid())
+            if (Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
             {
                 NceThreadPalAndroid.SuspendThread(handle);
+            }
+            else if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+            {
+                NceThreadPalUnix.SuspendThread(handle);
             }
             else
             {

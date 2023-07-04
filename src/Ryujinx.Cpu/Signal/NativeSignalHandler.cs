@@ -100,13 +100,25 @@ namespace Ryujinx.Cpu.Signal
 
                     if (customSignalHandlerFactory != null)
                     {
-                        _signalHandlerPtr = customSignalHandlerFactory(UnixSignalHandlerRegistration.GetSegfaultExceptionHandler().sa_handler, _signalHandlerPtr);
+                        _signalHandlerPtr = customSignalHandlerFactory(Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid() ?
+                            AndroidSignalHandlerRegistration.GetSegfaultExceptionHandler().sa_handler :
+                            UnixSignalHandlerRegistration.GetSegfaultExceptionHandler().sa_handler, _signalHandlerPtr);
                     }
 
-                    var old = UnixSignalHandlerRegistration.RegisterExceptionHandler(_signalHandlerPtr, userSignal);
+                    if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                    {
+                        var old = AndroidSignalHandlerRegistration.RegisterExceptionHandler(_signalHandlerPtr, userSignal);
 
-                    config.UnixOldSigaction = (nuint)(ulong)old.sa_handler;
-                    config.UnixOldSigaction3Arg = old.sa_flags & 4;
+                        config.UnixOldSigaction = (nuint)(ulong)old.sa_handler;
+                        config.UnixOldSigaction3Arg = old.sa_flags & 4;
+                    }
+                    else
+                    {
+                        var old = UnixSignalHandlerRegistration.RegisterExceptionHandler(_signalHandlerPtr, userSignal);
+
+                        config.UnixOldSigaction = (nuint)(ulong)old.sa_handler;
+                        config.UnixOldSigaction3Arg = old.sa_flags & 4;
+                    }
                 }
                 else
                 {
