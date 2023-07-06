@@ -1,4 +1,4 @@
-using Ryujinx.Common.Logging;
+﻿using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Silk.NET.Vulkan;
 using System;
@@ -130,9 +130,10 @@ namespace Ryujinx.Graphics.Vulkan
             UsePushDescriptors = usePushDescriptors;
 
             Stages = stages;
+            bool hasBatchedTextureSamplerBug = false;//gd.Vendor == Vendor.Qualcomm;
 
             ClearSegments = BuildClearSegments(sets);
-            BindingSegments = BuildBindingSegments(resourceLayout.SetUsages, out bool usesBufferTextures);
+            BindingSegments = BuildBindingSegments(resourceLayout.SetUsages, hasBatchedTextureSamplerBug, out bool usesBufferTextures);
             Templates = BuildTemplates(usePushDescriptors);
             (IncoherentBufferWriteStages, IncoherentTextureWriteStages) = BuildIncoherentStages(resourceLayout.SetUsages);
 
@@ -289,7 +290,7 @@ namespace Ryujinx.Graphics.Vulkan
             return segments;
         }
 
-        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, out bool usesBufferTextures)
+        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, bool hasBatchedTextureSamplerBug, out bool usesBufferTextures)
         {
             usesBufferTextures = false;
 
@@ -313,6 +314,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                     if (currentUsage.Binding + currentCount != usage.Binding ||
                         currentUsage.Type != usage.Type ||
+                        (currentUsage.Type == ResourceType.TextureAndSampler && hasBatchedTextureSamplerBug) ||
                         currentUsage.Stages != usage.Stages ||
                         currentUsage.ArrayLength > 1 ||
                         usage.ArrayLength > 1)
