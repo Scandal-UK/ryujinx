@@ -21,8 +21,7 @@ namespace Ryujinx.Cpu.Signal
             public IntPtr sa_restorer;
         }
 
-        [SupportedOSPlatform("android")]
-        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        [SupportedOSPlatform("android"), StructLayout(LayoutKind.Sequential, Pack = 8)]
         public struct SigActionBionic
         {
             public int sa_flags;
@@ -31,26 +30,37 @@ namespace Ryujinx.Cpu.Signal
             public IntPtr sa_restorer;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 8)]
+        public struct Stack
+        {
+            public IntPtr ss_sp;
+            public int ss_flags;
+            public IntPtr ss_size;
+        }
+
         private const int SIGSEGV = 11;
         private const int SIGBUS = 10;
         private const int SA_SIGINFO = 0x00000004;
+        private const int SA_ONSTACK = 0x08000000;
+        private const int SS_DISABLE = 2;
 
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, ref SigAction sigAction, out SigAction oldAction);
 
-        [SupportedOSPlatform("android")]
-        [LibraryImport("libc", SetLastError = true)]
+        [SupportedOSPlatform("android"), LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, ref SigActionBionic sigAction, out SigActionBionic oldAction);
 
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, IntPtr sigAction, out SigAction oldAction);
 
-        [SupportedOSPlatform("android")]
-        [LibraryImport("libc", SetLastError = true)]
+        [SupportedOSPlatform("android"), LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, IntPtr sigAction, out SigActionBionic oldAction);
 
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigemptyset(ref SigSet set);
+
+        [LibraryImport("libc", SetLastError = true)]
+        private static partial int sigaltstack(ref Stack ss, out Stack oldSs);
 
         public static SigAction GetSegfaultExceptionHandler()
         {
@@ -76,13 +86,13 @@ namespace Ryujinx.Cpu.Signal
 
             if (result != 0)
             {
-                throw new InvalidOperationException($"Could not get SIGSEGV sigaction. Error: {result}");
+                throw new SystemException($"Could not get SIGSEGV sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
             }
 
             return old;
         }
 
-        public static SigAction RegisterExceptionHandler(IntPtr action, int userSignal = -1)
+        public static SigAction RegisterExceptionHandler(IntPtr action)
         {
             int result;
             SigAction old;
@@ -106,21 +116,6 @@ namespace Ryujinx.Cpu.Signal
                     sa_flags = tmp.sa_flags,
                     sa_restorer = tmp.sa_restorer
                 };
-
-                if (userSignal != -1)
-                {
-                    result = sigaction(userSignal, ref sig, out SigActionBionic oldu);
-
-                    if (oldu.sa_handler != IntPtr.Zero)
-                    {
-                        throw new InvalidOperationException($"SIG{userSignal} is already in use.");
-                    }
-
-                    if (result != 0)
-                    {
-                        throw new InvalidOperationException($"Could not register SIG{userSignal} sigaction. Error: {result}");
-                    }
-                }
             }
             else
             {
@@ -136,7 +131,7 @@ namespace Ryujinx.Cpu.Signal
 
                 if (result != 0)
                 {
-                    throw new InvalidOperationException($"Could not register SIGSEGV sigaction. Error: {result}");
+                    throw new SystemException($"Could not register SIGSEGV sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
                 }
 
                 if (OperatingSystem.IsMacOS())
@@ -145,27 +140,93 @@ namespace Ryujinx.Cpu.Signal
 
                     if (result != 0)
                     {
-                        throw new InvalidOperationException($"Could not register SIGBUS sigaction. Error: {result}");
-                    }
-                }
-
-                if (userSignal != -1)
-                {
-                    result = sigaction(userSignal, ref sig, out SigAction oldu);
-
-                    if (oldu.sa_handler != IntPtr.Zero)
-                    {
-                        throw new InvalidOperationException($"SIG{userSignal} is already in use.");
-                    }
-
-                    if (result != 0)
-                    {
-                        throw new InvalidOperationException($"Could not register SIG{userSignal} sigaction. Error: {result}");
+                        throw new SystemException($"Could not register SIGBUS sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
                     }
                 }
             }
 
             return old;
+        }
+
+        public static void RegisterAlternateStack(IntPtr stackPtr, ulong stackSize)
+        {
+            Stack stack = new()
+            {
+                ss_sp = stackPtr,
+                ss_size = (IntPtr)stackSize
+            };
+
+            int result = sigaltstack(ref stack, out _);
+
+            if (result != 0)
+            {
+                throw new SystemException($"Could not set alternate stack. Error: {Marshal.GetLastPInvokeErrorMessage()}");
+            }
+        }
+
+        public static void UnregisterAlternateStack()
+        {
+            Stack stack = new()
+            {
+                ss_flags = SS_DISABLE
+            };
+
+            int result = sigaltstack(ref stack, out _);
+
+            if (result != 0)
+            {
+                throw new SystemException($"Could not remove alternate stack. Error: {Marshal.GetLastPInvokeErrorMessage()}");
+            }
+        }
+
+        public static void RegisterExceptionHandler(int sigNum, IntPtr action)
+        {
+            int result;
+
+            if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            {
+                SigActionBionic sig = new()
+                {
+                    sa_handler = action,
+                    sa_flags = SA_SIGINFO | SA_ONSTACK
+                };
+
+                sigemptyset(ref sig.sa_mask);
+
+                result = sigaction(sigNum, ref sig, out SigActionBionic oldu);
+
+                if (oldu.sa_handler != IntPtr.Zero)
+                {
+                    throw new SystemException($"SIG{sigNum} is already in use.");
+                }
+
+                if (result != 0)
+                {
+                    throw new SystemException($"Could not register SIG{sigNum} sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
+                }
+            }
+            else
+            {
+                SigAction sig = new()
+                {
+                    sa_handler = action,
+                    sa_flags = SA_SIGINFO | SA_ONSTACK,
+                };
+
+                sigemptyset(ref sig.sa_mask);
+
+                result = sigaction(sigNum, ref sig, out SigAction oldu);
+
+                if (oldu.sa_handler != IntPtr.Zero)
+                {
+                    throw new SystemException($"SIG{sigNum} is already in use.");
+                }
+
+                if (result != 0)
+                {
+                    throw new SystemException($"Could not register SIG{sigNum} sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
+                }
+            }
         }
 
         public static bool RestoreExceptionHandler(SigAction oldAction)

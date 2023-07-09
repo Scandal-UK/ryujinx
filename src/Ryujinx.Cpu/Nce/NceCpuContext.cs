@@ -1,14 +1,63 @@
-﻿using Ryujinx.Cpu.Jit;
+using Ryujinx.Cpu.Jit;
 using Ryujinx.Cpu.Signal;
 using Ryujinx.Common;
 using Ryujinx.Memory;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Ryujinx.Cpu.Nce
 {
     class NceCpuContext : ICpuContext
     {
+        private static uint[] _getTpidrEl0Code = new uint[]
+        {
+            GetMrsTpidrEl0(0), // mrs x0, tpidr_el0
+            0xd65f03c0u, // ret
+        };
+
+        private static uint GetMrsTpidrEl0(uint rd)
+        {
+            if (OperatingSystem.IsMacOS())
+            {
+                return 0xd53bd060u | rd; // TPIDRRO
+            }
+            else
+            {
+                return 0xd53bd040u | rd; // TPIDR
+            }
+        }
+
+        readonly struct CodeWriter
+        {
+            private readonly List<uint> _fullCode;
+
+            public CodeWriter()
+            {
+                _fullCode = new List<uint>();
+            }
+
+            public ulong Write(uint[] code)
+            {
+                ulong offset = (ulong)_fullCode.Count * sizeof(uint);
+                _fullCode.AddRange(code);
+
+                return offset;
+            }
+
+            public MemoryBlock CreateMemoryBlock()
+            {
+                ReadOnlySpan<byte> codeBytes = MemoryMarshal.Cast<uint, byte>(_fullCode.ToArray());
+
+                MemoryBlock codeBlock = new(BitUtils.AlignUp((ulong)codeBytes.Length, 0x1000UL));
+
+                codeBlock.Write(0, codeBytes);
+                codeBlock.Reprotect(0, (ulong)codeBytes.Length, MemoryPermission.ReadAndExecute, true);
+
+                return codeBlock;
+            }
+        }
+
         private delegate void ThreadStart(IntPtr nativeContextPtr);
         private delegate IntPtr GetTpidrEl0();
         private static MemoryBlock _codeBlock;
@@ -20,29 +69,29 @@ namespace Ryujinx.Cpu.Nce
 
         static NceCpuContext()
         {
-            ulong threadStartCodeSize = (ulong)NceAsmTable.ThreadStartCode.Length * 4;
-            ulong enEntryCodeOffset = threadStartCodeSize;
-            ulong ehEntryCodeSize = (ulong)NceAsmTable.ExceptionHandlerEntryCode.Length * 4;
-            ulong getTpidrEl0CodeOffset = threadStartCodeSize + ehEntryCodeSize;
-            ulong getTpidrEl0CodeSize = (ulong)NceAsmTable.GetTpidrEl0Code.Length * 4;
+            CodeWriter codeWriter = new();
 
-            ulong size = BitUtils.AlignUp(threadStartCodeSize + ehEntryCodeSize + getTpidrEl0CodeSize, 0x1000UL);
+            uint[] threadStartCode = NcePatcher.GenerateThreadStartCode();
+            uint[] ehSuspendCode = NcePatcher.GenerateSuspendExceptionHandler();
 
-            MemoryBlock codeBlock = new MemoryBlock(size);
+            ulong threadStartCodeOffset = codeWriter.Write(threadStartCode);
+            ulong getTpidrEl0CodeOffset = codeWriter.Write(_getTpidrEl0Code);
+            ulong ehSuspendCodeOffset = codeWriter.Write(ehSuspendCode);
 
-            codeBlock.Write(0, MemoryMarshal.Cast<uint, byte>(NceAsmTable.ThreadStartCode.AsSpan()));
-            codeBlock.Write(getTpidrEl0CodeOffset, MemoryMarshal.Cast<uint, byte>(NceAsmTable.GetTpidrEl0Code.AsSpan()));
+            MemoryBlock codeBlock = null;
 
             NativeSignalHandler.InitializeSignalHandler((IntPtr oldSignalHandlerSegfaultPtr, IntPtr signalHandlerPtr) =>
             {
-                uint[] ehEntryCode = NcePatcher.GenerateExceptionHandlerEntry(oldSignalHandlerSegfaultPtr, signalHandlerPtr);
-                codeBlock.Write(enEntryCodeOffset, MemoryMarshal.Cast<uint, byte>(ehEntryCode.AsSpan()));
-                codeBlock.Reprotect(0, size, MemoryPermission.ReadAndExecute, true);
-                return codeBlock.GetPointer(enEntryCodeOffset, ehEntryCodeSize);
-            }, NceThreadPal.UnixSuspendSignal);
+                uint[] ehWrapperCode = NcePatcher.GenerateWrapperExceptionHandler(oldSignalHandlerSegfaultPtr, signalHandlerPtr);
+                ulong ehWrapperCodeOffset = codeWriter.Write(ehWrapperCode);
+                codeBlock = codeWriter.CreateMemoryBlock();
+                return codeBlock.GetPointer(ehWrapperCodeOffset, (ulong)ehWrapperCode.Length * sizeof(uint));
+            });
 
-            _threadStart = Marshal.GetDelegateForFunctionPointer<ThreadStart>(codeBlock.GetPointer(0, threadStartCodeSize));
-            _getTpidrEl0 = Marshal.GetDelegateForFunctionPointer<GetTpidrEl0>(codeBlock.GetPointer(getTpidrEl0CodeOffset, getTpidrEl0CodeSize));
+            NativeSignalHandler.InstallUnixSignalHandler(NceThreadPal.UnixSuspendSignal, codeBlock.GetPointer(ehSuspendCodeOffset, (ulong)ehSuspendCode.Length * sizeof(uint)));
+
+            _threadStart = Marshal.GetDelegateForFunctionPointer<ThreadStart>(codeBlock.GetPointer(threadStartCodeOffset, (ulong)threadStartCode.Length * sizeof(uint)));
+            _getTpidrEl0 = Marshal.GetDelegateForFunctionPointer<GetTpidrEl0>(codeBlock.GetPointer(getTpidrEl0CodeOffset, (ulong)_getTpidrEl0Code.Length * sizeof(uint)));
             _codeBlock = codeBlock;
         }
 
@@ -66,7 +115,9 @@ namespace Ryujinx.Cpu.Nce
             int tableIndex = NceThreadTable.Register(_getTpidrEl0(), nec.NativeContextPtr);
 
             nec.SetStartAddress(address);
+            nec.RegisterAlternateStack();
             _threadStart(nec.NativeContextPtr);
+            nec.UnregisterAlternateStack();
 
             NceThreadTable.Unregister(tableIndex);
         }
