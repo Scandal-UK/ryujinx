@@ -1,11 +1,16 @@
 using ARMeilleure.State;
+using Ryujinx.Cpu.Signal;
+using Ryujinx.Memory;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Ryujinx.Cpu.Nce
 {
     class NceExecutionContext : IExecutionContext
     {
+        private const ulong AlternateStackSize = 0x4000;
+
         private readonly NceNativeContext _context;
         private readonly ExceptionCallbacks _exceptionCallbacks;
 
@@ -60,6 +65,8 @@ namespace Ryujinx.Cpu.Nce
         private delegate bool SupervisorCallHandler(int imm);
         private SupervisorCallHandler _svcHandler;
 
+        private MemoryBlock _alternateStackMemory;
+
         public NceExecutionContext(ExceptionCallbacks exceptionCallbacks)
         {
             _svcHandler = OnSupervisorCall;
@@ -97,6 +104,22 @@ namespace Ryujinx.Cpu.Nce
             storage.HostThreadHandle = NceThreadPal.GetCurrentThreadHandle();
         }
 
+        public void RegisterAlternateStack()
+        {
+            // We need to use an alternate stack to handle the suspend signal,
+            // as the guest stack may be in a state that is not suitable for the signal handlers.
+
+            _alternateStackMemory = new MemoryBlock(AlternateStackSize);
+            NativeSignalHandler.InstallUnixAlternateStackForCurrentThread(_alternateStackMemory.GetPointer(0UL, AlternateStackSize), AlternateStackSize);
+        }
+
+        public void UnregisterAlternateStack()
+        {
+            NativeSignalHandler.UninstallUnixAlternateStackForCurrentThread();
+            _alternateStackMemory.Dispose();
+            _alternateStackMemory = null;
+        }
+
         public bool OnSupervisorCall(int imm)
         {
             _exceptionCallbacks.SupervisorCallback?.Invoke(this, 0UL, imm);
@@ -114,7 +137,18 @@ namespace Ryujinx.Cpu.Nce
             IntPtr threadHandle = _context.GetStorage().HostThreadHandle;
             if (threadHandle != IntPtr.Zero)
             {
-                NceThreadPal.SuspendThread(threadHandle);
+                // Bit 0 set means that the thread is currently running managed code.
+                // Bit 1 set means that an interrupt was requested for the thread.
+                // This, we only need to send the suspend signal if the value was 0 (not running managed code,
+                // and no interrupt was requested before).
+
+                ref uint inManaged = ref _context.GetStorage().InManaged;
+                uint oldValue = Interlocked.Or(ref inManaged, 2);
+
+                if (oldValue == 0)
+                {
+                    NceThreadPal.SuspendThread(threadHandle);
+                }
             }
         }
 
