@@ -3,6 +3,7 @@ using Ryujinx.Cpu;
 using Ryujinx.Graphics.Gpu;
 using Ryujinx.HLE.HOS.Kernel.Process;
 using Ryujinx.Memory;
+using System;
 
 namespace Ryujinx.HLE.HOS
 {
@@ -79,11 +80,6 @@ namespace Ryujinx.HLE.HOS
         public void InvalidateCacheRegion(ulong address, ulong size)
         {
             _cpuContext.InvalidateCacheRegion(address, size);
-        }
-
-        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
-        {
-            _cpuContext.PatchCodeForNce(textAddress, textSize, patchRegionAddress, patchRegionSize);
         }
 
         public void Dispose()

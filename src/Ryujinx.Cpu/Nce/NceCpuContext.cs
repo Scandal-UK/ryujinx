@@ -128,12 +128,6 @@ namespace Ryujinx.Cpu.Nce
         }
 
         /// <inheritdoc/>
-        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
-        {
-            NcePatcher.Patch(_memoryManager, textAddress, textSize, patchRegionAddress, patchRegionSize);
-        }
-
-        /// <inheritdoc/>
         public IDiskCacheLoadState LoadDiskCache(string titleIdText, string displayVersion, bool enabled)
         {
             return new DiskCacheLoadState();

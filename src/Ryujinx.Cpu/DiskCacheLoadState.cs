@@ -1,6 +1,6 @@
 using System;
 
-namespace Ryujinx.Cpu.Jit
+namespace Ryujinx.Cpu
 {
     class DiskCacheLoadState : IDiskCacheLoadState
     {
