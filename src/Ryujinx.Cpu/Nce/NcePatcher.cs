@@ -1,115 +1,70 @@
 using Ryujinx.Cpu.Nce.Arm64;
-using Ryujinx.Common;
 using Ryujinx.Common.Logging;
-using Ryujinx.Memory;
 using System;
+using System.Runtime.InteropServices;
 
 namespace Ryujinx.Cpu.Nce
 {
-    static class NcePatcher
+    public static class NcePatcher
     {
         private const int ScratchBaseReg = 19;
 
         private const uint IntCalleeSavedRegsMask = 0x1ff80000; // X19 to X28
         private const uint FpCalleeSavedRegsMask = 0xff00; // D8 to D15
 
-        private struct Context
+        public static NceCpuCodePatch CreatePatch(ReadOnlySpan<byte> textSection)
         {
-            public readonly ICpuMemoryManager MemoryManager;
-            public ulong PatchRegionAddress;
-            public ulong PatchRegionSize;
+            NceCpuCodePatch codePatch = new();
 
-            public Context(ICpuMemoryManager memoryManager, ulong patchRegionAddress, ulong patchRegionSize)
+            var textUint = MemoryMarshal.Cast<byte, uint>(textSection);
+
+            for (int i = 0; i < textUint.Length; i++)
             {
-                MemoryManager = memoryManager;
-                PatchRegionAddress = patchRegionAddress;
-                PatchRegionSize = patchRegionSize;
-            }
-
-            public ulong GetPatchWriteAddress(int length)
-            {
-                ulong byteLength = (ulong)length * 4;
-
-                if (PatchRegionSize < byteLength)
-                {
-                    throw new Exception("No enough space for patch.");
-                }
-
-                ulong address = PatchRegionAddress;
-                PatchRegionAddress += byteLength;
-                PatchRegionSize -= byteLength;
-
-                return address;
-            }
-        }
-
-        public static void Patch(
-            ICpuMemoryManager memoryManager,
-            ulong textAddress,
-            ulong textSize,
-            ulong patchRegionAddress,
-            ulong patchRegionSize)
-        {
-            Context context = new Context(memoryManager, patchRegionAddress, patchRegionSize);
-
-            ulong address = textAddress;
-            while (address < textAddress + textSize)
-            {
-                uint inst = memoryManager.Read<uint>(address);
+                uint inst = textUint[i];
+                ulong address = (ulong)i * sizeof(uint);
 
                 if ((inst & ~(0xffffu << 5)) == 0xd4000001u) // svc #0
                 {
                     uint svcId = (ushort)(inst >> 5);
-                    PatchInstruction(memoryManager, address, WriteSvcPatch(ref context, address, svcId));
+                    codePatch.AddCode(i, WriteSvcPatch(svcId));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched SVC #{svcId} at 0x{address:X}.");
                 }
                 else if ((inst & ~0x1f) == 0xd53bd060) // mrs x0, tpidrro_el0
                 {
                     uint rd = inst & 0x1f;
-                    PatchInstruction(memoryManager, address, WriteMrsTpidrroEl0Patch(ref context, address, rd));
+                    codePatch.AddCode(i, WriteMrsTpidrroEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MRS x{rd}, tpidrro_el0 at 0x{address:X}.");
                 }
                 else if ((inst & ~0x1f) == 0xd53bd040) // mrs x0, tpidr_el0
                 {
                     uint rd = inst & 0x1f;
-                    PatchInstruction(memoryManager, address, WriteMrsTpidrEl0Patch(ref context, address, rd));
+                    codePatch.AddCode(i, WriteMrsTpidrEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MRS x{rd}, tpidr_el0 at 0x{address:X}.");
                 }
                 else if ((inst & ~0x1f) == 0xd53b0020 && OperatingSystem.IsMacOS()) // mrs x0, ctr_el0
                 {
                     uint rd = inst & 0x1f;
-                    PatchInstruction(memoryManager, address, WriteMrsCtrEl0Patch(ref context, address, rd));
+                    codePatch.AddCode(i, WriteMrsCtrEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MRS x{rd}, ctr_el0 at 0x{address:X}.");
                 }
                 else if ((inst & ~0x1f) == 0xd53be020) // mrs x0, cntpct_el0
                 {
                     uint rd = inst & 0x1f;
-                    PatchInstruction(memoryManager, address, WriteMrsCntpctEl0Patch(ref context, address, rd));
+                    codePatch.AddCode(i, WriteMrsCntpctEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MRS x{rd}, cntpct_el0 at 0x{address:X}.");
                 }
                 else if ((inst & ~0x1f) == 0xd51bd040) // msr tpidr_el0, x0
                 {
                     uint rd = inst & 0x1f;
-                    PatchInstruction(memoryManager, address, WriteMsrTpidrEl0Patch(ref context, address, rd));
+                    codePatch.AddCode(i, WriteMsrTpidrEl0Patch(rd));
                     Logger.Debug?.Print(LogClass.Cpu, $"Patched MSR tpidr_el0, x{rd} at 0x{address:X}.");
                 }
-
-                address += 4;
             }
 
-            ulong patchRegionConsumed = BitUtils.AlignUp(context.PatchRegionAddress - patchRegionAddress, 0x1000UL);
-            if (patchRegionConsumed != 0)
-            {
-                memoryManager.Reprotect(patchRegionAddress, patchRegionConsumed, MemoryPermission.ReadAndExecute);
-            }
+            return codePatch;
         }
 
-        private static void PatchInstruction(ICpuMemoryManager memoryManager, ulong instructionAddress, ulong targetAddress)
-        {
-            memoryManager.Write(instructionAddress, 0x14000000u | GetImm26(instructionAddress, targetAddress));
-        }
-
-        private static ulong WriteSvcPatch(ref Context context, ulong svcAddress, uint svcId)
+        private static uint[] WriteSvcPatch(uint svcId)
         {
             Assembler asm = new();
 
@@ -147,31 +102,27 @@ namespace Ryujinx.Cpu.Nce
                 }
             }, 0xff);
 
-            ulong targetAddress = context.GetPatchWriteAddress(asm.CodeWords + sizeof(uint));
+            asm.B(0);
 
-            asm.B(GetOffset(targetAddress + (ulong)asm.CodeWords * sizeof(uint), svcAddress + sizeof(uint)));
-
-            WriteCode(context.MemoryManager, targetAddress, asm.GetCode());
-
-            return targetAddress;
+            return asm.GetCode();
         }
 
-        private static ulong WriteMrsTpidrroEl0Patch(ref Context context, ulong mrsAddress, uint rd)
+        private static uint[] WriteMrsTpidrroEl0Patch(uint rd)
         {
-            return WriteMrsContextRead(ref context, mrsAddress, rd, NceNativeContext.GetTpidrroEl0Offset());
+            return WriteMrsContextRead(rd, NceNativeContext.GetTpidrroEl0Offset());
         }
 
-        private static ulong WriteMrsTpidrEl0Patch(ref Context context, ulong mrsAddress, uint rd)
+        private static uint[] WriteMrsTpidrEl0Patch(uint rd)
         {
-            return WriteMrsContextRead(ref context, mrsAddress, rd, NceNativeContext.GetTpidrEl0Offset());
+            return WriteMrsContextRead(rd, NceNativeContext.GetTpidrEl0Offset());
         }
 
-        private static ulong WriteMrsCtrEl0Patch(ref Context context, ulong mrsAddress, uint rd)
+        private static uint[] WriteMrsCtrEl0Patch(uint rd)
         {
-            return WriteMrsContextRead(ref context, mrsAddress, rd, NceNativeContext.GetCtrEl0Offset());
+            return WriteMrsContextRead(rd, NceNativeContext.GetCtrEl0Offset());
         }
 
-        private static ulong WriteMrsCntpctEl0Patch(ref Context context, ulong mrsAddress, uint rd)
+        private static uint[] WriteMrsCntpctEl0Patch(uint rd)
         {
             Assembler asm = new();
 
@@ -188,16 +139,12 @@ namespace Ryujinx.Cpu.Nce
                 asm.LdrRiUn(Gpr((int)rd), ctx, NceNativeContext.GetTempStorageOffset());
             }, 1u << (int)rd);
 
-            ulong targetAddress = context.GetPatchWriteAddress(asm.CodeWords + sizeof(uint));
+            asm.B(0);
 
-            asm.B(GetOffset(targetAddress + (ulong)asm.CodeWords * sizeof(uint), mrsAddress + sizeof(uint)));
-
-            WriteCode(context.MemoryManager, targetAddress, asm.GetCode());
-
-            return targetAddress;
+            return asm.GetCode();
         }
 
-        private static ulong WriteMsrTpidrEl0Patch(ref Context context, ulong msrAddress, uint rd)
+        private static uint[] WriteMsrTpidrEl0Patch(uint rd)
         {
             Assembler asm = new();
 
@@ -213,16 +160,12 @@ namespace Ryujinx.Cpu.Nce
 
             rsr.WriteEpilogue(asm);
 
-            ulong targetAddress = context.GetPatchWriteAddress(asm.CodeWords + sizeof(uint));
+            asm.B(0);
 
-            asm.B(GetOffset(targetAddress + (ulong)asm.CodeWords * sizeof(uint), msrAddress + sizeof(uint)));
-
-            WriteCode(context.MemoryManager, targetAddress, asm.GetCode());
-
-            return targetAddress;
+            return asm.GetCode();
         }
 
-        private static ulong WriteMrsContextRead(ref Context context, ulong mrsAddress, uint rd, int contextOffset)
+        private static uint[] WriteMrsContextRead(uint rd, int contextOffset)
         {
             Assembler asm = new();
 
@@ -240,13 +183,9 @@ namespace Ryujinx.Cpu.Nce
 
             asm.LdrRiUn(Gpr((int)rd), Gpr((int)rd), 0);
 
-            ulong targetAddress = context.GetPatchWriteAddress(asm.CodeWords + sizeof(uint));
+            asm.B(0);
 
-            asm.B(GetOffset(targetAddress + (ulong)asm.CodeWords * sizeof(uint), mrsAddress + sizeof(uint)));
-
-            WriteCode(context.MemoryManager, targetAddress, asm.GetCode());
-
-            return targetAddress;
+            return asm.GetCode();
         }
 
         private static void WriteLoadContext(Assembler asm, Operand tmp0, Operand tmp1, Operand tmp2)
@@ -404,7 +343,7 @@ namespace Ryujinx.Cpu.Nce
             rsr.WriteEpilogue(asm);
         }
 
-        public static uint[] GenerateThreadStartCode()
+        internal static uint[] GenerateThreadStartCode()
         {
             Assembler asm = new();
 
@@ -434,7 +373,7 @@ namespace Ryujinx.Cpu.Nce
             return asm.GetCode();
         }
 
-        public static uint[] GenerateSuspendExceptionHandler()
+        internal static uint[] GenerateSuspendExceptionHandler()
         {
             Assembler asm = new();
 
@@ -486,7 +425,7 @@ namespace Ryujinx.Cpu.Nce
             return asm.GetCode();
         }
 
-        public static uint[] GenerateWrapperExceptionHandler(IntPtr oldSignalHandlerSegfaultPtr, IntPtr signalHandlerPtr)
+        internal static uint[] GenerateWrapperExceptionHandler(IntPtr oldSignalHandlerSegfaultPtr, IntPtr signalHandlerPtr)
         {
             Assembler asm = new();
 
@@ -659,14 +598,6 @@ namespace Ryujinx.Cpu.Nce
         private static RegisterSaveRestore CreateRegisterSaveRestoreForManaged()
         {
             return new RegisterSaveRestore((int)IntCalleeSavedRegsMask, unchecked((int)FpCalleeSavedRegsMask), OperandType.FP64, hasCall: true);
-        }
-
-        private static void WriteCode(ICpuMemoryManager memoryManager, ulong address, uint[] code)
-        {
-            for (int i = 0; i < code.Length; i++)
-            {
-                memoryManager.Write(address + (ulong)i * sizeof(uint), code[i]);
-            }
         }
     }
 }

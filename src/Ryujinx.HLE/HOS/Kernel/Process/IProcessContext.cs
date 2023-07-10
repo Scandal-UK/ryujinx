@@ -14,6 +14,5 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         IExecutionContext CreateExecutionContext(ExceptionCallbacks exceptionCallbacks);
         void Execute(IExecutionContext context, ulong codeAddress);
         void InvalidateCacheRegion(ulong address, ulong size);
-        void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize);
     }
 }

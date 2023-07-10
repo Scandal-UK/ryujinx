@@ -44,6 +44,16 @@ namespace Ryujinx.HLE.HOS
             _codeSize = codeSize;
         }
 
+        public static NceCpuCodePatch CreateCodePatchForNce(KernelContext context, bool for64Bit, ReadOnlySpan<byte> textSection)
+        {
+            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && for64Bit && context.Device.Configuration.UseHypervisor && !OperatingSystem.IsMacOS())
+            {
+                return NcePatcher.CreatePatch(textSection);
+            }
+
+            return null;
+        }
+
         public IProcessContext Create(KernelContext context, ulong pid, ulong addressSpaceSize, InvalidAccessHandler invalidAccessHandler, bool for64Bit)
         {
             IArmProcessContext processContext;

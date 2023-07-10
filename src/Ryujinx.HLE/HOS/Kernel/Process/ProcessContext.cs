@@ -31,10 +31,6 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
         {
         }
 
-        public void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize)
-        {
-        }
-
         public void Dispose()
         {
         }

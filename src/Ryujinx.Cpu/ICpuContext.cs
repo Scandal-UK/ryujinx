@@ -38,8 +38,6 @@ namespace Ryujinx.Cpu
         /// <param name="size">Size of the region to be invalidated</param>
         void InvalidateCacheRegion(ulong address, ulong size);
 
-        void PatchCodeForNce(ulong textAddress, ulong textSize, ulong patchRegionAddress, ulong patchRegionSize);
-
         /// <summary>
         /// Loads cached code from disk for a given application.
         /// </summary>
