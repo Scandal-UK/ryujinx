@@ -1603,36 +1603,42 @@ namespace Ryujinx.Graphics.Vulkan
 
             DynamicState.ReplayIfDirty(Gd, CommandBuffer);
 
-            if (_needsIndexBufferRebind && _indexBufferPattern == null)
+            // Setting graphics state with a compute pipeline bound crashes the Adreno driver.
+            if (pbp == PipelineBindPoint.Graphics)
             {
-                _indexBuffer.BindIndexBuffer(Gd, Cbs);
-                _needsIndexBufferRebind = false;
-            }
+                DynamicState.ReplayIfDirty(Gd.Api, CommandBuffer);
 
-            if (_needsTransformFeedbackBuffersRebind)
-            {
-                PauseTransformFeedbackInternal();
-
-                for (int i = 0; i < Constants.MaxTransformFeedbackBuffers; i++)
+                if (_needsIndexBufferRebind && _indexBufferPattern == null)
                 {
-                    _transformFeedbackBuffers[i].BindTransformFeedbackBuffer(Gd, Cbs, (uint)i);
+                    _indexBuffer.BindIndexBuffer(Gd, Cbs);
+                    _needsIndexBufferRebind = false;
                 }
 
-                _needsTransformFeedbackBuffersRebind = false;
-            }
-
-            if (_vertexBuffersDirty != 0)
-            {
-                while (_vertexBuffersDirty != 0)
+                if (_needsTransformFeedbackBuffersRebind)
                 {
-                    int i = BitOperations.TrailingZeroCount(_vertexBuffersDirty);
+                    PauseTransformFeedbackInternal();
 
-                    _vertexBuffers[i].BindVertexBuffer(Gd, Cbs, (uint)i, ref _newState, _vertexBufferUpdater);
+                    for (int i = 0; i < Constants.MaxTransformFeedbackBuffers; i++)
+                    {
+                        _transformFeedbackBuffers[i].BindTransformFeedbackBuffer(Gd, Cbs, (uint)i);
+                    }
 
-                    _vertexBuffersDirty &= ~(1UL << i);
+                    _needsTransformFeedbackBuffersRebind = false;
                 }
 
-                _vertexBufferUpdater.Commit(Cbs);
+                if (_vertexBuffersDirty != 0)
+                {
+                    while (_vertexBuffersDirty != 0)
+                    {
+                        int i = BitOperations.TrailingZeroCount(_vertexBuffersDirty);
+
+                        _vertexBuffers[i].BindVertexBuffer(Gd, Cbs, (uint)i, ref _newState, _vertexBufferUpdater);
+
+                        _vertexBuffersDirty &= ~(1UL << i);
+                    }
+
+                    _vertexBufferUpdater.Commit(Cbs);
+                }
             }
 
             if (_bindingBarriersDirty)
