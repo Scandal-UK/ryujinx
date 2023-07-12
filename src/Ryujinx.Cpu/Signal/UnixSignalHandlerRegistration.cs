@@ -43,6 +43,7 @@ namespace Ryujinx.Cpu.Signal
         private const int SA_SIGINFO = 0x00000004;
         private const int SA_ONSTACK = 0x08000000;
         private const int SS_DISABLE = 2;
+        private const int SS_AUTODISARM = 1 << 31;
 
         [LibraryImport("libc", SetLastError = true)]
         private static partial int sigaction(int signum, ref SigAction sigAction, out SigAction oldAction);
@@ -102,7 +103,7 @@ namespace Ryujinx.Cpu.Signal
                 SigActionBionic sig = new()
                 {
                     sa_handler = action,
-                    sa_flags = SA_SIGINFO
+                    sa_flags = SA_SIGINFO | SA_ONSTACK,
                 };
 
                 sigemptyset(ref sig.sa_mask);
@@ -122,7 +123,7 @@ namespace Ryujinx.Cpu.Signal
                 SigAction sig = new SigAction
                 {
                     sa_handler = action,
-                    sa_flags = SA_SIGINFO
+                    sa_flags = SA_SIGINFO | SA_ONSTACK,
                 };
 
                 sigemptyset(ref sig.sa_mask);
@@ -153,6 +154,7 @@ namespace Ryujinx.Cpu.Signal
             Stack stack = new()
             {
                 ss_sp = stackPtr,
+                ss_flags = SS_AUTODISARM,
                 ss_size = (IntPtr)stackSize
             };
 
@@ -197,7 +199,7 @@ namespace Ryujinx.Cpu.Signal
 
                 if (oldu.sa_handler != IntPtr.Zero)
                 {
-                    throw new SystemException($"SIG{sigNum} is already in use.");
+                    throw new InvalidOperationException($"SIG{sigNum} is already in use.");
                 }
 
                 if (result != 0)
@@ -219,7 +221,7 @@ namespace Ryujinx.Cpu.Signal
 
                 if (oldu.sa_handler != IntPtr.Zero)
                 {
-                    throw new SystemException($"SIG{sigNum} is already in use.");
+                    throw new InvalidOperationException($"SIG{sigNum} is already in use.");
                 }
 
                 if (result != 0)

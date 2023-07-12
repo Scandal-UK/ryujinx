@@ -115,9 +115,8 @@ namespace Ryujinx.Cpu.Nce
             int tableIndex = NceThreadTable.Register(_getTpidrEl0(), nec.NativeContextPtr);
 
             nec.SetStartAddress(address);
-            nec.RegisterAlternateStack();
             _threadStart(nec.NativeContextPtr);
-            nec.UnregisterAlternateStack();
+            nec.Exit();
 
             NceThreadTable.Unregister(tableIndex);
         }

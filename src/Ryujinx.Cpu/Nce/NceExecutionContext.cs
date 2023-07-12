@@ -102,9 +102,18 @@ namespace Ryujinx.Cpu.Nce
             ref var storage = ref _context.GetStorage();
             storage.X[30] = address;
             storage.HostThreadHandle = NceThreadPal.GetCurrentThreadHandle();
+
+            RegisterAlternateStack();
         }
 
-        public void RegisterAlternateStack()
+        public void Exit()
+        {
+            _context.GetStorage().HostThreadHandle = IntPtr.Zero;
+
+            UnregisterAlternateStack();
+        }
+
+        private void RegisterAlternateStack()
         {
             // We need to use an alternate stack to handle the suspend signal,
             // as the guest stack may be in a state that is not suitable for the signal handlers.
@@ -113,7 +122,7 @@ namespace Ryujinx.Cpu.Nce
             NativeSignalHandler.InstallUnixAlternateStackForCurrentThread(_alternateStackMemory.GetPointer(0UL, AlternateStackSize), AlternateStackSize);
         }
 
-        public void UnregisterAlternateStack()
+        private void UnregisterAlternateStack()
         {
             NativeSignalHandler.UninstallUnixAlternateStackForCurrentThread();
             _alternateStackMemory.Dispose();
