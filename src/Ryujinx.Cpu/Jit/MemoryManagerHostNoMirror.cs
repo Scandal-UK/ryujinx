@@ -1,4 +1,4 @@
-﻿using ARMeilleure.Memory;
+using ARMeilleure.Memory;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Range;
 using Ryujinx.Memory.Tracking;
@@ -7,17 +7,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Ryujinx.Cpu.Nce
+namespace Ryujinx.Cpu.Jit
 {
     /// <summary>
     /// Represents a CPU memory manager which maps guest virtual memory directly onto a host virtual region.
     /// </summary>
-    public sealed class MemoryManagerNative : VirtualMemoryManagerRefCountedBase, ICpuMemoryManager, IVirtualMemoryManagerTracked, IWritableBlock
+    public sealed class MemoryManagerHostNoMirror : VirtualMemoryManagerRefCountedBase, ICpuMemoryManager, IVirtualMemoryManagerTracked, IWritableBlock
     {
-        private readonly MemoryBlock _addressSpace;
+        private readonly InvalidAccessHandler _invalidAccessHandler;
+        private readonly bool _unsafeMode;
 
+        private readonly MemoryBlock _addressSpace;
         private readonly MemoryBlock _backingMemory;
         private readonly PageTable<ulong> _pageTable;
+
+        public int AddressSpaceBits { get; }
+        protected override ulong AddressSpaceSize { get; }
 
         private readonly MemoryEhMeilleure _memoryEh;
 
@@ -26,40 +31,37 @@ namespace Ryujinx.Cpu.Nce
         /// <inheritdoc/>
         public bool UsesPrivateAllocations => false;
 
-        public IntPtr PageTablePointer => IntPtr.Zero;
+        public IntPtr PageTablePointer => _addressSpace.Pointer;
 
-        public ulong ReservedSize => (ulong)_addressSpace.Pointer.ToInt64();
-
-        public MemoryManagerType Type => MemoryManagerType.HostMappedUnsafe;
+        public MemoryManagerType Type => _unsafeMode ? MemoryManagerType.HostMappedUnsafe : MemoryManagerType.HostMapped;
 
         public MemoryTracking Tracking { get; }
 
         public event Action<ulong, ulong> UnmapEvent;
 
-        public int AddressSpaceBits { get; }
-        protected override ulong AddressSpaceSize { get; }
-
         /// <summary>
         /// Creates a new instance of the host mapped memory manager.
         /// </summary>
-        /// <param name="addressSpace">Address space memory block</param>
-        /// <param name="backingMemory">Physical backing memory where virtual memory will be mapped to</param>
-        /// <param name="addressSpaceSize">Size of the address space</param>
+        /// <param name="addressSpace">Address space instance to use</param>
+        /// <param name="unsafeMode">True if unmanaged access should not be masked (unsafe), false otherwise.</param>
         /// <param name="invalidAccessHandler">Optional function to handle invalid memory accesses</param>
-        public MemoryManagerNative(
+        public MemoryManagerHostNoMirror(
             MemoryBlock addressSpace,
             MemoryBlock backingMemory,
-            ulong addressSpaceSize,
-            InvalidAccessHandler invalidAccessHandler = null)
+            bool unsafeMode,
+            InvalidAccessHandler invalidAccessHandler)
         {
+            _addressSpace = addressSpace;
             _backingMemory = backingMemory;
             _pageTable = new PageTable<ulong>();
-            AddressSpaceSize = addressSpaceSize;
+            _invalidAccessHandler = invalidAccessHandler;
+            _unsafeMode = unsafeMode;
+            AddressSpaceSize = addressSpace.Size;
 
             ulong asSize = PageSize;
             int asBits = PageBits;
 
-            while (asSize < addressSpaceSize)
+            while (asSize < addressSpace.Size)
             {
                 asSize <<= 1;
                 asBits++;
@@ -69,10 +71,21 @@ namespace Ryujinx.Cpu.Nce
 
             _pages = new ManagedPageFlags(asBits);
 
-            _addressSpace = addressSpace;
+            Tracking = new MemoryTracking(this, (int)MemoryBlock.GetPageSize(), invalidAccessHandler);
+            _memoryEh = new MemoryEhMeilleure(addressSpace, null, Tracking);
+        }
 
-            Tracking = new MemoryTracking(this, PageSize, invalidAccessHandler);
-            _memoryEh = new MemoryEhMeilleure(asSize, Tracking);
+        /// <summary>
+        /// Ensures the combination of virtual address and size is part of the addressable space and fully mapped.
+        /// </summary>
+        /// <param name="va">Virtual address of the range</param>
+        /// <param name="size">Size of the range in bytes</param>
+        private void AssertMapped(ulong va, ulong size)
+        {
+            if (!ValidateAddressAndSize(va, size) || !_pages.IsRangeMapped(va, size))
+            {
+                throw new InvalidMemoryRegionException($"Not mapped: va=0x{va:X16}, size=0x{size:X16}");
+            }
         }
 
         /// <inheritdoc/>
@@ -80,7 +93,7 @@ namespace Ryujinx.Cpu.Nce
         {
             AssertValidAddressAndSize(va, size);
 
-            _addressSpace.MapView(_backingMemory, pa, AddressToOffset(va), size);
+            _addressSpace.MapView(_backingMemory, pa, va, size);
             _pages.AddMapping(va, size);
             PtMap(va, pa, size);
 
@@ -109,7 +122,7 @@ namespace Ryujinx.Cpu.Nce
 
             _pages.RemoveMapping(va, size);
             PtUnmap(va, size);
-            _addressSpace.UnmapView(_backingMemory, AddressToOffset(va), size);
+            _addressSpace.UnmapView(_backingMemory, va, size);
         }
 
         private void PtUnmap(ulong va, ulong size)
@@ -126,7 +139,6 @@ namespace Ryujinx.Cpu.Nce
         /// <inheritdoc/>
         public void Reprotect(ulong va, ulong size, MemoryPermission permission)
         {
-            _addressSpace.Reprotect(AddressToOffset(va), size, permission);
         }
 
         public ref T GetRef<T>(ulong va) where T : unmanaged
@@ -268,7 +280,7 @@ namespace Ryujinx.Cpu.Nce
         {
             if (guest)
             {
-                _addressSpace.Reprotect(AddressToOffset(va), size, protection, false);
+                _addressSpace.Reprotect(va, size, protection, false);
             }
             else
             {
@@ -292,16 +304,6 @@ namespace Ryujinx.Cpu.Nce
         public SmartMultiRegionHandle BeginSmartGranularTracking(ulong address, ulong size, ulong granularity, int id)
         {
             return Tracking.BeginSmartGranularTracking(address, size, granularity, id);
-        }
-
-        private ulong AddressToOffset(ulong address)
-        {
-            if (address < ReservedSize)
-            {
-                throw new ArgumentException($"Invalid address 0x{address:x16}");
-            }
-
-            return address - ReservedSize;
         }
 
         /// <summary>

@@ -221,11 +221,12 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                     break;
 
                 case ProcessCreationFlags.AddressSpace64Bit:
+                    ulong reservedAddressSpaceSize = _reservedAddressSpaceSize;
                     if (_reservedAddressSpaceSize < addrSpaceEnd)
                     {
-                        int addressSpaceWidth = (int)ulong.Log2(_reservedAddressSpaceSize);
+                        int addressSpaceWidth = (int)ulong.Log2(reservedAddressSpaceSize);
 
-                        aliasRegion.Size = 1UL << (addressSpaceWidth - 3);
+                        aliasRegion.Size = reservedAddressSpaceSize >= 0x1800000000 ? 0x1000000000 : 1UL << (addressSpaceWidth - 3);
                         heapRegion.Size = 0x180000000;
                         stackRegion.Size = 1UL << (addressSpaceWidth - 8);
                         tlsIoRegion.Size = 1UL << (addressSpaceWidth - 3);
@@ -234,7 +235,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Memory
                         stackAndTlsIoStart = 0;
                         stackAndTlsIoEnd = 0;
                         AslrRegionStart = Math.Max(reservedSize, 0x8000000);
-                        addrSpaceEnd = reservedSize + (1UL << addressSpaceWidth);
+                        addrSpaceEnd = reservedSize + reservedAddressSpaceSize;
                         AslrRegionEnd = addrSpaceEnd;
                     }
                     else
