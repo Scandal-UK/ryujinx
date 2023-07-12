@@ -1,4 +1,4 @@
-using LibHac.Account;
+﻿using LibHac.Account;
 using LibHac.Common;
 using LibHac.Fs;
 using LibHac.Fs.Fsa;
@@ -252,7 +252,7 @@ namespace Ryujinx.HLE.Loaders.Processes
             ulong argsStart = 0;
             uint argsSize = 0;
             ulong codeStart = ((meta.Flags & 1) != 0 ? 0x8000000UL : 0x200000UL) + CodeStartOffset;
-            uint codeSize = 0;
+            ulong codeSize = 0;
 
             var buildIds = executables.Select(e => (e switch
             {
