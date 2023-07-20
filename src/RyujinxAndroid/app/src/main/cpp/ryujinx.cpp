@@ -17,6 +17,31 @@
 //    }
 
 #include "ryuijnx.h"
+#include "pthread.h"
+#include <chrono>
+
+jmethodID _updateFrameTime;
+JNIEnv* _rendererEnv = nullptr;
+
+std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> _currentTimePoint;
+
+JNIEnv* getEnv(bool isRenderer){
+    JNIEnv* env;
+    if(isRenderer){
+        env = _rendererEnv;
+    }
+
+    if(env != nullptr)
+        return env;
+
+    auto result = _vm->AttachCurrentThread(&env, NULL);
+
+    return env;
+}
+
+void detachEnv(){
+    auto result = _vm->DetachCurrentThread();
+}
 
 extern "C"
 {
@@ -128,4 +153,39 @@ jstring createString(
 }
 
 
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_MainActivity_getRenderingThreadId(JNIEnv *env, jobject thiz) {
+    return _currentRenderingThreadId;
+}
+extern "C"
+void setRenderingThread(){
+    auto currentId = pthread_self();
+
+    _currentRenderingThreadId = currentId;
+    _renderingThreadId = currentId;
+
+    _currentTimePoint = std::chrono::high_resolution_clock::now();
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_ryujinx_android_MainActivity_initVm(JNIEnv *env, jobject thiz) {
+    JavaVM* vm = nullptr;
+    auto success = env->GetJavaVM(&vm);
+    _vm = vm;
+    _mainActivity = thiz;
+    _mainActivityClass = env->GetObjectClass(thiz);
+}
+
+extern "C"
+void onFrameEnd(double time){
+    auto env = getEnv(true);
+    auto cl = env->FindClass("org/ryujinx/android/MainActivity");
+    _updateFrameTime = env->GetStaticMethodID( cl , "updateRenderSessionPerformance", "(J)V");
+
+    auto now = std::chrono::high_resolution_clock::now();
+    auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(now-_currentTimePoint).count();
+    env->CallStaticVoidMethod(cl, _updateFrameTime,
+                              nano);
 }

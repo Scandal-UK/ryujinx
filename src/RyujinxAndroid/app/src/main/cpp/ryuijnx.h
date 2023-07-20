@@ -36,4 +36,10 @@ void* _ryujinxNative = NULL;
 // Ryujinx imported functions
 bool (*initialize)(char*) = NULL;
 
+long _renderingThreadId = 0;
+long _currentRenderingThreadId = 0;
+JavaVM* _vm = nullptr;
+jobject _mainActivity = nullptr;
+jclass _mainActivityClass = nullptr;
+
 #endif //RYUJINXNATIVE_RYUIJNX_H

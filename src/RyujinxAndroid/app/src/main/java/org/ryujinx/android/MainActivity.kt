@@ -1,5 +1,6 @@
 package org.ryujinx.android
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -8,6 +9,8 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,28 +32,43 @@ import org.ryujinx.android.views.MainView
 
 
 class MainActivity : ComponentActivity() {
-    private var mainViewModel: MainViewModel? = null
+    var physicalControllerManager: PhysicalControllerManager
     private var _isInit: Boolean = false
     var storageHelper: SimpleStorageHelper? = null
     companion object {
+        var mainViewModel: MainViewModel? = null
         var AppPath : String?
         var StorageHelper: SimpleStorageHelper? = null
         init {
             AppPath = ""
         }
+
+        @JvmStatic
+        fun updateRenderSessionPerformance(gameTime : Long)
+        {
+            if(gameTime <= 0)
+                return
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mainViewModel?.performanceManager?.updateRenderingSessionTime(gameTime)
+            }
+        }
     }
 
     init {
+        physicalControllerManager = PhysicalControllerManager(this)
         storageHelper = SimpleStorageHelper(this)
         StorageHelper = storageHelper
+        System.loadLibrary("ryujinxjni")
+        initVm()
     }
+
+    external fun getRenderingThreadId() : Long
+    external fun initVm()
 
     fun setFullScreen() :Unit {
         requestedOrientation =
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-        window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-
-        WindowCompat.setDecorFitsSystemWindows(window,false)
+            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         var insets = WindowCompat.getInsetsController(window, window.decorView)
 
@@ -79,6 +97,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
+    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
+        event?.apply {
+            return physicalControllerManager.onKeyEvent(this)
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent?): Boolean {
+        ev?.apply {
+            physicalControllerManager.onMotionEvent(this)
+        }
+        return super.dispatchGenericMotionEvent(ev)
+    }
+
     private fun initialize() : Unit
     {
         if(_isInit)
@@ -93,6 +126,9 @@ class MainActivity : ComponentActivity() {
         AppPath = this.getExternalFilesDir(null)!!.absolutePath
 
         initialize()
+
+        window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        WindowCompat.setDecorFitsSystemWindows(window,false)
 
         if(if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 !Environment.isExternalStorageManager()

@@ -1,13 +1,10 @@
 package org.ryujinx.android
 
 import android.content.Context
-import android.os.ParcelFileDescriptor
+import android.os.Build
 import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
@@ -15,6 +12,7 @@ import kotlin.concurrent.thread
 import kotlin.math.roundToInt
 
 class GameHost(context: Context?, val controller: GameController, val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+    private var _renderingThreadWatcher: Thread? = null
     private var _height: Int = 0
     private var _width: Int = 0
     private var _updateThread: Thread? = null
@@ -33,26 +31,6 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
 
     init {
         holder.addCallback(this)
-    }
-
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        if (_isStarted)
-            return  when (event!!.actionMasked) {
-                MotionEvent.ACTION_MOVE -> {
-                    _nativeRyujinx.inputSetTouchPoint(event.x.roundToInt(), event.y.roundToInt())
-                    true
-                }
-                MotionEvent.ACTION_DOWN -> {
-                    _nativeRyujinx.inputSetTouchPoint(event.x.roundToInt(), event.y.roundToInt())
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    _nativeRyujinx.inputReleaseTouchPoint()
-                    true
-                }
-                else -> super.onTouchEvent(event)
-            }
-        return super.onTouchEvent(event)
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
@@ -132,7 +110,16 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
 
         _nativeRyujinx.inputInitialize(width, height)
 
-        controller.connect()
+        if(!settings.useVirtualController){
+            controller.setVisible(false)
+        }
+        else{
+            controller.connect()
+        }
+
+        mainViewModel.activity.physicalControllerManager.connect()
+
+        //
 
         _nativeRyujinx.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
@@ -159,7 +146,25 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
     }
 
     private fun runGame() : Unit{
+        // RenderingThreadWatcher
+        _renderingThreadWatcher = thread(start = true) {
+            var threadId = 0L;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                mainViewModel.performanceManager?.enable()
+                while (_isStarted) {
+                    Thread.sleep(1000)
+                    var newthreadId = mainViewModel.activity.getRenderingThreadId()
+
+                    if (threadId != newthreadId) {
+                        mainViewModel.performanceManager?.closeCurrentRenderingSession()
+                    }
+                    threadId = newthreadId;
+                    if (threadId != 0L) {
+                        mainViewModel.performanceManager?.initializeRenderingSession(threadId)
+                    }
+                }
+            }
+        }
         _nativeRyujinx.graphicsRendererRunLoop()
     }
-
 }

@@ -36,6 +36,12 @@ namespace LibRyujinx
         [DllImport("libryujinxjni")]
         private extern static JStringLocalRef createString(JEnvRef jEnv, IntPtr ch);
 
+        [DllImport("libryujinxjni")]
+        internal extern static void setRenderingThread();
+
+        [DllImport("libryujinxjni")]
+        internal extern static void onFrameEnd(double time);
+
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
 
         [UnmanagedCallersOnly(EntryPoint = "JNI_OnLoad")]
@@ -279,6 +285,11 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsRendererRunLoop")]
         public static void JniRunLoopNative(JEnvRef jEnv, JObjectLocalRef jObj)
         {
+            SetSwapBuffersCallback(() =>
+            {
+                var time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
+                onFrameEnd(time);
+            });
             RunLoop();
         }
 
