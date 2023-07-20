@@ -112,6 +112,11 @@ namespace LibRyujinx
 
                     _isActive = true;
 
+                    if (Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+                    {
+                        setRenderingThread();
+                    }
+
                     while (_isActive)
                     {
                         if (_isStopped)

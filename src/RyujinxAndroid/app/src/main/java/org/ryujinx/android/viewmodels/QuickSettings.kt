@@ -10,6 +10,7 @@ class QuickSettings(val activity: MainActivity) {
     var enableDocked: Boolean
     var enableVsync: Boolean
     var useNce: Boolean
+    var useVirtualController: Boolean
     var isHostMapped: Boolean
     var enableShaderCache: Boolean
     var enableTextureRecompression: Boolean
@@ -27,5 +28,6 @@ class QuickSettings(val activity: MainActivity) {
         enableShaderCache = sharedPref.getBoolean("enableShaderCache", true)
         enableTextureRecompression = sharedPref.getBoolean("enableTextureRecompression", false)
         resScale = sharedPref.getFloat("resScale", 1f)
+        useVirtualController = sharedPref.getBoolean("useVirtualController", true)
     }
 }

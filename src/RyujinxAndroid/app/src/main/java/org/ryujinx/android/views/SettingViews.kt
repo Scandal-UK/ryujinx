@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
@@ -92,6 +94,9 @@ class SettingViews {
             var resScale = remember {
                 mutableStateOf(1f)
             }
+            var useVirtualController = remember {
+                mutableStateOf(true)
+            }
 
             if (!loaded.value) {
                 settingsViewModel.initializeState(
@@ -100,7 +105,8 @@ class SettingViews {
                     enableVsync, enableDocked, enablePtc, ignoreMissingServices,
                     enableShaderCache,
                     enableTextureRecompression,
-                    resScale
+                    resScale,
+                    useVirtualController
                 )
                 loaded.value = true
             }
@@ -121,7 +127,8 @@ class SettingViews {
                                     ignoreMissingServices,
                                     enableShaderCache,
                                     enableTextureRecompression,
-                                    resScale
+                                    resScale,
+                                    useVirtualController
                                 )
                                 settingsViewModel.navController.popBackStack()
                             }) {
@@ -136,7 +143,8 @@ class SettingViews {
                             useNce, enableVsync, enableDocked, enablePtc, ignoreMissingServices,
                             enableShaderCache,
                             enableTextureRecompression,
-                            resScale
+                            resScale,
+                            useVirtualController
                         )
                     }
                     ExpandableView(onCardArrowClick = { }, title = "System") {
@@ -429,6 +437,25 @@ class SettingViews {
                                 }
                             }
                             */
+                        }
+                    }
+                    ExpandableView(onCardArrowClick = { }, title = "Input") {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Show virtual controller",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = useVirtualController.value, onCheckedChange = {
+                                    useVirtualController.value = !useVirtualController.value
+                                })
+                            }
                         }
                     }
                 }

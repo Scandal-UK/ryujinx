@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.GraphicsLayerScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.flowWithLifecycle
@@ -45,9 +46,18 @@ typealias GamePad = RadialGamePad
 typealias GamePadConfig = RadialGamePadConfig
 
 class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = RyujinxNative()) {
+    private var controllerView: View? = null
     var leftGamePad: GamePad
     var rightGamePad: GamePad
     var controllerId: Int = -1
+    val isVisible : Boolean
+        get() {
+            controllerView?.apply {
+                return this.isVisible
+            }
+
+            return false;
+        }
 
     init {
         leftGamePad = GamePad(generateConfig(true), 16f, activity)
@@ -65,7 +75,6 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
     @Composable
     fun Compose(lifecycleScope: LifecycleCoroutineScope, lifecycle:Lifecycle) : Unit
     {
-
         AndroidView(
             modifier = Modifier.fillMaxSize(), factory = { context -> Create(context)})
 
@@ -81,14 +90,25 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
         }
     }
 
-    private  fun Create(context: Context) : View
+    private fun Create(context: Context) : View
     {
         var inflator = LayoutInflater.from(context);
         var view = inflator.inflate(R.layout.game_layout, null)
         view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(leftGamePad);
         view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(rightGamePad);
 
-        return view as View
+        controllerView = view
+
+        return controllerView as View
+    }
+
+    fun setVisible(isVisible: Boolean){
+        controllerView?.apply {
+            this.isVisible = isVisible
+
+            if(isVisible)
+                connect()
+        }
     }
 
     fun connect(){

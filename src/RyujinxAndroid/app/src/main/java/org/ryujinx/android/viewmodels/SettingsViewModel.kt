@@ -26,7 +26,8 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         ignoreMissingServices: MutableState<Boolean>,
         enableShaderCache: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
-        resScale: MutableState<Float>
+        resScale: MutableState<Float>,
+        useVirtualController: MutableState<Boolean>
     )
     {
 
@@ -39,6 +40,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         enableShaderCache.value = sharedPref.getBoolean("enableShaderCache", true)
         enableTextureRecompression.value = sharedPref.getBoolean("enableTextureRecompression", false)
         resScale.value = sharedPref.getFloat("resScale", 1f)
+        useVirtualController.value = sharedPref.getBoolean("useVirtualController", true)
     }
 
     fun save(
@@ -50,7 +52,8 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         ignoreMissingServices: MutableState<Boolean>,
         enableShaderCache: MutableState<Boolean>,
         enableTextureRecompression: MutableState<Boolean>,
-        resScale: MutableState<Float>
+        resScale: MutableState<Float>,
+        useVirtualController: MutableState<Boolean>
     ){
         var editor = sharedPref.edit()
 
@@ -63,6 +66,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         editor.putBoolean("enableShaderCache", enableShaderCache?.value ?: true)
         editor.putBoolean("enableTextureRecompression", enableTextureRecompression?.value ?: false)
         editor.putFloat("resScale", resScale?.value ?: 1f)
+        editor.putBoolean("useVirtualController", useVirtualController?.value ?: true)
 
         editor.apply()
     }
