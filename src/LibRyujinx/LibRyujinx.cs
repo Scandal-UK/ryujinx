@@ -65,6 +65,10 @@ namespace LibRyujinx
                     1000,
                     AsyncLogTargetOverflowAction.Block
                 ));
+
+                Logger.Notice.Print(LogClass.Application, "Initializing...");
+                Logger.Notice.Print(LogClass.Application, $"Using base path: {AppDataManager.BaseDirPath}");
+
                 SwitchDevice = new SwitchDevice();
             }
             catch (Exception ex)
@@ -416,6 +420,8 @@ namespace LibRyujinx
                 foreach (DirectoryEntryEx fileEntry in pfs.EnumerateEntries("/", "*.nca"))
                 {
                     using var ncaFile = new UniqueRef<IFile>();
+
+                    Logger.Info?.Print(LogClass.Application, $"Loading file from PFS: {fileEntry.FullPath}");
 
                     pfs.OpenFile(ref ncaFile.Ref, fileEntry.FullPath.ToU8Span(), OpenMode.Read).ThrowIfFailure();
 

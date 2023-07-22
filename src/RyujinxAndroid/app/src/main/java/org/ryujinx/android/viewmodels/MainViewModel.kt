@@ -23,14 +23,14 @@ class MainViewModel(val activity: MainActivity) {
 
     init {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            var hintService =
+            val hintService =
                 activity.getSystemService(Context.PERFORMANCE_HINT_SERVICE) as PerformanceHintManager
             performanceManager = PerformanceManager(hintService)
         }
     }
 
     fun loadGame(game:GameModel) {
-        var controller = navController?: return;
+        val controller = navController?: return
         activity.setFullScreen()
         GameHost.gameModel = game
         controller.navigate("game")

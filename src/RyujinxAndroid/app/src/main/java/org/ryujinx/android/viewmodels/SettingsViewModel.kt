@@ -55,18 +55,18 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         resScale: MutableState<Float>,
         useVirtualController: MutableState<Boolean>
     ){
-        var editor = sharedPref.edit()
+        val editor = sharedPref.edit()
 
-        editor.putBoolean("isHostMapped", isHostMapped?.value ?: true)
-        editor.putBoolean("useNce", useNce?.value ?: true)
-        editor.putBoolean("enableVsync", enableVsync?.value ?: true)
-        editor.putBoolean("enableDocked", enableDocked?.value ?: true)
-        editor.putBoolean("enablePtc", enablePtc?.value ?: true)
-        editor.putBoolean("ignoreMissingServices", ignoreMissingServices?.value ?: false)
-        editor.putBoolean("enableShaderCache", enableShaderCache?.value ?: true)
-        editor.putBoolean("enableTextureRecompression", enableTextureRecompression?.value ?: false)
-        editor.putFloat("resScale", resScale?.value ?: 1f)
-        editor.putBoolean("useVirtualController", useVirtualController?.value ?: true)
+        editor.putBoolean("isHostMapped", isHostMapped.value)
+        editor.putBoolean("useNce", useNce.value)
+        editor.putBoolean("enableVsync", enableVsync.value)
+        editor.putBoolean("enableDocked", enableDocked.value)
+        editor.putBoolean("enablePtc", enablePtc.value)
+        editor.putBoolean("ignoreMissingServices", ignoreMissingServices.value)
+        editor.putBoolean("enableShaderCache", enableShaderCache.value)
+        editor.putBoolean("enableTextureRecompression", enableTextureRecompression.value)
+        editor.putFloat("resScale", resScale.value)
+        editor.putBoolean("useVirtualController", useVirtualController.value)
 
         editor.apply()
     }

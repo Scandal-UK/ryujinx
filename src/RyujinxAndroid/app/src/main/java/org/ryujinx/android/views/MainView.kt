@@ -1,6 +1,5 @@
 package org.ryujinx.android.views
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,7 +72,7 @@ class MainView {
             Box(modifier = Modifier.fillMaxSize()) {
                 GameStats(mainViewModel)
 
-                var ryujinxNative = RyujinxNative()
+                val ryujinxNative = RyujinxNative()
 
                 // touch surface
                 Surface(color = Color.Transparent, modifier = Modifier
@@ -82,32 +81,36 @@ class MainView {
                     .pointerInput(Unit) {
                         awaitPointerEventScope {
                             while (true) {
-                                Thread.sleep(2);
+                                Thread.sleep(2)
                                 val event = awaitPointerEvent()
 
                                 if(controller.isVisible)
                                     continue
 
-                                var change = event
+                                val change = event
                                     .component1()
                                     .firstOrNull()
                                 change?.apply {
-                                    var position = this.position
+                                    val position = this.position
 
-                                    if (event.type == PointerEventType.Press) {
-                                        ryujinxNative.inputSetTouchPoint(
-                                            position.x.roundToInt(),
-                                            position.y.roundToInt()
-                                        )
-                                    } else if (event.type == PointerEventType.Release) {
-                                        ryujinxNative.inputReleaseTouchPoint()
+                                    when (event.type) {
+                                        PointerEventType.Press -> {
+                                            ryujinxNative.inputSetTouchPoint(
+                                                position.x.roundToInt(),
+                                                position.y.roundToInt()
+                                            )
+                                        }
+                                        PointerEventType.Release -> {
+                                            ryujinxNative.inputReleaseTouchPoint()
 
-                                    } else if (event.type == PointerEventType.Move) {
-                                        ryujinxNative.inputSetTouchPoint(
-                                            position.x.roundToInt(),
-                                            position.y.roundToInt()
-                                        )
+                                        }
+                                        PointerEventType.Move -> {
+                                            ryujinxNative.inputSetTouchPoint(
+                                                position.x.roundToInt(),
+                                                position.y.roundToInt()
+                                            )
 
+                                        }
                                     }
                                 }
                             }
@@ -128,7 +131,7 @@ class MainView {
         }
         @Composable
         fun rememberVideogameAsset(): ImageVector {
-            var primaryColor = MaterialTheme.colorScheme.primary
+            val primaryColor = MaterialTheme.colorScheme.primary
             return remember {
                 ImageVector.Builder(
                     name = "videogame_asset",
@@ -224,20 +227,20 @@ class MainView {
 
         @Composable
         fun GameStats(mainViewModel: MainViewModel){
-            var fifo = remember {
+            val fifo = remember {
                 mutableStateOf(0.0)
             }
-            var gameFps = remember {
+            val gameFps = remember {
                 mutableStateOf(0.0)
             }
-            var gameTime = remember {
+            val gameTime = remember {
                 mutableStateOf(0.0)
             }
 
             Surface(modifier = Modifier.padding(16.dp),
             color = MaterialTheme.colorScheme.surface.copy(0.4f)) {
                 Column {
-                    var gameTimeVal = 0.0;
+                    var gameTimeVal = 0.0
                     if (!gameTime.value.isInfinite())
                         gameTimeVal = gameTime.value
                     Text(text = "${String.format("%.3f", fifo.value)} %")

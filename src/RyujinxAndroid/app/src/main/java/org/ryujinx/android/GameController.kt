@@ -6,40 +6,26 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.GraphicsLayerScope
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
-import androidx.lifecycle.flowWithLifecycle
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.config.ButtonConfig
 import com.swordfish.radialgamepad.library.config.CrossConfig
 import com.swordfish.radialgamepad.library.config.CrossContentDescription
 import com.swordfish.radialgamepad.library.config.PrimaryDialConfig
 import com.swordfish.radialgamepad.library.config.RadialGamePadConfig
-import com.swordfish.radialgamepad.library.config.RadialGamePadTheme
 import com.swordfish.radialgamepad.library.config.SecondaryDialConfig
 import com.swordfish.radialgamepad.library.event.Event
-import com.swordfish.radialgamepad.library.event.GestureType
-import com.swordfish.radialgamepad.library.haptics.HapticConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.subscribe
 import kotlinx.coroutines.launch
 
 typealias GamePad = RadialGamePad
@@ -56,7 +42,7 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
                 return this.isVisible
             }
 
-            return false;
+            return false
         }
 
     init {
@@ -80,22 +66,22 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
 
         lifecycleScope.apply {
             lifecycleScope.launch {
-                var events = merge(leftGamePad.events(),rightGamePad.events())
+                val events = merge(leftGamePad.events(),rightGamePad.events())
                     .shareIn(lifecycleScope, SharingStarted.Lazily)
 
                 events.safeCollect {
                     handleEvent(it)
-                };
+                }
             }
         }
     }
 
     private fun Create(context: Context) : View
     {
-        var inflator = LayoutInflater.from(context);
-        var view = inflator.inflate(R.layout.game_layout, null)
-        view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(leftGamePad);
-        view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(rightGamePad);
+        val inflator = LayoutInflater.from(context)
+        val view = inflator.inflate(R.layout.game_layout, null)
+        view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(leftGamePad)
+        view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(rightGamePad)
 
         controllerView = view
 
@@ -120,51 +106,43 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
         if(controllerId == -1)
             controllerId = ryujinxNative.inputConnectGamepad(0)
 
-        controllerId?.apply {
+        controllerId.apply {
             when (ev) {
                 is Event.Button -> {
-                    var action = ev.action
+                    val action = ev.action
                     when (action) {
                         KeyEvent.ACTION_UP -> {
                             ryujinxNative.inputSetButtonReleased(ev.id, this)
                         }
+
                         KeyEvent.ACTION_DOWN -> {
                             ryujinxNative.inputSetButtonPressed(ev.id, this)
                         }
                     }
                 }
+
                 is Event.Direction -> {
-                    var direction = ev.id
+                    val direction = ev.id
 
                     when(direction) {
                         GamePadButtonInputId.DpadUp.ordinal -> {
-                            if (ev.xAxis > 0)
-                            {
+                            if (ev.xAxis > 0) {
                                 ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadRight.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadLeft.ordinal, this)
-                            }
-                            else if (ev.xAxis < 0)
-                            {
+                            } else if (ev.xAxis < 0) {
                                 ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadLeft.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadRight.ordinal, this)
-                            }
-                            else
-                            {
+                            } else {
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadLeft.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadRight.ordinal, this)
                             }
-                            if (ev.yAxis < 0)
-                            {
+                            if (ev.yAxis < 0) {
                                 ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadUp.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadDown.ordinal, this)
-                            }
-                            else if (ev.yAxis > 0)
-                            {
+                            } else if (ev.yAxis > 0) {
                                 ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadDown.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadUp.ordinal, this)
-                            }
-                            else
-                            {
+                            } else {
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadDown.ordinal, this)
                                 ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadUp.ordinal, this)
                             }
@@ -173,6 +151,7 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
                         GamePadButtonInputId.LeftStick.ordinal -> {
                             ryujinxNative.inputSetStickAxis(1, ev.xAxis, -ev.yAxis ,this)
                         }
+
                         GamePadButtonInputId.RightStick.ordinal -> {
                             ryujinxNative.inputSetStickAxis(2, ev.xAxis, -ev.yAxis ,this)
                         }
@@ -193,7 +172,7 @@ suspend fun <T> Flow<T>.safeCollect(
 }
 
 private fun generateConfig(isLeft: Boolean): GamePadConfig {
-    var distance = 0.05f
+    val distance = 0.05f
 
     if (isLeft) {
         return GamePadConfig(

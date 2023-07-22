@@ -1,6 +1,5 @@
 package org.ryujinx.android.viewmodels
 
-import androidx.appcompat.widget.ThemedSpinnerAdapter.Helper
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toLowerCase
@@ -24,23 +23,23 @@ class TitleUpdateViewModel(val titleId: String) {
             return
 
         data?.paths?.apply {
-            removeAt(index - 1);
+            removeAt(index - 1)
             pathsState?.clear()
             pathsState?.addAll(this)
         }
     }
 
     fun Add() {
-        var callBack = storageHelper.onFileSelected
+        val callBack = storageHelper.onFileSelected
 
         storageHelper.onFileSelected = { requestCode, files ->
             run {
                 storageHelper.onFileSelected = callBack
                 if(requestCode == UpdateRequestCode)
                 {
-                    var file = files.firstOrNull()
+                    val file = files.firstOrNull()
                     file?.apply {
-                        var path = Helpers.getPath(storageHelper.storage.context, file.uri)
+                        val path = Helpers.getPath(storageHelper.storage.context, file.uri)
                         if(!path.isNullOrEmpty()){
                             data?.apply {
                                 if(!paths.contains(path)) {
@@ -62,20 +61,19 @@ class TitleUpdateViewModel(val titleId: String) {
             this.selected = ""
             if(paths.isNotEmpty() && index > 0)
             {
-                var ind = max(index - 1, paths.count() - 1)
+                val ind = max(index - 1, paths.count() - 1)
                 this.selected = paths[ind]
             }
-            var gson = Gson()
-            var json = gson.toJson(this)
-            jsonPath = (MainActivity.AppPath
-                ?: "") + "/games/" + titleId.toLowerCase(Locale.current)
+            val gson = Gson()
+            val json = gson.toJson(this)
+            jsonPath = MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current)
             File(jsonPath).mkdirs()
-            File(jsonPath + "/updates.json").writeText(json)
+            File("$jsonPath/updates.json").writeText(json)
         }
     }
 
     fun setPaths(paths: SnapshotStateList<String>) {
-        pathsState = paths;
+        pathsState = paths
         data?.apply {
             pathsState?.clear()
             pathsState?.addAll(this.paths)
@@ -86,16 +84,15 @@ class TitleUpdateViewModel(val titleId: String) {
     private var jsonPath: String
 
     init {
-        jsonPath = (MainActivity.AppPath
-            ?: "") + "/games/" + titleId.toLowerCase(Locale.current) + "/updates.json"
+        jsonPath = MainActivity.AppPath + "/games/" + titleId.toLowerCase(Locale.current) + "/updates.json"
 
         data = TitleUpdateMetadata()
         if (File(jsonPath).exists()) {
-            var gson = Gson()
+            val gson = Gson()
             data = gson.fromJson(File(jsonPath).readText(), TitleUpdateMetadata::class.java)
 
             data?.apply {
-                var existingPaths = mutableListOf<String>()
+                val existingPaths = mutableListOf<String>()
                 for (path in paths) {
                     if (File(path).exists()) {
                         existingPaths.add(path)

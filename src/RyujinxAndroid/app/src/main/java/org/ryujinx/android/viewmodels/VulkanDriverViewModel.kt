@@ -12,22 +12,22 @@ class VulkanDriverViewModel(val activity: MainActivity) {
     var selected: String = ""
 
     companion object {
-        val DriverRequestCode: Int = 1003
+        const val DriverRequestCode: Int = 1003
         const val DriverFolder: String = "drivers"
     }
 
     private fun getAppPath() : String {
         var appPath =
-            (MainActivity.AppPath ?: activity.getExternalFilesDir(null)?.absolutePath ?: "");
+            MainActivity.AppPath
         appPath += "/"
 
         return appPath
     }
 
     fun ensureDriverPath() : File {
-        var driverPath = getAppPath() + DriverFolder
+        val driverPath = getAppPath() + DriverFolder
 
-        var driverFolder = File(driverPath)
+        val driverFolder = File(driverPath)
 
         if(!driverFolder.exists())
             driverFolder.mkdirs()
@@ -36,13 +36,13 @@ class VulkanDriverViewModel(val activity: MainActivity) {
     }
 
     fun getAvailableDrivers() : MutableList<DriverMetadata> {
-        var driverFolder = ensureDriverPath()
+        val driverFolder = ensureDriverPath()
 
-        var folders = driverFolder.walkTopDown()
+        val folders = driverFolder.walkTopDown()
 
-        var drivers = mutableListOf<DriverMetadata>()
+        val drivers = mutableListOf<DriverMetadata>()
         
-        var selectedDriverFile = File(driverFolder.absolutePath + "/selected");
+        val selectedDriverFile = File(driverFolder.absolutePath + "/selected")
         if(selectedDriverFile.exists()){
             selected = selectedDriverFile.readText()
 
@@ -52,16 +52,16 @@ class VulkanDriverViewModel(val activity: MainActivity) {
             }
         }
 
-        var gson = Gson()
+        val gson = Gson()
 
         for (folder in folders){
             if(folder.isDirectory() && folder.parent == driverFolder.absolutePath){
-                var meta = File(folder.absolutePath + "/meta.json")
+                val meta = File(folder.absolutePath + "/meta.json")
 
                 if(meta.exists()){
-                    var metadata = gson.fromJson(meta.readText(), DriverMetadata::class.java)
+                    val metadata = gson.fromJson(meta.readText(), DriverMetadata::class.java)
                     if(metadata.name.isNotEmpty()) {
-                        var driver = folder.absolutePath + "/${metadata.libraryName}"
+                        val driver = folder.absolutePath + "/${metadata.libraryName}"
                         metadata.driverPath = driver
                         if (File(driver).exists())
                             drivers.add(metadata)
@@ -74,18 +74,17 @@ class VulkanDriverViewModel(val activity: MainActivity) {
     }
 
     fun saveSelected() {
-        var driverFolder = ensureDriverPath()
+        val driverFolder = ensureDriverPath()
 
-        var selectedDriverFile = File(driverFolder.absolutePath + "/selected")
+        val selectedDriverFile = File(driverFolder.absolutePath + "/selected")
         selectedDriverFile.writeText(selected)
     }
 
     fun removeSelected(){
         if(selected.isNotEmpty()){
-            var sel = File(selected)
+            val sel = File(selected)
             if(sel.exists()) {
-                var parent = sel.parentFile
-                parent.deleteRecursively()
+                sel.parentFile?.deleteRecursively()
             }
             selected = ""
 
@@ -96,20 +95,20 @@ class VulkanDriverViewModel(val activity: MainActivity) {
     fun add(refresh: MutableState<Boolean>) {
         activity.storageHelper?.apply {
 
-            var callBack = this.onFileSelected
+            val callBack = this.onFileSelected
 
             onFileSelected = { requestCode, files ->
                 run {
                     onFileSelected = callBack
                     if(requestCode == DriverRequestCode)
                     {
-                        var file = files.firstOrNull()
+                        val file = files.firstOrNull()
                         file?.apply {
-                            var path = Helpers.getPath(storage.context, file.uri)
+                            val path = Helpers.getPath(storage.context, file.uri)
                             if(!path.isNullOrEmpty()){
-                                var name = file.name?.removeSuffix("." + file.extension) ?: ""
-                                var driverFolder = ensureDriverPath()
-                                var extractionFolder = File(driverFolder.absolutePath + "/${name}")
+                                val name = file.name?.removeSuffix("." + file.extension) ?: ""
+                                val driverFolder = ensureDriverPath()
+                                val extractionFolder = File(driverFolder.absolutePath + "/${name}")
                                 extractionFolder.mkdirs()
                                 ZipFile(path)?.use { zip ->
                                     zip.entries().asSequence().forEach { entry ->
@@ -118,7 +117,7 @@ class VulkanDriverViewModel(val activity: MainActivity) {
                                             val filePath = extractionFolder.absolutePath + File.separator + entry.name
 
                                             if (!entry.isDirectory) {
-                                                var length = input.available()
+                                                val length = input.available()
                                                 val bytesIn = ByteArray(length)
                                                 input.read(bytesIn)
                                                 File(filePath).writeBytes(bytesIn)

@@ -1,27 +1,28 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using Ryujinx.Common.Configuration;
-using System.Collections.Generic;
+﻿using LibRyujinx.Jni;
 using LibRyujinx.Jni.Pointers;
+using LibRyujinx.Jni.Primitives;
 using LibRyujinx.Jni.References;
 using LibRyujinx.Jni.Values;
-using LibRyujinx.Jni.Primitives;
-using LibRyujinx.Jni;
+using LibRyujinx.Shared.Audio.Oboe;
+using Microsoft.Win32.SafeHandles;
 using Rxmxnx.PInvoke;
-using System.Text;
-using LibRyujinx.Jni.Internal.Pointers;
+using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Logging.Targets;
+using Ryujinx.Common.SystemInfo;
+using Ryujinx.HLE.HOS.SystemState;
+using Ryujinx.Input;
+using Silk.NET.Core.Loader;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
-using LibRyujinx.Shared.Audio.Oboe;
-using System.Threading;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using Microsoft.Win32.SafeHandles;
-using Newtonsoft.Json.Linq;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using LibHac.Tools.Fs;
-using Ryujinx.HLE.HOS.SystemState;
+using System.Text;
+using System.Threading;
 
 namespace LibRyujinx
 {
@@ -53,9 +54,16 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_initialize")]
         public static JBoolean JniInitialize(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef jpath, JBoolean enableDebugLogs)
         {
-            var path = GetString(jEnv, jpath);
+            SystemInfo.IsBionic = true;
 
-            Ryujinx.Common.SystemInfo.SystemInfo.IsBionic = true;
+            Logger.AddTarget(
+                new AsyncLogTargetWrapper(
+                    new AndroidLogTarget("Ryujinx"),
+                    1000,
+                    AsyncLogTargetOverflowAction.Block
+                ));
+
+            var path = GetString(jEnv, jpath);
 
             var init = Initialize(path, enableDebugLogs);
 
@@ -63,17 +71,10 @@ namespace LibRyujinx
 
             _surfaceEvent = new ManualResetEvent(false);
 
-            Logger.AddTarget(
-                new AsyncLogTargetWrapper(
-                new AndroidLogTarget("Ryujinx"),
-                1000,
-                AsyncLogTargetOverflowAction.Block
-                ));
-
             return init;
         }
 
-        private static string GetString(JEnvRef jEnv, JStringLocalRef jString)
+        private static string? GetString(JEnvRef jEnv, JStringLocalRef jString)
         {
             var stringPtr = getStringPointer(jEnv, jString);
 
@@ -179,7 +180,7 @@ namespace LibRyujinx
 
             var jobject = getObjectClass(jEnv, graphicObject);
 
-            GraphicsConfiguration graphicsConfiguration = new GraphicsConfiguration()
+            GraphicsConfiguration graphicsConfiguration = new()
             {
                 EnableShaderCache = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableShaderCache"), GetCCharSequence("Z"))),
                 EnableMacroHLE = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableMacroHLE"), GetCCharSequence("Z"))),
@@ -191,17 +192,17 @@ namespace LibRyujinx
                 MaxAnisotropy = getFloatField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("MaxAnisotropy"), GetCCharSequence("F"))),
                 BackendThreading = (BackendThreading)(int)getIntField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("BackendThreading"), GetCCharSequence("I")))
             };
-            Silk.NET.Core.Loader.SearchPathContainer.Platform = Silk.NET.Core.Loader.UnderlyingPlatform.Android;
+            SearchPathContainer.Platform = UnderlyingPlatform.Android;
             return InitializeGraphics(graphicsConfiguration);
         }
 
         private static CCharSequence GetCCharSequence(string s)
         {
-            return (CCharSequence)Encoding.UTF8.GetBytes(s).AsSpan();
+            return Encoding.UTF8.GetBytes(s).AsSpan();
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsSetSurface")]
-        public unsafe static void JniSetSurface(JEnvRef jEnv, JObjectLocalRef jObj, JLong surfacePtr)
+        public static void JniSetSurface(JEnvRef jEnv, JObjectLocalRef jObj, JLong surfacePtr)
         {
             _surfacePtr = surfacePtr;
 
@@ -235,7 +236,7 @@ namespace LibRyujinx
             var getLongField = getLongFieldPtr.GetUnsafeDelegate<GetLongFieldDelegate>();
             var getObjectField = getObjectFieldPtr.GetUnsafeDelegate<GetObjectFieldDelegate>();
 
-            List<string> extensions = new List<string>();
+            List<string?> extensions = new();
 
             var count = getArrayLength(jEnv, extensionsArray);
 
@@ -249,9 +250,9 @@ namespace LibRyujinx
 
             _surfaceEvent.Set();
 
-            _surfacePtr = (long)surfacePtr;
+            _surfacePtr = surfacePtr;
 
-            CreateSurface createSurfaceFunc = (IntPtr instance) =>
+            CreateSurface createSurfaceFunc = instance =>
             {
                 _surfaceEvent.WaitOne();
                 _surfaceEvent.Reset();
@@ -259,10 +260,10 @@ namespace LibRyujinx
                 var api = Vk.GetApi();
                 if (api.TryGetInstanceExtension(new Instance(instance), out KhrAndroidSurface surfaceExtension))
                 {
-                    var createInfo = new AndroidSurfaceCreateInfoKHR()
+                    var createInfo = new AndroidSurfaceCreateInfoKHR
                     {
                         SType = StructureType.AndroidSurfaceCreateInfoKhr,
-                        Window = (nint*)_surfacePtr
+                        Window = (nint*)_surfacePtr,
                     };
 
                     var result = surfaceExtension.CreateAndroidSurface(new Instance(instance), createInfo, null, out var surface);
@@ -296,9 +297,8 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameInfoFromPath")]
         public static JObjectLocalRef JniGetGameInfo(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef path)
         {
-            var info = GetGameInfo(GetString(jEnv, path)) ?? new GameInfo();
-            SHA256 sha;
-            return GetInfo(jEnv, info, out sha);
+            var info = GetGameInfo(GetString(jEnv, path));
+            return GetInfo(jEnv, info, out SHA256 _);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameInfo")]
@@ -306,12 +306,11 @@ namespace LibRyujinx
         {
             using var stream = OpenFile(fileDescriptor);
 
-            var info = GetGameInfo(stream, isXci) ?? new GameInfo();
-            SHA256 sha;
-            return GetInfo(jEnv, info, out sha);
+            var info = GetGameInfo(stream, isXci);
+            return GetInfo(jEnv, info, out SHA256 _);
         }
 
-        private static JObjectLocalRef GetInfo(JEnvRef jEnv, GameInfo info, out SHA256 sha)
+        private static JObjectLocalRef GetInfo(JEnvRef jEnv, GameInfo? info, out SHA256 sha)
         {
             var javaClassName = GetCCharSequence("org/ryujinx/android/viewmodels/GameInfo");
 
@@ -339,7 +338,7 @@ namespace LibRyujinx
             var constructor = getMethod(jEnv, javaClass, GetCCharSequence("<init>"), GetCCharSequence("()V"));
             var newObj = newObject(jEnv, javaClass, constructor, 0);
             sha = SHA256.Create();
-            var iconCacheByte = sha.ComputeHash(info.Icon ?? new byte[0]);
+            var iconCacheByte = sha.ComputeHash(info?.Icon ?? Array.Empty<byte>());
             var iconCache = BitConverter.ToString(iconCacheByte).Replace("-", "");
 
             var cacheDirectory = Path.Combine(AppDataManager.BaseDirPath, "iconCache");
@@ -348,21 +347,23 @@ namespace LibRyujinx
             var cachePath = Path.Combine(cacheDirectory, iconCache);
             if (!File.Exists(cachePath))
             {
-                File.WriteAllBytes(cachePath, info.Icon ?? new byte[0]);
+                File.WriteAllBytes(cachePath, info?.Icon ?? Array.Empty<byte>());
             }
 
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleName"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info.TitleName)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleId"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info.TitleId)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Developer"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info.Developer)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Version"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info.Version)._value);
+            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleName"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.TitleName)._value);
+            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleId"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.TitleId)._value);
+            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Developer"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.Developer)._value);
+            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Version"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.Version)._value);
             setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("IconCache"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, iconCache)._value);
-            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("FileSize"), GetCCharSequence("D")), info.FileSize);
+            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("FileSize"), GetCCharSequence("D")), info?.FileSize ?? 0d);
 
             return newObj;
         }
 
-        private static JStringLocalRef CreateString(JEnvRef jEnv, string s)
+        private static JStringLocalRef CreateString(JEnvRef jEnv, string? s)
         {
+            s ??= string.Empty;
+
             var ptr = Marshal.StringToHGlobalAnsi(s);
 
             var str = createString(jEnv, ptr);
@@ -417,19 +418,19 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetButtonPressed")]
         public static void JniSetButtonPressed(JEnvRef jEnv, JObjectLocalRef jObj, JInt button, JInt id)
         {
-            SetButtonPressed((Ryujinx.Input.GamepadButtonInputId)(int)button, id);
+            SetButtonPressed((GamepadButtonInputId)(int)button, id);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetButtonReleased")]
         public static void JniSetButtonReleased(JEnvRef jEnv, JObjectLocalRef jObj, JInt button, JInt id)
         {
-            SetButtonReleased((Ryujinx.Input.GamepadButtonInputId)(int)button, id);
+            SetButtonReleased((GamepadButtonInputId)(int)button, id);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetStickAxis")]
         public static void JniSetStickAxis(JEnvRef jEnv, JObjectLocalRef jObj, JInt stick, JFloat x, JFloat y, JInt id)
         {
-            SetStickAxis((Ryujinx.Input.StickInputId)(int)stick, new System.Numerics.Vector2(x, y), id);
+            SetStickAxis((StickInputId)(int)stick, new Vector2(x, y), id);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputConnectGamepad")]
@@ -438,7 +439,7 @@ namespace LibRyujinx
             return ConnectGamepad(index);
         }
 
-        private static Stream OpenFile(int descriptor)
+        private static FileStream OpenFile(int descriptor)
         {
             var safeHandle = new SafeFileHandle(descriptor, false);
 
@@ -464,7 +465,7 @@ namespace LibRyujinx
             Warn = 0x05,
             Error = 0x06,
             Fatal = 0x07,
-            Silent = 0x08
+            Silent = 0x08,
         }
     }
 }
