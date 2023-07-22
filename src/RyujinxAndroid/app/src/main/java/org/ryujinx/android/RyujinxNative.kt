@@ -1,9 +1,8 @@
 package org.ryujinx.android
 
-import android.view.Surface
 import org.ryujinx.android.viewmodels.GameInfo
-import java.io.FileDescriptor
 
+@Suppress("KotlinJniMissingFunction")
 class RyujinxNative {
 
     external fun initialize(appPath: String, enableDebugLogs : Boolean): Boolean

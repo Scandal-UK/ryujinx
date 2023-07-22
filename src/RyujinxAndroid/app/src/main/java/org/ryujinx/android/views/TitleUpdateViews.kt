@@ -3,11 +3,9 @@ package org.ryujinx.android.views
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -35,7 +33,7 @@ class TitleUpdateViews {
         fun Main(titleId: String, name: String, openDialog: MutableState<Boolean>) {
             val viewModel = TitleUpdateViewModel(titleId)
 
-            var selected = remember { mutableStateOf(0) }
+            val selected = remember { mutableStateOf(0) }
             viewModel.data?.apply {
                     selected.value = paths.indexOf(this.selected) + 1
             }
@@ -67,14 +65,14 @@ class TitleUpdateViews {
                                 )
                             }
 
-                            var paths = remember {
+                            val paths = remember {
                                 mutableStateListOf<String>()
                             }
 
                             viewModel.setPaths(paths)
                             var index = 1
                             for (path in paths) {
-                                var i = index
+                                val i = index
                                 Row(modifier = Modifier.padding(8.dp)) {
                                     RadioButton(
                                         selected = (selected.value == i),

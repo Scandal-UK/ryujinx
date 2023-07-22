@@ -12,8 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -56,12 +54,9 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindowProvider
-import androidx.compose.ui.window.Popup
 import androidx.compose.ui.zIndex
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import org.ryujinx.android.MainActivity
@@ -78,11 +73,11 @@ class HomeViews {
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         fun MainTopBar(navController: NavHostController) {
-            var topBarSize = remember {
+            val topBarSize = remember {
                 mutableStateOf(0)
             }
             Column {
-                var showOptionsPopup = remember {
+                val showOptionsPopup = remember {
                     mutableStateOf(false)
                 }
                 TopAppBar(
@@ -116,7 +111,7 @@ class HomeViews {
                     actions = {
                         IconButton(
                             onClick = {
-                                showOptionsPopup.value = true;
+                                showOptionsPopup.value = true
                             }
                         ) {
                             Icon(
@@ -171,7 +166,7 @@ class HomeViews {
         fun Home(viewModel: HomeViewModel = HomeViewModel(), navController: NavHostController? = null) {
             val sheetState = rememberModalBottomSheetState()
             val scope = rememberCoroutineScope()
-            var showBottomSheet = remember { mutableStateOf(false) }
+            val showBottomSheet = remember { mutableStateOf(false) }
 
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -195,7 +190,7 @@ class HomeViews {
 
             ) { contentPadding ->
                 Box(modifier = Modifier.padding(contentPadding)) {
-                    var list = remember {
+                    val list = remember {
                         mutableStateListOf<GameModel>()
                     }
                     viewModel.setViewList(list)
@@ -227,8 +222,8 @@ class HomeViews {
                                     shape = MaterialTheme.shapes.large,
                                     tonalElevation = AlertDialogDefaults.TonalElevation
                                 ) {
-                                    var titleId = viewModel.mainViewModel?.selected?.titleId ?: ""
-                                    var name = viewModel.mainViewModel?.selected?.titleName ?: ""
+                                    val titleId = viewModel.mainViewModel?.selected?.titleId ?: ""
+                                    val name = viewModel.mainViewModel?.selected?.titleName ?: ""
                                     TitleUpdateViews.Main(titleId, name, openDialog)
                                 }
 
@@ -267,7 +262,7 @@ class HomeViews {
             }
         }
 
-        @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+        @OptIn(ExperimentalFoundationApi::class)
         @Composable
         fun GameItem(gameModel: GameModel, viewModel: HomeViewModel, showSheet : MutableState<Boolean>) {
             Card(shape = MaterialTheme.shapes.medium,
@@ -291,8 +286,8 @@ class HomeViews {
                     Row {
                         if(!gameModel.titleId.isNullOrEmpty() && gameModel.titleId != "0000000000000000")
                         {
-                            var iconSource = MainActivity.AppPath + "/iconCache/" + gameModel.iconCache
-                            var imageFile = File(iconSource)
+                            val iconSource = MainActivity.AppPath + "/iconCache/" + gameModel.iconCache
+                            val imageFile = File(iconSource)
                             if(imageFile.exists()) {
                                 val size = ImageSize / Resources.getSystem().displayMetrics.density
                                 AsyncImage(model = imageFile,
@@ -320,7 +315,7 @@ class HomeViews {
 
         @Composable
         fun NotAvailableIcon() {
-            var size = ImageSize / Resources.getSystem().displayMetrics.density
+            val size = ImageSize / Resources.getSystem().displayMetrics.density
             Icon(
                 Icons.Filled.Add,
                 contentDescription = "Options",

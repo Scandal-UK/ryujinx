@@ -1,10 +1,7 @@
 package org.ryujinx.android.viewmodels
 
-import android.R.string
-import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import android.os.ParcelFileDescriptor
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
 import org.ryujinx.android.Helpers
@@ -22,8 +19,8 @@ class GameModel(var file: DocumentFile, val context: Context) {
 
     init {
         fileName = file.name
-        var absPath = getPath()
-        var gameInfo = RyujinxNative().deviceGetGameInfoFromPath(absPath ?: "")
+        val absPath = getPath()
+        val gameInfo = RyujinxNative().deviceGetGameInfoFromPath(absPath ?: "")
 
         fileSize = gameInfo.FileSize
         titleId = gameInfo.TitleId
@@ -37,7 +34,7 @@ class GameModel(var file: DocumentFile, val context: Context) {
         var uri = file.uri
         if (uri.scheme != "file")
             uri = Uri.parse("file://" + Helpers.getPath(context, file.uri))
-        return uri.path;
+        return uri.path
     }
 
     fun getIsXci() : Boolean {

@@ -8,7 +8,6 @@ import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.DocumentFileType
 import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.extension
-import com.anggrayudi.storage.file.fullName
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.anggrayudi.storage.file.search
 import org.ryujinx.android.MainActivity
@@ -20,7 +19,7 @@ class HomeViewModel(
     private var gameList: SnapshotStateList<GameModel>? = null
     private var loadedCache: List<GameModel> = listOf()
     private var gameFolderPath: DocumentFile? = null
-    private var sharedPref: SharedPreferences? = null;
+    private var sharedPref: SharedPreferences? = null
 
     init {
         if (activity != null) {
@@ -28,15 +27,15 @@ class HomeViewModel(
             activity.storageHelper!!.onFolderSelected = { requestCode, folder ->
                 run {
                     gameFolderPath = folder
-                    var p = folder.getAbsolutePath(activity!!)
-                    var editor = sharedPref?.edit()
-                    editor?.putString("gameFolder", p);
+                    val p = folder.getAbsolutePath(activity!!)
+                    val editor = sharedPref?.edit()
+                    editor?.putString("gameFolder", p)
                     editor?.apply()
                     reloadGameList()
                 }
             }
 
-            var savedFolder = sharedPref?.getString("gameFolder", "") ?: ""
+            val savedFolder = sharedPref?.getString("gameFolder", "") ?: ""
 
             if (savedFolder.isNotEmpty()) {
                 try {
@@ -56,26 +55,26 @@ class HomeViewModel(
     }
 
     fun openGameFolder() {
-        var path = sharedPref?.getString("gameFolder", "") ?: ""
+        val path = sharedPref?.getString("gameFolder", "") ?: ""
 
-        if (path.isNullOrEmpty())
-            activity?.storageHelper?.storage?.openFolderPicker();
+        if (path.isEmpty())
+            activity?.storageHelper?.storage?.openFolderPicker()
         else
             activity?.storageHelper?.storage?.openFolderPicker(
-                activity!!.storageHelper!!.storage.requestCodeFolderPicker,
+                activity.storageHelper!!.storage.requestCodeFolderPicker,
                 FileFullPath(activity, path)
             )
     }
 
     fun reloadGameList() {
         var storage = activity?.storageHelper ?: return
-        var folder = gameFolderPath ?: return
+        val folder = gameFolderPath ?: return
 
-        var files = mutableListOf<GameModel>()
+        val files = mutableListOf<GameModel>()
 
         for (file in folder.search(false, DocumentFileType.FILE)) {
             if (file.extension == "xci" || file.extension == "nsp")
-                activity?.let {
+                activity.let {
                     files.add(GameModel(file, it))
                 }
         }
@@ -91,7 +90,7 @@ class HomeViewModel(
     }
 
     fun setViewList(list: SnapshotStateList<GameModel>) {
-        gameList = list;
+        gameList = list
         applyFilter()
     }
 }

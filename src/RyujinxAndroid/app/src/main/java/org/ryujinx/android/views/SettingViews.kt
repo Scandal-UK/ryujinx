@@ -13,36 +13,24 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +42,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.ryujinx.android.viewmodels.SettingsViewModel
-import org.ryujinx.android.viewmodels.VulkanDriverViewModel
 
 class SettingViews {
     companion object {
@@ -63,38 +50,38 @@ class SettingViews {
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
         fun Main(settingsViewModel: SettingsViewModel) {
-            var loaded = remember {
+            val loaded = remember {
                 mutableStateOf(false)
             }
 
-            var isHostMapped = remember {
+            val isHostMapped = remember {
                 mutableStateOf(false)
             }
-            var useNce = remember {
+            val useNce = remember {
                 mutableStateOf(false)
             }
-            var enableVsync = remember {
+            val enableVsync = remember {
                 mutableStateOf(false)
             }
-            var enableDocked = remember {
+            val enableDocked = remember {
                 mutableStateOf(false)
             }
-            var enablePtc = remember {
+            val enablePtc = remember {
                 mutableStateOf(false)
             }
-            var ignoreMissingServices = remember {
+            val ignoreMissingServices = remember {
                 mutableStateOf(false)
             }
-            var enableShaderCache = remember {
+            val enableShaderCache = remember {
                 mutableStateOf(false)
             }
-            var enableTextureRecompression = remember {
+            val enableTextureRecompression = remember {
                 mutableStateOf(false)
             }
-            var resScale = remember {
+            val resScale = remember {
                 mutableStateOf(1f)
             }
-            var useVirtualController = remember {
+            val useVirtualController = remember {
                 mutableStateOf(true)
             }
 
@@ -470,8 +457,8 @@ class SettingViews {
             title: String,
             content: @Composable () -> Unit
         ) {
-            var expanded = false
-            var mutableExpanded = remember {
+            val expanded = false
+            val mutableExpanded = remember {
                 mutableStateOf(expanded)
             }
             val transitionState = remember {

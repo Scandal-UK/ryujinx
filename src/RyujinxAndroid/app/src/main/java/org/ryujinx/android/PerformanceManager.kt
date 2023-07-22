@@ -14,7 +14,7 @@ class PerformanceManager(val performanceHintManager: PerformanceHintManager) {
         if(!_isEnabled || renderingSession != null)
             return
 
-        var threads = IntArray(1)
+        val threads = IntArray(1)
         threads[0] = threadId.toInt()
         renderingSession = performanceHintManager.createHintSession(threads, DEFAULT_TARGET_NS)
     }

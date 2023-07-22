@@ -2,14 +2,12 @@ package org.ryujinx.android
 
 import android.content.Context
 import android.os.Build
-import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
 import kotlin.concurrent.thread
-import kotlin.math.roundToInt
 
 class GameHost(context: Context?, val controller: GameController, val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
     private var _renderingThreadWatcher: Thread? = null
@@ -37,19 +35,19 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        var isStarted = _isStarted;
+        val isStarted = _isStarted
 
         start(holder)
 
         if(isStarted && (_width != width || _height != height))
         {
-            var nativeHelpers = NativeHelpers()
-            var window = nativeHelpers.getNativeWindow(holder.surface);
-            _nativeRyujinx.graphicsSetSurface(window);
+            val nativeHelpers = NativeHelpers()
+            val window = nativeHelpers.getNativeWindow(holder.surface)
+            _nativeRyujinx.graphicsSetSurface(window)
         }
 
-        _width = width;
-        _height = height;
+        _width = width
+        _height = height
 
         if(_isStarted)
         {
@@ -61,15 +59,15 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
 
     }
 
-    private fun start(surfaceHolder: SurfaceHolder) : Unit {
-        var game = gameModel ?: return
-        var path = game.getPath() ?: return
+    private fun start(surfaceHolder: SurfaceHolder) {
+        val game = gameModel ?: return
+        val path = game.getPath() ?: return
         if (_isStarted)
             return
 
-        var surface = surfaceHolder.surface;
+        var surface = surfaceHolder.surface
 
-        var settings = QuickSettings(mainViewModel.activity)
+        val settings = QuickSettings(mainViewModel.activity)
 
         var success = _nativeRyujinx.graphicsInitialize(GraphicsConfiguration().apply {
             EnableShaderCache = settings.enableShaderCache
@@ -78,14 +76,14 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
         })
 
 
-        var nativeHelpers = NativeHelpers()
-        var window = nativeHelpers.getNativeWindow(surfaceHolder.surface);
+        val nativeHelpers = NativeHelpers()
+        val window = nativeHelpers.getNativeWindow(surfaceHolder.surface)
         nativeInterop = NativeGraphicsInterop()
         nativeInterop!!.VkRequiredExtensions = arrayOf(
             "VK_KHR_surface", "VK_KHR_android_surface"
-        );
+        )
         nativeInterop!!.VkCreateSurface = nativeHelpers.getCreateSurfacePtr()
-        nativeInterop!!.SurfaceHandle = window;
+        nativeInterop!!.SurfaceHandle = window
 
         success = _nativeRyujinx.graphicsInitializeRenderer(
             nativeInterop!!.VkRequiredExtensions!!,
@@ -104,7 +102,7 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
             false,
             "UTC",
             settings.ignoreMissingServices
-        );
+        )
 
         success = _nativeRyujinx.deviceLoad(path)
 
@@ -124,12 +122,12 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
         _nativeRyujinx.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
             surfaceHolder.surfaceFrame.height()
-        );
+        )
 
         _guestThread = thread(start = true) {
             runGame()
         }
-        _isStarted = success;
+        _isStarted = success
 
         _updateThread = thread(start = true) {
             var c = 0
@@ -145,20 +143,20 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
         }
     }
 
-    private fun runGame() : Unit{
+    private fun runGame() {
         // RenderingThreadWatcher
         _renderingThreadWatcher = thread(start = true) {
-            var threadId = 0L;
+            var threadId = 0L
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 mainViewModel.performanceManager?.enable()
                 while (_isStarted) {
                     Thread.sleep(1000)
-                    var newthreadId = mainViewModel.activity.getRenderingThreadId()
+                    val newthreadId = mainViewModel.activity.getRenderingThreadId()
 
                     if (threadId != newthreadId) {
                         mainViewModel.performanceManager?.closeCurrentRenderingSession()
                     }
-                    threadId = newthreadId;
+                    threadId = newthreadId
                     if (threadId != 0L) {
                         mainViewModel.performanceManager?.initializeRenderingSession(threadId)
                     }

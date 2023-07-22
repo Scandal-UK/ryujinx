@@ -1,10 +1,7 @@
-﻿using Ryujinx.Common;
-using Ryujinx.Common.Logging;
+﻿using Ryujinx.Common.Logging;
 using Ryujinx.Common.Logging.Formatters;
 using Ryujinx.Common.Logging.Targets;
 using System;
-using System.IO;
-using System.Linq;
 
 namespace LibRyujinx
 {
@@ -26,7 +23,7 @@ namespace LibRyujinx
             Logcat.AndroidLogPrint(GetLogLevel(args.Level), _name, _formatter.Format(args));
         }
 
-        private Logcat.LogLevel GetLogLevel(LogLevel logLevel)
+        private static Logcat.LogLevel GetLogLevel(LogLevel logLevel)
         {
             return logLevel switch
             {
@@ -39,13 +36,14 @@ namespace LibRyujinx
                 LogLevel.AccessLog => Logcat.LogLevel.Info,
                 LogLevel.Notice => Logcat.LogLevel.Info,
                 LogLevel.Trace => Logcat.LogLevel.Verbose,
-                _ => throw new NotImplementedException()
+                _ => throw new NotImplementedException(),
 
             };
         }
 
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
         }
     }
 }

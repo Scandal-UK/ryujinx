@@ -9,7 +9,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
 
     fun onKeyEvent(event: KeyEvent) : Boolean{
         if(controllerId != -1) {
-            var id = GetGamePadButtonInputId(event.keyCode)
+            val id = GetGamePadButtonInputId(event.keyCode)
 
             if(id != GamePadButtonInputId.None) {
                 when (event.action) {
@@ -21,7 +21,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
                         ryujinxNative.inputSetButtonPressed(id.ordinal, controllerId)
                     }
                 }
-                return true;
+                return true
             }
         }
 
@@ -31,10 +31,10 @@ class PhysicalControllerManager(val activity: MainActivity) {
     fun onMotionEvent(ev: MotionEvent) {
         if(controllerId != -1) {
             if(ev.action == MotionEvent.ACTION_MOVE) {
-                var leftStickX = ev.getAxisValue(MotionEvent.AXIS_X);
-                var leftStickY = ev.getAxisValue(MotionEvent.AXIS_Y);
-                var rightStickX = ev.getAxisValue(MotionEvent.AXIS_Z);
-                var rightStickY = ev.getAxisValue(MotionEvent.AXIS_RZ);
+                val leftStickX = ev.getAxisValue(MotionEvent.AXIS_X)
+                val leftStickY = ev.getAxisValue(MotionEvent.AXIS_Y)
+                val rightStickX = ev.getAxisValue(MotionEvent.AXIS_Z)
+                val rightStickY = ev.getAxisValue(MotionEvent.AXIS_RZ)
                 ryujinxNative.inputSetStickAxis(1, leftStickX, -leftStickY ,controllerId)
                 ryujinxNative.inputSetStickAxis(2, rightStickX, -rightStickY ,controllerId)
             }
