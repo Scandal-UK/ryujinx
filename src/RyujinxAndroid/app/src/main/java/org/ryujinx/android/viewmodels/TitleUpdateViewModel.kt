@@ -4,8 +4,8 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toLowerCase
 import com.anggrayudi.storage.SimpleStorageHelper
+import com.anggrayudi.storage.file.getAbsolutePath
 import com.google.gson.Gson
-import org.ryujinx.android.Helpers
 import org.ryujinx.android.MainActivity
 import java.io.File
 import kotlin.math.max
@@ -39,8 +39,8 @@ class TitleUpdateViewModel(val titleId: String) {
                 {
                     val file = files.firstOrNull()
                     file?.apply {
-                        val path = Helpers.getPath(storageHelper.storage.context, file.uri)
-                        if(!path.isNullOrEmpty()){
+                        val path = file.getAbsolutePath(storageHelper.storage.context)
+                        if(path.isNotEmpty()){
                             data?.apply {
                                 if(!paths.contains(path)) {
                                     paths.add(path)
