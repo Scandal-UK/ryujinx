@@ -107,7 +107,7 @@ class TitleUpdateViews {
                         ) {
                             Icon(
                                 Icons.Filled.Add,
-                                contentDescription = "Remove"
+                                contentDescription = "Add"
                             )
                         }
                     }

@@ -25,7 +25,7 @@ class RyujinxNative {
     external fun graphicsInitialize(configuration: GraphicsConfiguration): Boolean
     external fun graphicsInitializeRenderer(
         extensions: Array<String>,
-        surface: Long
+        driver: Long
     ): Boolean
 
     external fun deviceLoad(game: String): Boolean
@@ -47,5 +47,9 @@ class RyujinxNative {
     external fun inputSetButtonReleased(button: Int, id: Int): Unit
     external fun inputConnectGamepad(index: Int): Int
     external fun inputSetStickAxis(stick: Int, x: Float, y: Float, id: Int): Unit
-    external fun graphicsSetSurface(surface: Long): String
+    external fun graphicsSetSurface(surface: Long)
+    external fun deviceCloseEmulation()
+    external fun deviceSignalEmulationClose()
+    external fun deviceGetDlcTitleId(path: String, ncaPath: String) : String
+    external fun deviceGetDlcContentList(path: String, titleId: Long) : Array<String>
 }

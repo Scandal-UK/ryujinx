@@ -15,4 +15,6 @@ class NativeHelpers {
     external fun getNativeWindow(surface:Surface) : Long
     external fun attachCurrentThread() : Unit
     external fun detachCurrentThread() : Unit
+
+    external fun loadDriver(nativeLibPath:String, privateAppsPath:String, driverName:String) : Long
 }

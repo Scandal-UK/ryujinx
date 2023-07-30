@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -25,8 +26,10 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.anggrayudi.storage.SimpleStorageHelper
 import org.ryujinx.android.ui.theme.RyujinxAndroidTheme
 import org.ryujinx.android.viewmodels.MainViewModel
+import org.ryujinx.android.viewmodels.VulkanDriverViewModel
 import org.ryujinx.android.views.HomeViews
 import org.ryujinx.android.views.MainView
+import java.io.File
 
 
 class MainActivity : ComponentActivity() {
@@ -60,15 +63,22 @@ class MainActivity : ComponentActivity() {
     external fun getRenderingThreadId() : Long
     external fun initVm()
 
-    fun setFullScreen() {
+    fun setFullScreen(fullscreen: Boolean) {
         requestedOrientation =
-            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            if (fullscreen) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_FULL_USER
 
         val insets = WindowCompat.getInsetsController(window, window.decorView)
 
         insets.apply {
-            insets.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
-            insets.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (fullscreen) {
+                insets.hide(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+                insets.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            } else {
+                insets.show(WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.navigationBars())
+                insets.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+            }
         }
     }
 
@@ -93,7 +103,8 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         event?.apply {
-            return physicalControllerManager.onKeyEvent(this)
+            if(physicalControllerManager.onKeyEvent(this))
+                return true;
         }
         return super.dispatchKeyEvent(event)
     }

@@ -7,9 +7,12 @@ import android.view.SurfaceView
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
+import org.ryujinx.android.viewmodels.VulkanDriverViewModel
+import java.io.File
 import kotlin.concurrent.thread
 
-class GameHost(context: Context?, val controller: GameController, val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+    private var _isClosed: Boolean = false
     private var _renderingThreadWatcher: Thread? = null
     private var _height: Int = 0
     private var _width: Int = 0
@@ -19,13 +22,8 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
     private var _isInit: Boolean = false
     private var _isStarted: Boolean = false
     private var _nativeWindow: Long = 0
-    private var _nativeHelper: NativeHelpers = NativeHelpers()
 
     private var _nativeRyujinx: RyujinxNative = RyujinxNative()
-
-    companion object {
-        var gameModel: GameModel? = null
-    }
 
     init {
         holder.addCallback(this)
@@ -35,11 +33,11 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        val isStarted = _isStarted
-
+        if(_isClosed)
+            return
         start(holder)
 
-        if(isStarted && (_width != width || _height != height))
+        if(_width != width || _height != height)
         {
             val nativeHelpers = NativeHelpers()
             val window = nativeHelpers.getNativeWindow(holder.surface)
@@ -59,65 +57,32 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
 
     }
 
+    fun close(){
+        _isClosed = true
+        _isInit = false
+        _isStarted = false
+
+        _updateThread?.join()
+        _renderingThreadWatcher?.join()
+    }
+
     private fun start(surfaceHolder: SurfaceHolder) {
-        val game = gameModel ?: return
-        val path = game.getPath() ?: return
-        if (_isStarted)
-            return
-
-        var surface = surfaceHolder.surface
-
-        val settings = QuickSettings(mainViewModel.activity)
-
-        var success = _nativeRyujinx.graphicsInitialize(GraphicsConfiguration().apply {
-            EnableShaderCache = settings.enableShaderCache
-            EnableTextureRecompression = settings.enableTextureRecompression
-            ResScale = settings.resScale
-        })
-
-
-        val nativeHelpers = NativeHelpers()
-        val window = nativeHelpers.getNativeWindow(surfaceHolder.surface)
-        nativeInterop = NativeGraphicsInterop()
-        nativeInterop!!.VkRequiredExtensions = arrayOf(
-            "VK_KHR_surface", "VK_KHR_android_surface"
-        )
-        nativeInterop!!.VkCreateSurface = nativeHelpers.getCreateSurfacePtr()
-        nativeInterop!!.SurfaceHandle = window
-
-        success = _nativeRyujinx.graphicsInitializeRenderer(
-            nativeInterop!!.VkRequiredExtensions!!,
-            window
-        )
-
-
-        success = _nativeRyujinx.deviceInitialize(
-            settings.isHostMapped,
-            settings.useNce,
-            SystemLanguage.AmericanEnglish.ordinal,
-            RegionCode.USA.ordinal,
-            settings.enableVsync,
-            settings.enableDocked,
-            settings.enablePtc,
-            false,
-            "UTC",
-            settings.ignoreMissingServices
-        )
-
-        success = _nativeRyujinx.deviceLoad(path)
+        mainViewModel.gameHost = this
+        if(_isStarted)
+            return;
 
         _nativeRyujinx.inputInitialize(width, height)
 
+        val settings = QuickSettings(mainViewModel.activity)
+
         if(!settings.useVirtualController){
-            controller.setVisible(false)
+            mainViewModel.controller?.setVisible(false)
         }
         else{
-            controller.connect()
+            mainViewModel.controller?.connect()
         }
 
         mainViewModel.activity.physicalControllerManager.connect()
-
-        //
 
         _nativeRyujinx.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
@@ -127,7 +92,7 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
         _guestThread = thread(start = true) {
             runGame()
         }
-        _isStarted = success
+        _isStarted = true
 
         _updateThread = thread(start = true) {
             var c = 0
@@ -161,6 +126,7 @@ class GameHost(context: Context?, val controller: GameController, val mainViewMo
                         mainViewModel.performanceManager?.initializeRenderingSession(threadId)
                     }
                 }
+                mainViewModel.performanceManager?.closeCurrentRenderingSession()
             }
         }
         _nativeRyujinx.graphicsRendererRunLoop()
