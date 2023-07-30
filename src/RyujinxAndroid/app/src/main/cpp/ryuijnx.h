@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <string.h>
+#include <string>
 #include <jni.h>
 #include <exception>
 #include <android/log.h>
@@ -15,6 +16,8 @@
 #include "vulkan_wrapper.h"
 #include <vulkan/vulkan_android.h>
 #include <cassert>
+#include <fcntl.h>
+#include "libraries/adrenotools/include/adrenotools/driver.h"
 
 // A macro to pass call to Vulkan and check for return value for success
 #define CALL_VK(func)                                                 \

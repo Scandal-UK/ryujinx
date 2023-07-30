@@ -19,6 +19,7 @@
 #include "ryuijnx.h"
 #include "pthread.h"
 #include <chrono>
+#include <csignal>
 
 jmethodID _updateFrameTime;
 JNIEnv* _rendererEnv = nullptr;
@@ -179,13 +180,48 @@ Java_org_ryujinx_android_MainActivity_initVm(JNIEnv *env, jobject thiz) {
 }
 
 extern "C"
-void onFrameEnd(double time){
+void onFrameEnd(double time) {
     auto env = getEnv(true);
     auto cl = env->FindClass("org/ryujinx/android/MainActivity");
-    _updateFrameTime = env->GetStaticMethodID( cl , "updateRenderSessionPerformance", "(J)V");
+    _updateFrameTime = env->GetStaticMethodID(cl, "updateRenderSessionPerformance", "(J)V");
 
     auto now = std::chrono::high_resolution_clock::now();
-    auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(now-_currentTimePoint).count();
+    auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            now - _currentTimePoint).count();
     env->CallStaticVoidMethod(cl, _updateFrameTime,
                               nano);
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_loadDriver(JNIEnv *env, jobject thiz,
+                                                  jstring native_lib_path,
+                                                  jstring private_apps_path,
+                                                  jstring driver_name) {
+    auto libPath = getStringPointer(env, native_lib_path);
+    auto privateAppsPath = getStringPointer(env, private_apps_path);
+    auto driverName = getStringPointer(env, driver_name);
+
+    auto handle = adrenotools_open_libvulkan(
+            RTLD_NOW,
+            ADRENOTOOLS_DRIVER_CUSTOM,
+            nullptr,
+            libPath,
+            privateAppsPath,
+            driverName,
+            nullptr,
+            nullptr
+            );
+
+    delete libPath;
+    delete privateAppsPath;
+    delete driverName;
+
+    return (jlong)handle;
+}
+
+extern "C"
+void debug_break(int code){
+    if(code >= 3)
+    int r = 0;
 }

@@ -10,6 +10,7 @@ namespace LibRyujinx.Shared.Audio.Oboe
     internal class OboeHardwareDeviceSession : HardwareDeviceSessionOutputBase
     {
         private OboeHardwareDeviceDriver _driver;
+        private bool _isClosed;
         private bool _isWorkerActive;
         private Queue<OboeAudioBuffer> _queuedBuffers;
         private bool _isActive;
@@ -59,6 +60,9 @@ namespace LibRyujinx.Shared.Audio.Oboe
                 {
                     StartIfNotPlaying();
 
+                    if (_isClosed)
+                        break;
+
                     fixed(byte* ptr = buffer.Data)
                         OboeInterop.WriteToSession(_session, (ulong)ptr, buffer.SampleCount);
 
@@ -90,18 +94,31 @@ namespace LibRyujinx.Shared.Audio.Oboe
 
         public override void Dispose()
         {
+            if (_session == 0)
+                return;
+
+            PrepareToClose();
+
             OboeInterop.CloseSession(_session);
+
+            _session = 0;
         }
+
         public override void PrepareToClose()
         {
+            _isClosed = true;
             _isWorkerActive = false;
-            _workerThread.Join();
+            _workerThread?.Join();
+            Stop();
         }
 
         private void StartIfNotPlaying()
         {
             lock (_trackLock)
             {
+                if (_isClosed)
+                    return;
+
                 if (OboeInterop.IsPlaying(_session) == 0)
                 {
                     Start();
@@ -145,6 +162,9 @@ namespace LibRyujinx.Shared.Audio.Oboe
 
         public override void Start()
         {
+            if (_isClosed)
+                return;
+
             OboeInterop.StartSession(_session);
         }
 

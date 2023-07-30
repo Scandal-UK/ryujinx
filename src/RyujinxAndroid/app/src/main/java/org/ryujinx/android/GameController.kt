@@ -13,6 +13,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleCoroutineScope
+import androidx.lifecycle.lifecycleScope
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.config.ButtonConfig
 import com.swordfish.radialgamepad.library.config.CrossConfig
@@ -27,11 +28,47 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
+import org.ryujinx.android.viewmodels.MainViewModel
 
 typealias GamePad = RadialGamePad
 typealias GamePadConfig = RadialGamePadConfig
 
-class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = RyujinxNative()) {
+class GameController(var activity: Activity) {
+
+    companion object{
+        private fun Create(context: Context, activity: Activity, controller: GameController) : View
+        {
+            val inflator = LayoutInflater.from(context)
+            val view = inflator.inflate(R.layout.game_layout, null)
+            view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(controller.leftGamePad)
+            view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(controller.rightGamePad)
+
+            return view
+        }
+        @Composable
+        fun Compose(viewModel: MainViewModel) : Unit
+        {
+            AndroidView(
+                modifier = Modifier.fillMaxSize(), factory = { context ->
+                    val controller = GameController(viewModel.activity)
+                    val c = Create(context, viewModel.activity, controller)
+                        viewModel.activity.lifecycleScope.apply {
+                            viewModel.activity.lifecycleScope.launch {
+                            val events = merge(controller.leftGamePad.events(),controller.rightGamePad.events())
+                                .shareIn(viewModel.activity.lifecycleScope, SharingStarted.Lazily)
+                            events.safeCollect {
+                                controller.handleEvent(it)
+                            }
+                        }
+                    }
+                    controller.controllerView = c
+                    viewModel.setGameController(controller)
+                    c
+                })
+        }
+    }
+
+    private var ryujinxNative: RyujinxNative
     private var controllerView: View? = null
     var leftGamePad: GamePad
     var rightGamePad: GamePad
@@ -56,36 +93,8 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
         leftGamePad.gravityY = 1f
         rightGamePad.gravityX = 1f
         rightGamePad.gravityY = 1f
-    }
 
-    @Composable
-    fun Compose(lifecycleScope: LifecycleCoroutineScope, lifecycle:Lifecycle) : Unit
-    {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(), factory = { context -> Create(context)})
-
-        lifecycleScope.apply {
-            lifecycleScope.launch {
-                val events = merge(leftGamePad.events(),rightGamePad.events())
-                    .shareIn(lifecycleScope, SharingStarted.Lazily)
-
-                events.safeCollect {
-                    handleEvent(it)
-                }
-            }
-        }
-    }
-
-    private fun Create(context: Context) : View
-    {
-        val inflator = LayoutInflater.from(context)
-        val view = inflator.inflate(R.layout.game_layout, null)
-        view.findViewById<FrameLayout>(R.id.leftcontainer)!!.addView(leftGamePad)
-        view.findViewById<FrameLayout>(R.id.rightcontainer)!!.addView(rightGamePad)
-
-        controllerView = view
-
-        return controllerView as View
+        ryujinxNative = RyujinxNative()
     }
 
     fun setVisible(isVisible: Boolean){
@@ -99,7 +108,7 @@ class GameController(var activity: Activity, var ryujinxNative: RyujinxNative = 
 
     fun connect(){
         if(controllerId == -1)
-            controllerId = ryujinxNative.inputConnectGamepad(0)
+            controllerId = RyujinxNative().inputConnectGamepad(0)
     }
 
     private fun handleEvent(ev: Event) {

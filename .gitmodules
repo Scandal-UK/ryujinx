@@ -1,0 +1,3 @@
+[submodule "libadrenotools"]
+	path = src/RyujinxAndroid/app/src/main/cpp/libraries/adrenotools
+	url = https://github.com/bylaws/libadrenotools.git

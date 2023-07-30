@@ -32,6 +32,7 @@ import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -59,6 +60,9 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.anggrayudi.storage.extension.launchOnUiThread
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.ryujinx.android.MainActivity
 import org.ryujinx.android.R
 import org.ryujinx.android.viewmodels.GameModel
@@ -143,14 +147,16 @@ class HomeViews {
                                 Column {
                                     TextButton(onClick = {
                                                          navController.navigate("settings")
-                                    }, modifier = Modifier.fillMaxWidth()
+                                    }, modifier = Modifier
+                                        .fillMaxWidth()
                                         .align(Alignment.Start),
                                     ) {
                                         Icon(
                                             Icons.Filled.Settings,
                                             contentDescription = "Settings"
                                         )
-                                        Text(text = "Settings", modifier = Modifier.padding(16.dp)
+                                        Text(text = "Settings", modifier = Modifier
+                                            .padding(16.dp)
                                             .align(Alignment.CenterVertically))
                                     }
                                 }
@@ -167,6 +173,7 @@ class HomeViews {
             val sheetState = rememberModalBottomSheetState()
             val scope = rememberCoroutineScope()
             val showBottomSheet = remember { mutableStateOf(false) }
+            val showLoading = remember { mutableStateOf(false) }
 
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
@@ -198,8 +205,27 @@ class HomeViews {
                         items(list) {
                             it.titleName?.apply {
                                 if (this.isNotEmpty())
-                                    GameItem(it, viewModel, showBottomSheet)
+                                    GameItem(it, viewModel, showBottomSheet, showLoading)
                             }
+                        }
+                    }
+                }
+
+                if(showLoading.value){
+                    AlertDialog(onDismissRequest = {  }) {
+                        Card(modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium) {
+                            Column(modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()) {
+                                Text(text = "Loading")
+                                LinearProgressIndicator(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp))
+                            }
+
                         }
                     }
                 }
@@ -209,11 +235,12 @@ class HomeViews {
                         showBottomSheet.value = false
                     },
                     sheetState = sheetState) {
-                        val openDialog = remember { mutableStateOf(false) }
+                        val openTitleUpdateDialog = remember { mutableStateOf(false) }
+                        val openDlcDialog = remember { mutableStateOf(false) }
 
-                        if(openDialog.value) {
+                        if(openTitleUpdateDialog.value) {
                             AlertDialog(onDismissRequest = { 
-                                openDialog.value = false
+                                openTitleUpdateDialog.value = false
                             }) {
                                 Surface(
                                     modifier = Modifier
@@ -224,24 +251,43 @@ class HomeViews {
                                 ) {
                                     val titleId = viewModel.mainViewModel?.selected?.titleId ?: ""
                                     val name = viewModel.mainViewModel?.selected?.titleName ?: ""
-                                    TitleUpdateViews.Main(titleId, name, openDialog)
+                                    TitleUpdateViews.Main(titleId, name, openTitleUpdateDialog)
                                 }
 
                             }
                         }
+                        if(openDlcDialog.value) {
+                        AlertDialog(onDismissRequest = {
+                            openDlcDialog.value = false
+                        }) {
+                            Surface(
+                                modifier = Modifier
+                                    .wrapContentWidth()
+                                    .wrapContentHeight(),
+                                shape = MaterialTheme.shapes.large,
+                                tonalElevation = AlertDialogDefaults.TonalElevation
+                            ) {
+                                val titleId = viewModel.mainViewModel?.selected?.titleId ?: ""
+                                val name = viewModel.mainViewModel?.selected?.titleName ?: ""
+                                DlcViews.Main(titleId, name, openDlcDialog)
+                            }
+
+                        }
+                    }
                         Surface(color =  MaterialTheme.colorScheme.surface,
                         modifier = Modifier.padding(16.dp)) {
                             Column(modifier = Modifier.fillMaxSize()) {
                                 Row(modifier = Modifier.align(Alignment.CenterHorizontally)) {
                                     Card(
+                                        modifier = Modifier.padding(8.dp),
                                         onClick = {
-                                            openDialog.value = true
+                                            openTitleUpdateDialog.value = true
                                         }
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Icon(
                                                 painter = painterResource(R.drawable.app_update),
-                                                contentDescription = "More",
+                                                contentDescription = "Game Updates",
                                                 tint = Color.Green,
                                                 modifier = Modifier
                                                     .width(48.dp)
@@ -251,6 +297,28 @@ class HomeViews {
                                             Text(text = "Game Updates",
                                                 modifier = Modifier.align(Alignment.CenterHorizontally),
                                             color = MaterialTheme.colorScheme.onSurface)
+
+                                        }
+                                    }
+                                    Card(
+                                        modifier = Modifier.padding(8.dp),
+                                        onClick = {
+                                            openDlcDialog.value = true
+                                        }
+                                    ) {
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Icon(
+                                                imageVector = org.ryujinx.android.Icons.Download(),
+                                                contentDescription = "Game Dlc",
+                                                tint = Color.Green,
+                                                modifier = Modifier
+                                                    .width(48.dp)
+                                                    .height(48.dp)
+                                                    .align(Alignment.CenterHorizontally)
+                                            )
+                                            Text(text = "Game DLC",
+                                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                                color = MaterialTheme.colorScheme.onSurface)
 
                                         }
                                     }
@@ -264,15 +332,35 @@ class HomeViews {
 
         @OptIn(ExperimentalFoundationApi::class)
         @Composable
-        fun GameItem(gameModel: GameModel, viewModel: HomeViewModel, showSheet : MutableState<Boolean>) {
-            Card(shape = MaterialTheme.shapes.medium,
+        fun GameItem(
+            gameModel: GameModel,
+            viewModel: HomeViewModel,
+            showSheet: MutableState<Boolean>,
+            showLoading: MutableState<Boolean>
+        ) {
+            Surface(shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
                     .combinedClickable(
                         onClick = {
                             if (gameModel.titleId.isNullOrEmpty() || gameModel.titleId != "0000000000000000") {
-                                viewModel.mainViewModel?.loadGame(gameModel)
+                                runBlocking {
+                                    launch {
+                                        showLoading.value = true
+                                        val success =
+                                            viewModel.mainViewModel?.loadGame(gameModel) ?: false
+                                        if (success) {
+                                            launchOnUiThread {
+                                                viewModel.mainViewModel?.activity?.setFullScreen(
+                                                    true
+                                                )
+                                                viewModel.mainViewModel?.navController?.navigate("game")
+                                            }
+                                        }
+                                        showLoading.value = false
+                                    }
+                                }
                             }
                         },
                         onLongClick = {

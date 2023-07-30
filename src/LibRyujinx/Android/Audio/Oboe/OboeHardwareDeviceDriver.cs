@@ -62,11 +62,6 @@ namespace LibRyujinx.Shared.Audio.Oboe
             return session;
         }
 
-        internal bool Unregister(OboeHardwareDeviceSession session)
-        {
-            return _sessions.TryRemove(session, out _);
-        }
-
         public void Dispose()
         {
             Dispose(true);
@@ -82,6 +77,8 @@ namespace LibRyujinx.Shared.Audio.Oboe
                 }
 
                 _pauseEvent.Dispose();
+
+                _sessions.Clear();
             }
         }
 
