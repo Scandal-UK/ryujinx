@@ -55,6 +55,7 @@ android {
     packagingOptions {
         jniLibs {
             keepDebugSymbols += '**/libryujinx.so'
+            useLegacyPackaging true
         }
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
