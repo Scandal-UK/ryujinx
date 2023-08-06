@@ -1,8 +1,12 @@
 package org.ryujinx.android
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -10,13 +14,17 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import compose.icons.CssGgIcons
+import compose.icons.cssggicons.Games
 
 class Icons {
     companion object{
         /// Icons exported from https://www.composables.com/icons
         @Composable
-        fun Download(): ImageVector {
+        fun download(): ImageVector {
+            val primaryColor = MaterialTheme.colorScheme.primary
             return remember {
                 ImageVector.Builder(
                     name = "download",
@@ -26,9 +34,9 @@ class Icons {
                     viewportHeight = 40.0f
                 ).apply {
                     path(
-                        fill = SolidColor(Color.Black),
+                        fill = SolidColor(Color.Black.copy(alpha = 0.5f)),
+                        stroke = SolidColor(primaryColor),
                         fillAlpha = 1f,
-                        stroke = null,
                         strokeAlpha = 1f,
                         strokeLineWidth = 1.0f,
                         strokeLineCap = StrokeCap.Butt,
@@ -84,7 +92,77 @@ class Icons {
             }
         }
         @Composable
-        fun VideoGame(): ImageVector {
+        fun vSync(): ImageVector {
+            val primaryColor = MaterialTheme.colorScheme.primary
+            return remember {
+                ImageVector.Builder(
+                    name = "60fps",
+                    defaultWidth = 40.0.dp,
+                    defaultHeight = 40.0.dp,
+                    viewportWidth = 40.0f,
+                    viewportHeight = 40.0f
+                ).apply {
+                    path(
+                        fill = SolidColor(Color.Black.copy(alpha = 0.5f)),
+                        stroke = SolidColor(primaryColor),
+                        fillAlpha = 1f,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1.0f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Miter,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.NonZero
+                    ) {
+                        moveTo(7.292f, 31.458f)
+                        quadToRelative(-1.542f, 0f, -2.625f, -1.041f)
+                        quadToRelative(-1.084f, -1.042f, -1.084f, -2.625f)
+                        verticalLineTo(12.208f)
+                        quadToRelative(0f, -1.583f, 1.084f, -2.625f)
+                        quadTo(5.75f, 8.542f, 7.292f, 8.542f)
+                        horizontalLineTo(14f)
+                        quadToRelative(0.75f, 0f, 1.292f, 0.541f)
+                        quadToRelative(0.541f, 0.542f, 0.541f, 1.292f)
+                        reflectiveQuadToRelative(-0.541f, 1.292f)
+                        quadToRelative(-0.542f, 0.541f, -1.292f, 0.541f)
+                        horizontalLineTo(7.208f)
+                        verticalLineToRelative(5.084f)
+                        horizontalLineToRelative(6.709f)
+                        quadToRelative(1.541f, 0f, 2.583f, 1.041f)
+                        quadToRelative(1.042f, 1.042f, 1.042f, 2.625f)
+                        verticalLineToRelative(6.834f)
+                        quadToRelative(0f, 1.583f, -1.042f, 2.625f)
+                        quadToRelative(-1.042f, 1.041f, -2.583f, 1.041f)
+                        close()
+                        moveToRelative(-0.084f, -10.5f)
+                        verticalLineToRelative(6.834f)
+                        horizontalLineToRelative(6.709f)
+                        verticalLineToRelative(-6.834f)
+                        close()
+                        moveToRelative(17.125f, 6.834f)
+                        horizontalLineToRelative(8.459f)
+                        verticalLineTo(12.208f)
+                        horizontalLineToRelative(-8.459f)
+                        verticalLineToRelative(15.584f)
+                        close()
+                        moveToRelative(0f, 3.666f)
+                        quadToRelative(-1.541f, 0f, -2.583f, -1.041f)
+                        quadToRelative(-1.042f, -1.042f, -1.042f, -2.625f)
+                        verticalLineTo(12.208f)
+                        quadToRelative(0f, -1.583f, 1.042f, -2.625f)
+                        quadToRelative(1.042f, -1.041f, 2.583f, -1.041f)
+                        horizontalLineToRelative(8.459f)
+                        quadToRelative(1.541f, 0f, 2.583f, 1.041f)
+                        quadToRelative(1.042f, 1.042f, 1.042f, 2.625f)
+                        verticalLineToRelative(15.584f)
+                        quadToRelative(0f, 1.583f, -1.042f, 2.625f)
+                        quadToRelative(-1.042f, 1.041f, -2.583f, 1.041f)
+                        close()
+                    }
+                }.build()
+            }
+        }
+        @Composable
+        fun videoGame(): ImageVector {
             val primaryColor = MaterialTheme.colorScheme.primary
             return remember {
                 ImageVector.Builder(
@@ -96,8 +174,8 @@ class Icons {
                 ).apply {
                     path(
                         fill = SolidColor(Color.Black.copy(alpha = 0.5f)),
-                        fillAlpha = 1f,
                         stroke = SolidColor(primaryColor),
+                        fillAlpha = 1f,
                         strokeAlpha = 1f,
                         strokeLineWidth = 1.0f,
                         strokeLineCap = StrokeCap.Butt,
@@ -178,5 +256,17 @@ class Icons {
                 }.build()
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun Preview(){
+    IconButton(modifier = Modifier.padding(4.dp), onClick = {
+    }) {
+        Icon(
+            imageVector = CssGgIcons.Games,
+            contentDescription = "Open Panel"
+        )
     }
 }

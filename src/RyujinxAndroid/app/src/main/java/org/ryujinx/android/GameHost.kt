@@ -1,5 +1,6 @@
 package org.ryujinx.android
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.view.SurfaceHolder
@@ -7,21 +8,19 @@ import android.view.SurfaceView
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
-import org.ryujinx.android.viewmodels.VulkanDriverViewModel
-import java.io.File
 import kotlin.concurrent.thread
 
-class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+@SuppressLint("ViewConstructor")
+class GameHost(context: Context?, private val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+    private var game: GameModel? = null
     private var _isClosed: Boolean = false
     private var _renderingThreadWatcher: Thread? = null
     private var _height: Int = 0
     private var _width: Int = 0
     private var _updateThread: Thread? = null
-    private var nativeInterop: NativeGraphicsInterop? = null
     private var _guestThread: Thread? = null
     private var _isInit: Boolean = false
     private var _isStarted: Boolean = false
-    private var _nativeWindow: Long = 0
 
     private var _nativeRyujinx: RyujinxNative = RyujinxNative()
 
@@ -47,6 +46,11 @@ class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceVie
         _width = width
         _height = height
 
+        _nativeRyujinx.graphicsRendererSetSize(
+            width,
+            height
+        )
+
         if(_isStarted)
         {
             _nativeRyujinx.inputSetClientSize(width, height)
@@ -69,7 +73,9 @@ class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceVie
     private fun start(surfaceHolder: SurfaceHolder) {
         mainViewModel.gameHost = this
         if(_isStarted)
-            return;
+            return
+
+        game = mainViewModel.gameModel
 
         _nativeRyujinx.inputInitialize(width, height)
 
@@ -82,7 +88,7 @@ class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceVie
             mainViewModel.controller?.connect()
         }
 
-        mainViewModel.activity.physicalControllerManager.connect()
+        mainViewModel.physicalControllerManager?.connect()
 
         _nativeRyujinx.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
@@ -130,5 +136,7 @@ class GameHost(context: Context?, val mainViewModel: MainViewModel) : SurfaceVie
             }
         }
         _nativeRyujinx.graphicsRendererRunLoop()
+
+        game?.close()
     }
 }

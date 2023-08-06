@@ -4,7 +4,6 @@ import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
@@ -12,10 +11,9 @@ import android.provider.MediaStore
 class Helpers {
     companion object{
         fun getPath(context: Context, uri: Uri): String? {
-            val isKitKatorAbove = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT
 
             // DocumentProvider
-            if (isKitKatorAbove && DocumentsContract.isDocumentUri(context, uri)) {
+            if (DocumentsContract.isDocumentUri(context, uri)) {
                 // ExternalStorageProvider
                 if (isExternalStorageDocument(uri)) {
                     val docId = DocumentsContract.getDocumentId(uri)
@@ -57,7 +55,7 @@ class Helpers {
             return null
         }
 
-        fun getDataColumn(context: Context, uri: Uri?, selection: String?, selectionArgs: Array<String>?): String? {
+        private fun getDataColumn(context: Context, uri: Uri?, selection: String?, selectionArgs: Array<String>?): String? {
             var cursor: Cursor? = null
             val column = "_data"
             val projection = arrayOf(column)
@@ -73,15 +71,15 @@ class Helpers {
             return null
         }
 
-        fun isExternalStorageDocument(uri: Uri): Boolean {
+        private fun isExternalStorageDocument(uri: Uri): Boolean {
             return "com.android.externalstorage.documents" == uri.authority
         }
 
-        fun isDownloadsDocument(uri: Uri): Boolean {
+        private fun isDownloadsDocument(uri: Uri): Boolean {
             return "com.android.providers.downloads.documents" == uri.authority
         }
 
-        fun isMediaDocument(uri: Uri): Boolean {
+        private fun isMediaDocument(uri: Uri): Boolean {
             return "com.android.providers.media.documents" == uri.authority
         }
     }

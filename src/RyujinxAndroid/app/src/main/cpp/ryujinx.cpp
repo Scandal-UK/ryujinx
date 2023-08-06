@@ -225,3 +225,9 @@ void debug_break(int code){
     if(code >= 3)
     int r = 0;
 }
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_ryujinx_android_NativeHelpers_setTurboMode(JNIEnv *env, jobject thiz, jboolean enable) {
+    adrenotools_set_turbo(enable);
+}

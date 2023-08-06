@@ -1,10 +1,10 @@
 package org.ryujinx.android.viewmodels
 
+import android.app.Activity
 import android.content.SharedPreferences
 import androidx.preference.PreferenceManager
-import org.ryujinx.android.MainActivity
 
-class QuickSettings(val activity: MainActivity) {
+class QuickSettings(val activity: Activity) {
     var ignoreMissingServices: Boolean
     var enablePtc: Boolean
     var enableDocked: Boolean

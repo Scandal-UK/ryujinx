@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -47,7 +48,6 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -68,6 +68,7 @@ import org.ryujinx.android.R
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.HomeViewModel
 import java.io.File
+import java.util.Locale
 import kotlin.math.roundToInt
 
 class HomeViews {
@@ -76,7 +77,11 @@ class HomeViews {
 
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
-        fun MainTopBar(navController: NavHostController) {
+        fun MainTopBar(
+            navController: NavHostController,
+            query: MutableState<String>,
+            refresh: MutableState<Boolean>
+        ) {
             val topBarSize = remember {
                 mutableStateOf(0)
             }
@@ -87,15 +92,17 @@ class HomeViews {
                 TopAppBar(
                     modifier = Modifier
                         .zIndex(1f)
-                        .padding(top = 16.dp)
+                        .padding(top = 8.dp)
                         .onSizeChanged {
                             topBarSize.value = it.height
                         },
                     title = {
                         DockedSearchBar(
                             shape = SearchBarDefaults.inputFieldShape,
-                            query = "",
-                            onQueryChange = {},
+                            query = query.value,
+                            onQueryChange = {
+                                query.value = it
+                            },
                             onSearch = {},
                             active = false,
                             onActiveChange = {},
@@ -115,6 +122,16 @@ class HomeViews {
                     actions = {
                         IconButton(
                             onClick = {
+                                refresh.value = true
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.Refresh,
+                                contentDescription = "Refresh"
+                            )
+                        }
+                        IconButton(
+                            onClick = {
                                 showOptionsPopup.value = true
                             }
                         ) {
@@ -126,15 +143,17 @@ class HomeViews {
                     }
                 )
                 Box {
-                    if(showOptionsPopup.value)
-                    {
+                    if (showOptionsPopup.value) {
                         AlertDialog(
-                            modifier = Modifier.padding(top = (topBarSize.value / Resources.getSystem().displayMetrics.density + 10).dp,
-                            start = 16.dp, end = 16.dp),
+                            modifier = Modifier.padding(
+                                top = (topBarSize.value / Resources.getSystem().displayMetrics.density + 10).dp,
+                                start = 16.dp, end = 16.dp
+                            ),
                             onDismissRequest = {
                                 showOptionsPopup.value = false
                             }) {
-                            val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
+                            val dialogWindowProvider =
+                                LocalView.current.parent as DialogWindowProvider
                             dialogWindowProvider.window.setGravity(Gravity.TOP)
                             Surface(
                                 modifier = Modifier
@@ -145,19 +164,23 @@ class HomeViews {
                                 tonalElevation = AlertDialogDefaults.TonalElevation
                             ) {
                                 Column {
-                                    TextButton(onClick = {
-                                                         navController.navigate("settings")
-                                    }, modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Start),
+                                    TextButton(
+                                        onClick = {
+                                            navController.navigate("settings")
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.Start),
                                     ) {
                                         Icon(
                                             Icons.Filled.Settings,
                                             contentDescription = "Settings"
                                         )
-                                        Text(text = "Settings", modifier = Modifier
-                                            .padding(16.dp)
-                                            .align(Alignment.CenterVertically))
+                                        Text(
+                                            text = "Settings", modifier = Modifier
+                                                .padding(16.dp)
+                                                .align(Alignment.CenterVertically)
+                                        )
                                     }
                                 }
                             }
@@ -171,15 +194,19 @@ class HomeViews {
         @Composable
         fun Home(viewModel: HomeViewModel = HomeViewModel(), navController: NavHostController? = null) {
             val sheetState = rememberModalBottomSheetState()
-            val scope = rememberCoroutineScope()
             val showBottomSheet = remember { mutableStateOf(false) }
             val showLoading = remember { mutableStateOf(false) }
-
+            val query = remember {
+                mutableStateOf("")
+            }
+            val refresh = remember {
+                mutableStateOf(true)
+            }
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
                     navController?.apply {
-                        MainTopBar(navController)
+                        MainTopBar(navController, query, refresh)
                     }
                 },
                 floatingActionButtonPosition = FabPosition.End,
@@ -200,11 +227,19 @@ class HomeViews {
                     val list = remember {
                         mutableStateListOf<GameModel>()
                     }
-                    viewModel.setViewList(list)
+
+
+                    if(refresh.value) {
+                        viewModel.setViewList(list)
+                        refresh.value = false
+                    }
                     LazyColumn(Modifier.fillMaxSize()) {
                         items(list) {
                             it.titleName?.apply {
-                                if (this.isNotEmpty())
+                                if (this.isNotEmpty() && (query.value.trim().isEmpty() || this.lowercase(
+                                        Locale.getDefault()
+                                    )
+                                        .contains(query.value)))
                                     GameItem(it, viewModel, showBottomSheet, showLoading)
                             }
                         }
@@ -308,7 +343,7 @@ class HomeViews {
                                     ) {
                                         Column(modifier = Modifier.padding(16.dp)) {
                                             Icon(
-                                                imageVector = org.ryujinx.android.Icons.Download(),
+                                                imageVector = org.ryujinx.android.Icons.download(),
                                                 contentDescription = "Game Dlc",
                                                 tint = Color.Green,
                                                 modifier = Modifier
@@ -352,11 +387,10 @@ class HomeViews {
                                             viewModel.mainViewModel?.loadGame(gameModel) ?: false
                                         if (success) {
                                             launchOnUiThread {
-                                                viewModel.mainViewModel?.activity?.setFullScreen(
-                                                    true
-                                                )
-                                                viewModel.mainViewModel?.navController?.navigate("game")
+                                                viewModel.mainViewModel?.navigateToGame()
                                             }
+                                        } else {
+                                            gameModel.close()
                                         }
                                         showLoading.value = false
                                     }

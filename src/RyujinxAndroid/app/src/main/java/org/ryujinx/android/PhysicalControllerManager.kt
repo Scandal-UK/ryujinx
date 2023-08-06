@@ -3,13 +3,13 @@ package org.ryujinx.android
 import android.view.KeyEvent
 import android.view.MotionEvent
 
-class PhysicalControllerManager(val activity: MainActivity) {
+class PhysicalControllerManager(val activity: GameActivity) {
     private var controllerId: Int = -1
     private var ryujinxNative: RyujinxNative = RyujinxNative()
 
     fun onKeyEvent(event: KeyEvent) : Boolean{
         if(controllerId != -1) {
-            val id = GetGamePadButtonInputId(event.keyCode)
+            val id = getGamePadButtonInputId(event.keyCode)
 
             if(id != GamePadButtonInputId.None) {
                 when (event.action) {
@@ -45,7 +45,7 @@ class PhysicalControllerManager(val activity: MainActivity) {
         controllerId = ryujinxNative.inputConnectGamepad(0)
     }
 
-    fun GetGamePadButtonInputId(keycode: Int): GamePadButtonInputId {
+    private fun getGamePadButtonInputId(keycode: Int): GamePadButtonInputId {
         return when (keycode) {
             KeyEvent.KEYCODE_BUTTON_A -> GamePadButtonInputId.B
             KeyEvent.KEYCODE_BUTTON_B -> GamePadButtonInputId.A
