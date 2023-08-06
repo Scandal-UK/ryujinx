@@ -46,15 +46,17 @@ class GameController(var activity: Activity) {
             return view
         }
         @Composable
-        fun Compose(viewModel: MainViewModel) : Unit
-        {
+        fun Compose(viewModel: MainViewModel) : Unit {
             AndroidView(
                 modifier = Modifier.fillMaxSize(), factory = { context ->
                     val controller = GameController(viewModel.activity)
                     val c = Create(context, viewModel.activity, controller)
-                        viewModel.activity.lifecycleScope.apply {
-                            viewModel.activity.lifecycleScope.launch {
-                            val events = merge(controller.leftGamePad.events(),controller.rightGamePad.events())
+                    viewModel.activity.lifecycleScope.apply {
+                        viewModel.activity.lifecycleScope.launch {
+                            val events = merge(
+                                controller.leftGamePad.events(),
+                                controller.rightGamePad.events()
+                            )
                                 .shareIn(viewModel.activity.lifecycleScope, SharingStarted.Lazily)
                             events.safeCollect {
                                 controller.handleEvent(it)

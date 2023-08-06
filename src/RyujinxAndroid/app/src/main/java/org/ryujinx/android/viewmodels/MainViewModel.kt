@@ -2,10 +2,12 @@ package org.ryujinx.android.viewmodels
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.PerformanceHintManager
 import androidx.compose.runtime.MutableState
 import androidx.navigation.NavHostController
+import org.ryujinx.android.GameActivity
 import org.ryujinx.android.GameController
 import org.ryujinx.android.GameHost
 import org.ryujinx.android.GraphicsConfiguration
@@ -13,6 +15,7 @@ import org.ryujinx.android.MainActivity
 import org.ryujinx.android.NativeGraphicsInterop
 import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.PerformanceManager
+import org.ryujinx.android.PhysicalControllerManager
 import org.ryujinx.android.RegionCode
 import org.ryujinx.android.RyujinxNative
 import org.ryujinx.android.SystemLanguage
@@ -20,6 +23,8 @@ import java.io.File
 
 @SuppressLint("WrongConstant")
 class MainViewModel(val activity: MainActivity) {
+    var physicalControllerManager: PhysicalControllerManager? = null
+    var gameModel: GameModel? = null
     var gameHost: GameHost? = null
     var controller: GameController? = null
     var performanceManager: PerformanceManager? = null
@@ -43,18 +48,17 @@ class MainViewModel(val activity: MainActivity) {
         RyujinxNative().deviceSignalEmulationClose()
         gameHost?.close()
         RyujinxNative().deviceCloseEmulation()
-        goBack()
-        activity.setFullScreen(false)
-    }
-
-    fun goBack(){
-        navController?.popBackStack()
     }
 
     fun loadGame(game:GameModel) : Boolean {
-        var nativeRyujinx = RyujinxNative()
+        val nativeRyujinx = RyujinxNative()
 
-        val path = game.getPath() ?: return false
+        val descriptor = game.open()
+
+        if(descriptor == 0)
+            return false
+
+        gameModel = game
 
         val settings = QuickSettings(activity)
 
@@ -62,42 +66,45 @@ class MainViewModel(val activity: MainActivity) {
             EnableShaderCache = settings.enableShaderCache
             EnableTextureRecompression = settings.enableTextureRecompression
             ResScale = settings.resScale
+            BackendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
         })
 
         if(!success)
             return false
 
         val nativeHelpers = NativeHelpers()
-        var nativeInterop = NativeGraphicsInterop()
-        nativeInterop!!.VkRequiredExtensions = arrayOf(
+        val nativeInterop = NativeGraphicsInterop()
+        nativeInterop.VkRequiredExtensions = arrayOf(
             "VK_KHR_surface", "VK_KHR_android_surface"
         )
-        nativeInterop!!.VkCreateSurface = nativeHelpers.getCreateSurfacePtr()
-        nativeInterop!!.SurfaceHandle = 0
+        nativeInterop.VkCreateSurface = nativeHelpers.getCreateSurfacePtr()
+        nativeInterop.SurfaceHandle = 0
 
-        var driverViewModel = VulkanDriverViewModel(activity);
-        var drivers = driverViewModel.getAvailableDrivers()
+        val driverViewModel = VulkanDriverViewModel(activity)
+        val drivers = driverViewModel.getAvailableDrivers()
 
-        var driverHandle = 0L;
+        var driverHandle = 0L
 
         if (driverViewModel.selected.isNotEmpty()) {
-            var metaData = drivers.find { it.driverPath == driverViewModel.selected }
+            val metaData = drivers.find { it.driverPath == driverViewModel.selected }
 
             metaData?.apply {
-                var privatePath = activity.filesDir;
-                var privateDriverPath = privatePath.canonicalPath + "/driver/"
+                val privatePath = activity.filesDir
+                val privateDriverPath = privatePath.canonicalPath + "/driver/"
                 val pD = File(privateDriverPath)
                 if (pD.exists())
                     pD.deleteRecursively()
 
                 pD.mkdirs()
 
-                var driver = File(driverViewModel.selected)
-                var parent = driver.parentFile
-                for (file in parent.walkTopDown()) {
-                    if (file.absolutePath == parent.absolutePath)
-                        continue
-                    file.copyTo(File(privateDriverPath + file.name), true)
+                val driver = File(driverViewModel.selected)
+                val parent = driver.parentFile
+                if (parent != null) {
+                    for (file in parent.walkTopDown()) {
+                        if (file.absolutePath == parent.absolutePath)
+                            continue
+                        file.copyTo(File(privateDriverPath + file.name), true)
+                    }
                 }
 
                 driverHandle = NativeHelpers().loadDriver(
@@ -110,7 +117,7 @@ class MainViewModel(val activity: MainActivity) {
         }
 
         success = nativeRyujinx.graphicsInitializeRenderer(
-            nativeInterop!!.VkRequiredExtensions!!,
+            nativeInterop.VkRequiredExtensions!!,
             driverHandle
         )
         if(!success)
@@ -131,7 +138,7 @@ class MainViewModel(val activity: MainActivity) {
         if(!success)
             return false
 
-        success = nativeRyujinx.deviceLoad(path)
+        success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.isXci())
 
         if(!success)
             return false
@@ -169,6 +176,8 @@ class MainViewModel(val activity: MainActivity) {
         this.controller = controller
     }
 
-    fun backCalled() {
+    fun navigateToGame() {
+        val intent = Intent(activity, GameActivity::class.java)
+        activity.startActivity(intent)
     }
 }

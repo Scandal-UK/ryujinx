@@ -4,10 +4,10 @@ import android.os.Build
 import android.os.PerformanceHintManager
 import androidx.annotation.RequiresApi
 
-class PerformanceManager(val performanceHintManager: PerformanceHintManager) {
+class PerformanceManager(private val performanceHintManager: PerformanceHintManager) {
     private var _isEnabled: Boolean = false
     private var renderingSession: PerformanceHintManager.Session? = null
-    val DEFAULT_TARGET_NS = 16666666L
+    private val DEFAULT_TARGET_NS = 16666666L
 
     @RequiresApi(Build.VERSION_CODES.S)
     fun initializeRenderingSession(threadId : Long){

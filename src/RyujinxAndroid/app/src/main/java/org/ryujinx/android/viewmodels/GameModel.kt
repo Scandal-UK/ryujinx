@@ -2,6 +2,7 @@ package org.ryujinx.android.viewmodels
 
 import android.content.Context
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
 import org.ryujinx.android.Helpers
@@ -9,6 +10,7 @@ import org.ryujinx.android.RyujinxNative
 
 
 class GameModel(var file: DocumentFile, val context: Context) {
+    private var descriptor: ParcelFileDescriptor? = null
     var fileName: String?
     var fileSize = 0.0
     var titleName: String? = null
@@ -37,7 +39,18 @@ class GameModel(var file: DocumentFile, val context: Context) {
         return uri.path
     }
 
-    fun getIsXci() : Boolean {
+    fun open() : Int {
+        descriptor = context.contentResolver.openFileDescriptor(file.uri, "rw")
+
+        return descriptor?.fd ?: 0
+    }
+
+    fun close() {
+        descriptor?.close()
+        descriptor = null
+    }
+
+    fun isXci() : Boolean {
         return file.extension == "xci"
     }
 }

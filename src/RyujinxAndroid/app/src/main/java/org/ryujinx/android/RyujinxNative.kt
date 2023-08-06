@@ -35,18 +35,18 @@ class RyujinxNative {
     external fun deviceGetGameInfo(fileDescriptor: Int,  isXci:Boolean): GameInfo
     external fun deviceGetGameInfoFromPath(path: String): GameInfo
     external fun deviceLoadDescriptor(fileDescriptor: Int,  isXci:Boolean): Boolean
-    external fun graphicsRendererSetSize(width: Int, height: Int): Unit
-    external fun graphicsRendererSetVsync(enabled: Boolean): Unit
-    external fun graphicsRendererRunLoop(): Unit
-    external fun inputInitialize(width: Int, height: Int): Unit
-    external fun inputSetClientSize(width: Int, height: Int): Unit
-    external fun inputSetTouchPoint(x: Int, y: Int): Unit
-    external fun inputReleaseTouchPoint(): Unit
-    external fun inputUpdate(): Unit
-    external fun inputSetButtonPressed(button: Int, id: Int): Unit
-    external fun inputSetButtonReleased(button: Int, id: Int): Unit
+    external fun graphicsRendererSetSize(width: Int, height: Int)
+    external fun graphicsRendererSetVsync(enabled: Boolean)
+    external fun graphicsRendererRunLoop()
+    external fun inputInitialize(width: Int, height: Int)
+    external fun inputSetClientSize(width: Int, height: Int)
+    external fun inputSetTouchPoint(x: Int, y: Int)
+    external fun inputReleaseTouchPoint()
+    external fun inputUpdate()
+    external fun inputSetButtonPressed(button: Int, id: Int)
+    external fun inputSetButtonReleased(button: Int, id: Int)
     external fun inputConnectGamepad(index: Int): Int
-    external fun inputSetStickAxis(stick: Int, x: Float, y: Float, id: Int): Unit
+    external fun inputSetStickAxis(stick: Int, x: Float, y: Float, id: Int)
     external fun graphicsSetSurface(surface: Long)
     external fun deviceCloseEmulation()
     external fun deviceSignalEmulationClose()
