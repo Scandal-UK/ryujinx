@@ -30,6 +30,7 @@ namespace LibRyujinx
     {
         private static ManualResetEvent _surfaceEvent;
         private static long _surfacePtr;
+        private static long _window = 0;
 
         public static VulkanLoader? VulkanLoader { get; private set; }
 
@@ -47,6 +48,9 @@ namespace LibRyujinx
 
         [DllImport("libryujinxjni")]
         internal extern static void onFrameEnd(double time);
+
+        [DllImport("libryujinxjni")]
+        internal extern static void setCurrentTransform(long native_window, int transform);
 
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
 
@@ -236,9 +240,10 @@ namespace LibRyujinx
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsSetSurface")]
-        public static void JniSetSurface(JEnvRef jEnv, JObjectLocalRef jObj, JLong surfacePtr)
+        public static void JniSetSurface(JEnvRef jEnv, JObjectLocalRef jObj, JLong surfacePtr, JLong window)
         {
             _surfacePtr = surfacePtr;
+            _window = window;
 
             _surfaceEvent.Set();
         }

@@ -21,11 +21,14 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     private var _guestThread: Thread? = null
     private var _isInit: Boolean = false
     private var _isStarted: Boolean = false
+    private val nativeWindow : NativeWindow
 
     private var _nativeRyujinx: RyujinxNative = RyujinxNative()
 
     init {
         holder.addCallback(this)
+
+        nativeWindow = NativeWindow(this)
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
@@ -38,9 +41,10 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         if(_width != width || _height != height)
         {
-            val nativeHelpers = NativeHelpers()
-            val window = nativeHelpers.getNativeWindow(holder.surface)
-            _nativeRyujinx.graphicsSetSurface(window)
+            val window = nativeWindow.requeryWindowHandle()
+            _nativeRyujinx.graphicsSetSurface(window, nativeWindow.nativePointer)
+
+            nativeWindow.swapInterval = 0;
         }
 
         _width = width
