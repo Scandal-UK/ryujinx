@@ -52,7 +52,6 @@ extern "C"
             jobject instance,
             jobject surface) {
         auto nativeWindow = ANativeWindow_fromSurface(env, surface);
-
         return nativeWindow == NULL ? -1 : (jlong) nativeWindow;
     }
 
@@ -66,28 +65,6 @@ extern "C"
         if (nativeWindow != NULL)
             ANativeWindow_release(nativeWindow);
     }
-
-JNIEXPORT jlong JNICALL
-Java_org_ryujinx_android_NativeHelpers_createSurface(
-        JNIEnv *env,
-        jobject instance,
-        jlong vulkanInstance,
-        jlong window) {
-    auto nativeWindow = (ANativeWindow *) window;
-
-    if (nativeWindow != NULL)
-        return -1;
-    VkSurfaceKHR surface;
-    auto vkInstance = VkInstance(vulkanInstance);
-    auto fpCreateAndroidSurfaceKHR =
-            reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(vkGetInstanceProcAddr(vkInstance, "vkCreateAndroidSurfaceKHR"));
-    if (!fpCreateAndroidSurfaceKHR)
-        return -1;
-    VkAndroidSurfaceCreateInfoKHR info = { VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
-    info.window = nativeWindow;
-    VK_CHECK(fpCreateAndroidSurfaceKHR(vkInstance, &info, nullptr, &surface));
-    return (jlong)surface;
-}
 
 JNIEXPORT void JNICALL
 Java_org_ryujinx_android_NativeHelpers_attachCurrentThread(
@@ -193,6 +170,54 @@ void onFrameEnd(double time) {
 }
 
 extern "C"
+void setCurrentTransform(long native_window, int transform){
+    if(native_window == 0 || native_window == -1)
+        return;
+    auto nativeWindow = (ANativeWindow *) native_window;
+
+    auto nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY;
+
+    transform = transform >> 1;
+
+    // transform is a valid VkSurfaceTransformFlagBitsKHR
+    switch (transform) {
+        case 0x1:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY;
+            break;
+        case 0x2:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_90;
+            break;
+        case 0x4:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_180;
+            break;
+        case 0x8:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_270;
+            break;
+        case 0x10:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_MIRROR_HORIZONTAL;
+            break;
+        case 0x20:
+            nativeTransform = static_cast<ANativeWindowTransform>(
+                    ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_MIRROR_HORIZONTAL |
+                    ANATIVEWINDOW_TRANSFORM_ROTATE_90);
+            break;
+        case 0x40:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_MIRROR_VERTICAL;
+            break;
+        case 0x80:
+            nativeTransform = static_cast<ANativeWindowTransform>(
+                    ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_MIRROR_VERTICAL |
+                    ANATIVEWINDOW_TRANSFORM_ROTATE_90);
+            break;
+        case 0x100:
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY;
+            break;
+    }
+
+    nativeWindow->perform(nativeWindow, NATIVE_WINDOW_SET_BUFFERS_TRANSFORM, static_cast<int32_t>(nativeTransform));
+}
+
+extern "C"
 JNIEXPORT jlong JNICALL
 Java_org_ryujinx_android_NativeHelpers_loadDriver(JNIEnv *env, jobject thiz,
                                                   jstring native_lib_path,
@@ -230,4 +255,31 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_org_ryujinx_android_NativeHelpers_setTurboMode(JNIEnv *env, jobject thiz, jboolean enable) {
     adrenotools_set_turbo(enable);
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getMaxSwapInterval(JNIEnv *env, jobject thiz,
+                                                       jlong native_window) {
+    auto nativeWindow = (ANativeWindow *) native_window;
+
+    return nativeWindow->maxSwapInterval;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getMinSwapInterval(JNIEnv *env, jobject thiz,
+                                                          jlong native_window) {
+    auto nativeWindow = (ANativeWindow *) native_window;
+
+    return nativeWindow->minSwapInterval;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_setSwapInterval(JNIEnv *env, jobject thiz,
+                                                       jlong native_window, jint swap_interval) {
+    auto nativeWindow = (ANativeWindow *) native_window;
+
+    return nativeWindow->setSwapInterval(nativeWindow, swap_interval);
 }
