@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -35,11 +36,16 @@ class TitleUpdateViews {
 
             val selected = remember { mutableStateOf(0) }
             viewModel.data?.apply {
-                    selected.value = paths.indexOf(this.selected) + 1
+                selected.value = paths.indexOf(this.selected) + 1
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
-
+                val isCopying = remember {
+                    mutableStateOf(false)
+                }
+                val copyProgress = remember {
+                    mutableStateOf(0.0f)
+                }
                 Column {
                     Text(text = "Updates for ${name}", textAlign = TextAlign.Center)
                     Surface(
@@ -50,17 +56,19 @@ class TitleUpdateViews {
                     ) {
                         Column(
                             modifier = Modifier
-                                .height(300.dp)
+                                .height(250.dp)
                                 .fillMaxWidth()
                         ) {
                             Row(modifier = Modifier.padding(8.dp)) {
                                 RadioButton(
                                     selected = (selected.value == 0),
-                                    onClick = { selected.value = 0
-                                        })
+                                    onClick = {
+                                        selected.value = 0
+                                    })
                                 Text(
                                     text = "None",
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
                                         .align(Alignment.CenterVertically)
                                 )
                             }
@@ -79,7 +87,8 @@ class TitleUpdateViews {
                                         onClick = { selected.value = i })
                                     Text(
                                         text = path,
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier
+                                            .fillMaxWidth()
                                             .align(Alignment.CenterVertically)
                                     )
                                 }
@@ -113,12 +122,22 @@ class TitleUpdateViews {
                     }
 
                 }
+                var currentProgressName = remember {
+                    mutableStateOf("Starting Copy")
+                }
+                if (isCopying.value) {
+                    Text(text = "Copying updates to local storage")
+                    Text(text = currentProgressName.value)
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        progress = copyProgress.value
+                    )
+                }
                 Spacer(modifier = Modifier.height(18.dp))
                 TextButton(
                     modifier = Modifier.align(Alignment.End),
                     onClick = {
-                        openDialog.value = false
-                        viewModel.save(selected.value)
+                        viewModel.save(selected.value, isCopying, openDialog, copyProgress, currentProgressName)
                     },
                 ) {
                     Text("Save")
