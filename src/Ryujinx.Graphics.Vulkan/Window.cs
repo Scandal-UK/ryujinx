@@ -142,7 +142,7 @@ namespace Ryujinx.Graphics.Vulkan
                 ImageFormat = surfaceFormat.Format,
                 ImageColorSpace = surfaceFormat.ColorSpace,
                 ImageExtent = extent,
-                ImageUsage = ImageUsageFlags.ColorAttachmentBit | ImageUsageFlags.TransferDstBit | ImageUsageFlags.StorageBit,
+                ImageUsage = ImageUsageFlags.ColorAttachmentBit | ImageUsageFlags.TransferDstBit | (Ryujinx.Common.SystemInfo.SystemInfo.IsBionic ? 0 : ImageUsageFlags.StorageBit),
                 ImageSharingMode = SharingMode.Exclusive,
                 ImageArrayLayers = 1,
                 PreTransform = Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid() ? SurfaceTransformFlagsKHR.IdentityBitKhr : capabilities.CurrentTransform,
