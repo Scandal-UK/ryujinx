@@ -227,14 +227,44 @@ namespace Ryujinx.Graphics.Shader.CodeGen.Spirv
         private static OperationResult GenerateBallot(CodeGenContext context, AstOperation operation)
         {
             var source = operation.GetSource(0);
+            var predicate = context.Get(AggregateType.Bool, source);
 
-            var uvec4Type = context.TypeVector(context.TypeU32(), 4);
-            var execution = context.Constant(context.TypeU32(), Scope.Subgroup);
+            if (!context.HostCapabilities.SupportsShaderBallotDivergence &&
+                (context.CurrentBlock.Type != AstBlockType.Main || context.MayHaveReturned || !context.IsMainFunction))
+            {
+                // If divergent ballot is not supported, we can emulate it with a subgroupAdd operation,
+                // where we add a bit mask with a unique bit set for each subgroup invocation.
 
-            var maskVector = context.GroupNonUniformBallot(uvec4Type, execution, context.Get(AggregateType.Bool, source));
-            var mask = context.CompositeExtract(context.TypeU32(), maskVector, (SpvLiteralInteger)operation.Index);
+                var bit = context.Select(
+                    context.TypeU32(),
+                    predicate,
+                    context.Constant(context.TypeU32(), 1),
+                    context.Constant(context.TypeU32(), 0));
 
-            return new OperationResult(AggregateType.U32, mask);
+                var threadId = GetScalarInput(context, IoVariable.SubgroupLaneId);
+                var threadIdLow = context.BitwiseAnd(context.TypeU32(), threadId, context.Constant(context.TypeU32(), 0x1f));
+                var threadIdHigh = context.ShiftRightLogical(context.TypeU32(), threadId, context.Constant(context.TypeU32(), 5));
+                var bitMask = context.ShiftLeftLogical(context.TypeU32(), bit, threadIdLow);
+                var isGroup = context.IEqual(context.TypeBool(), threadIdHigh, context.Constant(context.TypeU32(), operation.Index));
+                bitMask = context.Select(context.TypeU32(), isGroup, bitMask, context.Constant(context.TypeU32(), 0));
+                var mask = context.GroupNonUniformIAdd(
+                    context.TypeU32(),
+                    context.Constant(context.TypeU32(), Scope.Subgroup),
+                    GroupOperation.Reduce,
+                    bitMask);
+
+                return new OperationResult(AggregateType.U32, mask);
+            }
+            else
+            {
+                var uvec4Type = context.TypeVector(context.TypeU32(), 4);
+                var execution = context.Constant(context.TypeU32(), Scope.Subgroup);
+
+                var maskVector = context.GroupNonUniformBallot(uvec4Type, execution, predicate);
+                var mask = context.CompositeExtract(context.TypeU32(), maskVector, (SpvLiteralInteger)operation.Index);
+
+                return new OperationResult(AggregateType.U32, mask);
+            }
         }
 
         private static OperationResult GenerateBarrier(CodeGenContext context, AstOperation operation)

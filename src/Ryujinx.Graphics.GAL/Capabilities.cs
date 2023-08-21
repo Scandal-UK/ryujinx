@@ -40,6 +40,7 @@ namespace Ryujinx.Graphics.GAL
         public readonly bool SupportsQuads;
         public readonly bool SupportsSeparateSampler;
         public readonly bool SupportsShaderBallot;
+        public readonly bool SupportsShaderBallotDivergence;
         public readonly bool SupportsShaderBarrierDivergence;
         public readonly bool SupportsShaderFloat64;
         public readonly bool SupportsTextureGatherOffsets;
@@ -106,6 +107,7 @@ namespace Ryujinx.Graphics.GAL
             bool supportsQuads,
             bool supportsSeparateSampler,
             bool supportsShaderBallot,
+            bool supportsShaderBallotDivergence,
             bool supportsShaderBarrierDivergence,
             bool supportsShaderFloat64,
             bool supportsTextureGatherOffsets,
@@ -167,6 +169,7 @@ namespace Ryujinx.Graphics.GAL
             SupportsQuads = supportsQuads;
             SupportsSeparateSampler = supportsSeparateSampler;
             SupportsShaderBallot = supportsShaderBallot;
+            SupportsShaderBallotDivergence = supportsShaderBallotDivergence;
             SupportsShaderBarrierDivergence = supportsShaderBarrierDivergence;
             SupportsShaderFloat64 = supportsShaderFloat64;
             SupportsTextureGatherOffsets = supportsTextureGatherOffsets;

@@ -320,6 +320,15 @@ namespace Ryujinx.Graphics.Shader
         }
 
         /// <summary>
+        /// Queries host GPU shader support for ballot instructions on divergent control flow paths.
+        /// </summary>
+        /// <returns>True if the GPU supports ballot instructions on divergent control flow paths, false otherwise</returns>
+        bool QueryHostSupportsShaderBallotDivergence()
+        {
+            return true;
+        }
+
+        /// <summary>
         /// Queries host GPU shader support for barrier instructions on divergent control flow paths.
         /// </summary>
         /// <returns>True if the GPU supports barriers on divergent control flow paths, false otherwise</returns>

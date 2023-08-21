@@ -1,4 +1,4 @@
-﻿using Ryujinx.Common.Logging;
+using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
 using Silk.NET.Vulkan;
 using System;
@@ -290,7 +290,7 @@ namespace Ryujinx.Graphics.Vulkan
             return segments;
         }
 
-        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, bool hasBatchedTextureSamplerBug, out bool usesBufferTextures)
+        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, bool hasBatchedTextureBug, out bool usesBufferTextures)
         {
             usesBufferTextures = false;
 
@@ -314,7 +314,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                     if (currentUsage.Binding + currentCount != usage.Binding ||
                         currentUsage.Type != usage.Type ||
-                        (currentUsage.Type == ResourceType.TextureAndSampler && hasBatchedTextureSamplerBug) ||
+                        (IsReadOnlyTexture(currentUsage.Type) && hasBatchedTextureBug) ||
                         currentUsage.Stages != usage.Stages ||
                         currentUsage.ArrayLength > 1 ||
                         usage.ArrayLength > 1)
@@ -448,6 +448,12 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             return (buffer, texture);
+        }
+
+        private static bool IsReadOnlyTexture(ResourceType resourceType)
+        {
+            return resourceType == ResourceType.TextureAndSampler || resourceType == ResourceType.BufferTexture;
+
         }
 
         private async Task BackgroundCompilation()
