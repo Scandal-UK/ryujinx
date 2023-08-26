@@ -26,4 +26,6 @@ class NativeHelpers {
     external fun getMaxSwapInterval(nativeWindow: Long): Int
     external fun getMinSwapInterval(nativeWindow: Long): Int
     external fun setSwapInterval(nativeWindow: Long, swapInterval: Int): Int
+    external fun getProgressInfo() : String
+    external fun getProgressValue() : Float
 }

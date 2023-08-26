@@ -11,11 +11,13 @@ import com.anggrayudi.storage.file.extension
 import com.anggrayudi.storage.file.getAbsolutePath
 import com.anggrayudi.storage.file.search
 import org.ryujinx.android.MainActivity
+import kotlin.concurrent.thread
 
 class HomeViewModel(
     val activity: MainActivity? = null,
     val mainViewModel: MainViewModel? = null
 ) {
+    private var isLoading: Boolean = false
     private var gameList: SnapshotStateList<GameModel>? = null
     private var loadedCache: List<GameModel> = listOf()
     private var gameFolderPath: DocumentFile? = null
@@ -68,23 +70,39 @@ class HomeViewModel(
 
     fun reloadGameList() {
         var storage = activity?.storageHelper ?: return
+        
+        if(isLoading)
+            return
         val folder = gameFolderPath ?: return
+        
+        isLoading = true
 
         val files = mutableListOf<GameModel>()
 
-        for (file in folder.search(false, DocumentFileType.FILE)) {
-            if (file.extension == "xci" || file.extension == "nsp")
-                activity.let {
-                    files.add(GameModel(file, it))
+        thread {
+            try {
+                for (file in folder.search(false, DocumentFileType.FILE)) {
+                    if (file.extension == "xci" || file.extension == "nsp")
+                        activity.let {
+                            files.add(GameModel(file, it))
+                        }
                 }
+
+                loadedCache = files.toList()
+
+                isLoading = false
+
+                applyFilter()
+            }
+            finally {
+                isLoading = false
+            }
         }
-
-        loadedCache = files.toList()
-
-        applyFilter()
     }
 
     private fun applyFilter() {
+        if(isLoading)
+            return
         gameList?.clear()
         gameList?.addAll(loadedCache)
     }

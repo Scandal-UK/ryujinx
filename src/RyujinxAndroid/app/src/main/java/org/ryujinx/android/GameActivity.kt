@@ -21,9 +21,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -50,7 +52,9 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class GameActivity : ComponentActivity() {
-    private var physicalControllerManager: PhysicalControllerManager = PhysicalControllerManager(this)
+    private var physicalControllerManager: PhysicalControllerManager =
+        PhysicalControllerManager(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -70,7 +74,7 @@ class GameActivity : ComponentActivity() {
     @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
         event?.apply {
-            if(physicalControllerManager.onKeyEvent(this))
+            if (physicalControllerManager.onKeyEvent(this))
                 return true
         }
         return super.dispatchKeyEvent(event)
@@ -105,20 +109,22 @@ class GameActivity : ComponentActivity() {
         force60HzRefreshRate(false)
     }
 
-    private fun force60HzRefreshRate(enable : Boolean) {
+    private fun force60HzRefreshRate(enable: Boolean) {
         // Hack for MIUI devices since they don't support the standard Android APIs
         try {
             val setFpsIntent = Intent("com.miui.powerkeeper.SET_ACTIVITY_FPS")
             setFpsIntent.putExtra("package_name", "org.ryujinx.android")
             setFpsIntent.putExtra("isEnter", enable)
             sendBroadcast(setFpsIntent)
-        } catch (_ : Exception) {
+        } catch (_: Exception) {
         }
 
         if (enable)
-            display?.supportedModes?.minByOrNull { abs(it.refreshRate - 60f) }?.let { window.attributes.preferredDisplayModeId = it.modeId }
+            display?.supportedModes?.minByOrNull { abs(it.refreshRate - 60f) }
+                ?.let { window.attributes.preferredDisplayModeId = it.modeId }
         else
-            display?.supportedModes?.maxByOrNull { it.refreshRate }?.let { window.attributes.preferredDisplayModeId = it.modeId }
+            display?.supportedModes?.maxByOrNull { it.refreshRate }
+                ?.let { window.attributes.preferredDisplayModeId = it.modeId }
     }
 
     private fun setFullScreen(fullscreen: Boolean) {
@@ -139,6 +145,7 @@ class GameActivity : ComponentActivity() {
             }
         }
     }
+
     @Composable
     fun GameView(mainViewModel: MainViewModel) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -169,6 +176,20 @@ class GameActivity : ComponentActivity() {
             val showMore = remember {
                 mutableStateOf(false)
             }
+
+            val showLoading = remember {
+                mutableStateOf(true)
+            }
+
+            val progressValue = remember {
+                mutableStateOf(0.0f)
+            }
+
+            val progress = remember {
+                mutableStateOf("Loading")
+            }
+
+            mainViewModel.setProgressStates(showLoading, progressValue, progress)
 
             // touch surface
             Surface(color = Color.Transparent, modifier = Modifier
@@ -213,47 +234,54 @@ class GameActivity : ComponentActivity() {
                     }
                 }) {
             }
-            GameController.Compose(mainViewModel)
-            Row(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(8.dp)
-            ) {
-                IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                    showMore.value = true
-                }) {
-                    Icon(
-                        imageVector = CssGgIcons.ToolbarBottom,
-                        contentDescription = "Open Panel"
-                    )
-                }
-            }
+            if (!showLoading.value) {
+                GameController.Compose(mainViewModel)
 
-            if(showMore.value){
-                Popup(alignment = Alignment.BottomCenter, onDismissRequest = {showMore.value = false}) {
-                    Surface(modifier = Modifier.padding(16.dp),
-                        shape = MaterialTheme.shapes.medium) {
-                        Row(modifier = Modifier.padding(8.dp)) {
-                            IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                                showMore.value = false
-                                showController.value = !showController.value
-                                mainViewModel.controller?.setVisible(showController.value)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.videoGame(),
-                                    contentDescription = "Toggle Virtual Pad"
-                                )
-                            }
-                            IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                                showMore.value = false
-                                enableVsync.value = !enableVsync.value
-                                RyujinxNative().graphicsRendererSetVsync(enableVsync.value)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.vSync(),
-                                    tint = if(enableVsync.value) Color.Green else Color.Red,
-                                    contentDescription = "Toggle VSync"
-                                )
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp)
+                ) {
+                    IconButton(modifier = Modifier.padding(4.dp), onClick = {
+                        showMore.value = true
+                    }) {
+                        Icon(
+                            imageVector = CssGgIcons.ToolbarBottom,
+                            contentDescription = "Open Panel"
+                        )
+                    }
+                }
+
+                if (showMore.value) {
+                    Popup(
+                        alignment = Alignment.BottomCenter,
+                        onDismissRequest = { showMore.value = false }) {
+                        Surface(
+                            modifier = Modifier.padding(16.dp),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Row(modifier = Modifier.padding(8.dp)) {
+                                IconButton(modifier = Modifier.padding(4.dp), onClick = {
+                                    showMore.value = false
+                                    showController.value = !showController.value
+                                    mainViewModel.controller?.setVisible(showController.value)
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.videoGame(),
+                                        contentDescription = "Toggle Virtual Pad"
+                                    )
+                                }
+                                IconButton(modifier = Modifier.padding(4.dp), onClick = {
+                                    showMore.value = false
+                                    enableVsync.value = !enableVsync.value
+                                    RyujinxNative().graphicsRendererSetVsync(enableVsync.value)
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.vSync(),
+                                        tint = if (enableVsync.value) Color.Green else Color.Red,
+                                        contentDescription = "Toggle VSync"
+                                    )
+                                }
                             }
                         }
                     }
@@ -266,6 +294,39 @@ class GameActivity : ComponentActivity() {
 
             BackHandler {
                 showBackNotice.value = true
+            }
+
+            if (showLoading.value) {
+                Card(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(0.5f)
+                        .align(Alignment.Center),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Text(text = progress.value)
+
+                        if (progressValue.value > -1)
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp),
+                                progress = progressValue.value
+                            )
+                        else
+                            LinearProgressIndicator(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 16.dp)
+                            )
+                    }
+
+                }
             }
 
             if (showBackNotice.value) {
