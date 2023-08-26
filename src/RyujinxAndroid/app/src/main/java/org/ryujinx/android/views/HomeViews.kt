@@ -61,14 +61,13 @@ import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.anggrayudi.storage.extension.launchOnUiThread
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import org.ryujinx.android.MainActivity
 import org.ryujinx.android.R
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.HomeViewModel
 import java.io.File
 import java.util.Locale
+import kotlin.concurrent.thread
 import kotlin.math.roundToInt
 
 class HomeViews {
@@ -380,20 +379,18 @@ class HomeViews {
                     .combinedClickable(
                         onClick = {
                             if (gameModel.titleId.isNullOrEmpty() || gameModel.titleId != "0000000000000000") {
-                                runBlocking {
-                                    launch {
-                                        showLoading.value = true
-                                        val success =
-                                            viewModel.mainViewModel?.loadGame(gameModel) ?: false
-                                        if (success) {
-                                            launchOnUiThread {
-                                                viewModel.mainViewModel?.navigateToGame()
-                                            }
-                                        } else {
-                                            gameModel.close()
+                                thread {
+                                    showLoading.value = true
+                                    val success =
+                                        viewModel.mainViewModel?.loadGame(gameModel) ?: false
+                                    if (success) {
+                                        launchOnUiThread {
+                                            viewModel.mainViewModel?.navigateToGame()
                                         }
-                                        showLoading.value = false
+                                    } else {
+                                        gameModel.close()
                                     }
+                                    showLoading.value = false
                                 }
                             }
                         },

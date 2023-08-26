@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import androidx.compose.runtime.MutableState
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
@@ -12,6 +13,10 @@ import kotlin.concurrent.thread
 
 @SuppressLint("ViewConstructor")
 class GameHost(context: Context?, private val mainViewModel: MainViewModel) : SurfaceView(context), SurfaceHolder.Callback {
+    private var isProgressHidden: Boolean = false
+    private var progress: MutableState<String>? = null
+    private var progressValue: MutableState<Float>? = null
+    private var showLoading: MutableState<Boolean>? = null
     private var game: GameModel? = null
     private var _isClosed: Boolean = false
     private var _renderingThreadWatcher: Thread? = null
@@ -29,6 +34,8 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         holder.addCallback(this)
 
         nativeWindow = NativeWindow(this)
+
+        mainViewModel.gameHost = this
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
@@ -75,7 +82,6 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     }
 
     private fun start(surfaceHolder: SurfaceHolder) {
-        mainViewModel.gameHost = this
         if(_isStarted)
             return
 
@@ -106,11 +112,31 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         _updateThread = thread(start = true) {
             var c = 0
+            val helper = NativeHelpers()
             while (_isStarted) {
                 _nativeRyujinx.inputUpdate()
                 Thread.sleep(1)
+
+                showLoading?.apply {
+                    if(value){
+                        var value = helper.getProgressValue()
+
+                        if(value != -1f)
+                        progress?.apply {
+                            this.value = helper.getProgressInfo()
+                        }
+
+                        progressValue?.apply {
+                            this.value = value
+                        }
+                    }
+                }
                 c++
                 if (c >= 1000) {
+                    if(helper.getProgressValue() == -1f)
+                        progress?.apply {
+                            this.value = "Loading ${game!!.titleName}"
+                        }
                     c = 0
                     mainViewModel.updateStats(_nativeRyujinx.deviceGetGameFifo(), _nativeRyujinx.deviceGetGameFrameRate(), _nativeRyujinx.deviceGetGameFrameTime())
                 }
@@ -142,5 +168,27 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         _nativeRyujinx.graphicsRendererRunLoop()
 
         game?.close()
+    }
+
+    fun setProgressStates(
+        showLoading: MutableState<Boolean>?,
+        progressValue: MutableState<Float>?,
+        progress: MutableState<String>?
+    ) {
+        this.showLoading = showLoading
+        this.progressValue = progressValue
+        this.progress = progress
+
+        showLoading?.apply {
+            showLoading.value = !isProgressHidden
+        }
+    }
+
+    fun hideProgressIndicator() {
+        isProgressHidden = true
+        showLoading?.apply {
+            if (value == isProgressHidden)
+                value = !isProgressHidden
+        }
     }
 }

@@ -34,6 +34,8 @@ class MainActivity : ComponentActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 mainViewModel?.performanceManager?.updateRenderingSessionTime(gameTime)
             }
+
+            mainViewModel?.gameHost?.hideProgressIndicator()
         }
     }
 

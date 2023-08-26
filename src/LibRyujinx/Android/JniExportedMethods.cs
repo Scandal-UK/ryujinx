@@ -50,6 +50,9 @@ namespace LibRyujinx
         internal extern static void onFrameEnd(double time);
 
         [DllImport("libryujinxjni")]
+        internal extern static void setProgressInfo(IntPtr info, float progress);
+
+        [DllImport("libryujinxjni")]
         internal extern static void setCurrentTransform(long native_window, int transform);
 
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
@@ -287,7 +290,7 @@ namespace LibRyujinx
                 extensions.Add(GetString(jEnv, ext));
             }
 
-            if((long)driverHandle != 0)
+            if ((long)driverHandle != 0)
             {
                 VulkanLoader = new VulkanLoader((IntPtr)(long)driverHandle);
             }
@@ -491,7 +494,7 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetStickAxis")]
         public static void JniSetStickAxis(JEnvRef jEnv, JObjectLocalRef jObj, JInt stick, JFloat x, JFloat y, JInt id)
         {
-            SetStickAxis((StickInputId)(int)stick, new Vector2(x, y), id);
+            SetStickAxis((StickInputId)(int)stick, new Vector2(float.IsNaN(x) ? 0 : x, float.IsNaN(y) ? 0 : y), id);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputConnectGamepad")]

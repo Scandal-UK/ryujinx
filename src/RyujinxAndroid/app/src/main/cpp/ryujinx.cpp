@@ -26,6 +26,9 @@ JNIEnv* _rendererEnv = nullptr;
 
 std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> _currentTimePoint;
 
+std::string progressInfo = "";
+float progress = -1;
+
 JNIEnv* getEnv(bool isRenderer){
     JNIEnv* env;
     if(isRenderer){
@@ -130,6 +133,14 @@ jstring createString(
     return str;
 }
 
+jstring createStringFromStdString(
+        JNIEnv *env,
+        std::string s) {
+    auto str = env->NewStringUTF(s.c_str());
+
+    return str;
+}
+
 
 }
 extern "C"
@@ -167,6 +178,11 @@ void onFrameEnd(double time) {
             now - _currentTimePoint).count();
     env->CallStaticVoidMethod(cl, _updateFrameTime,
                               nano);
+}
+extern "C"
+void setProgressInfo(char* info, float progressValue) {
+    progressInfo = std::string (info);
+    progress = progressValue;
 }
 
 extern "C"
@@ -282,4 +298,16 @@ Java_org_ryujinx_android_NativeHelpers_setSwapInterval(JNIEnv *env, jobject thiz
     auto nativeWindow = (ANativeWindow *) native_window;
 
     return nativeWindow->setSwapInterval(nativeWindow, swap_interval);
+}
+
+extern "C"
+JNIEXPORT jfloat JNICALL
+Java_org_ryujinx_android_NativeHelpers_getProgressValue(JNIEnv *env, jobject thiz) {
+    return progress;
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_org_ryujinx_android_NativeHelpers_getProgressInfo(JNIEnv *env, jobject thiz) {
+    return createStringFromStdString(env, progressInfo);
 }

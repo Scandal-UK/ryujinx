@@ -7,6 +7,9 @@ import android.os.Build
 import android.os.PerformanceHintManager
 import androidx.compose.runtime.MutableState
 import androidx.navigation.NavHostController
+import com.anggrayudi.storage.extension.launchOnUiThread
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Semaphore
 import org.ryujinx.android.GameActivity
 import org.ryujinx.android.GameController
 import org.ryujinx.android.GameHost
@@ -25,13 +28,20 @@ import java.io.File
 class MainViewModel(val activity: MainActivity) {
     var physicalControllerManager: PhysicalControllerManager? = null
     var gameModel: GameModel? = null
-    var gameHost: GameHost? = null
     var controller: GameController? = null
     var performanceManager: PerformanceManager? = null
     var selected: GameModel? = null
     private var gameTimeState: MutableState<Double>? = null
     private var gameFpsState: MutableState<Double>? = null
     private var fifoState: MutableState<Double>? = null
+    private var progress: MutableState<String>? = null
+    private var progressValue: MutableState<Float>? = null
+    private var showLoading: MutableState<Boolean>? = null
+    var gameHost: GameHost? = null
+        set(value) {
+            field = value
+            field?.setProgressStates(showLoading, progressValue, progress)
+        }
     var navController : NavHostController? = null
 
     var homeViewModel: HomeViewModel = HomeViewModel(activity, this)
@@ -55,7 +65,7 @@ class MainViewModel(val activity: MainActivity) {
 
         val descriptor = game.open()
 
-        if(descriptor == 0)
+        if (descriptor == 0)
             return false
 
         gameModel = game
@@ -69,7 +79,7 @@ class MainViewModel(val activity: MainActivity) {
             BackendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
         })
 
-        if(!success)
+        if (!success)
             return false
 
         val nativeHelpers = NativeHelpers()
@@ -120,27 +130,39 @@ class MainViewModel(val activity: MainActivity) {
             nativeInterop.VkRequiredExtensions!!,
             driverHandle
         )
-        if(!success)
+        if (!success)
             return false
 
-        success = nativeRyujinx.deviceInitialize(
-            settings.isHostMapped,
-            settings.useNce,
-            SystemLanguage.AmericanEnglish.ordinal,
-            RegionCode.USA.ordinal,
-            settings.enableVsync,
-            settings.enableDocked,
-            settings.enablePtc,
-            false,
-            "UTC",
-            settings.ignoreMissingServices
-        )
-        if(!success)
+        val semaphore = Semaphore(1, 0)
+        runBlocking {
+            semaphore.acquire()
+            launchOnUiThread {
+                // We are only able to initialize the emulation context on the main thread
+                success = nativeRyujinx.deviceInitialize(
+                    settings.isHostMapped,
+                    settings.useNce,
+                    SystemLanguage.AmericanEnglish.ordinal,
+                    RegionCode.USA.ordinal,
+                    settings.enableVsync,
+                    settings.enableDocked,
+                    settings.enablePtc,
+                    false,
+                    "UTC",
+                    settings.ignoreMissingServices
+                )
+
+                semaphore.release()
+            }
+            semaphore.acquire()
+            semaphore.release()
+        }
+
+        if (!success)
             return false
 
         success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.isXci())
 
-        if(!success)
+        if (!success)
             return false
 
         return true
@@ -179,5 +201,16 @@ class MainViewModel(val activity: MainActivity) {
     fun navigateToGame() {
         val intent = Intent(activity, GameActivity::class.java)
         activity.startActivity(intent)
+    }
+
+    fun setProgressStates(
+        showLoading: MutableState<Boolean>,
+        progressValue: MutableState<Float>,
+        progress: MutableState<String>
+    ) {
+        this.showLoading = showLoading
+        this.progressValue = progressValue
+        this.progress = progress
+        gameHost?.setProgressStates(showLoading, progressValue, progress)
     }
 }
