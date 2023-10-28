@@ -4,7 +4,6 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -17,7 +16,7 @@ import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.views.MainView
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : BaseActivity() {
     private var _isInit: Boolean = false
     var storageHelper: SimpleStorageHelper? = null
     companion object {

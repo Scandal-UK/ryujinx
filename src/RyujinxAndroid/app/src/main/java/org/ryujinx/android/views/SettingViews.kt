@@ -3,9 +3,7 @@ package org.ryujinx.android.views
 import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
@@ -23,6 +21,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -33,6 +33,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -51,16 +52,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
+import com.anggrayudi.storage.file.extension
+import org.ryujinx.android.Helpers
+import org.ryujinx.android.MainActivity
+import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.SettingsViewModel
 import org.ryujinx.android.viewmodels.VulkanDriverViewModel
+import kotlin.concurrent.thread
 
 class SettingViews {
     companion object {
         const val EXPANSTION_TRANSITION_DURATION = 450
+        const val IMPORT_CODE = 12341
 
         @OptIn(ExperimentalMaterial3Api::class)
         @Composable
-        fun Main(settingsViewModel: SettingsViewModel) {
+        fun Main(settingsViewModel: SettingsViewModel, mainViewModel: MainViewModel) {
             val loaded = remember {
                 mutableStateOf(false)
             }
@@ -134,7 +142,9 @@ class SettingViews {
                             }
                         })
                 }) { contentPadding ->
-                Column(modifier = Modifier.padding(contentPadding)) {
+                Column(modifier = Modifier
+                    .padding(contentPadding)
+                    .verticalScroll(rememberScrollState())) {
                     ExpandableView(onCardArrowClick = { }, title = "System") {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
@@ -227,6 +237,121 @@ class SettingViews {
                                     ignoreMissingServices.value = !ignoreMissingServices.value
                                 })
                             }
+                            val isImporting = remember {
+                                mutableStateOf(false)
+                            }
+                            val showImportWarning = remember {
+                                mutableStateOf(false)
+                            }
+                            val showImportCompletion = remember {
+                                mutableStateOf(false)
+                            }
+                            var importFile = remember {
+                                mutableStateOf<DocumentFile?>(null)
+                            }
+                            Button(onClick = {
+                                val storage = MainActivity.StorageHelper
+                                storage?.apply {
+                                    val s = this.storage
+                                    val callBack = this.onFileSelected
+                                    onFileSelected = { requestCode, files ->
+                                        run {
+                                            onFileSelected = callBack
+                                            if (requestCode == IMPORT_CODE) {
+                                                val file = files.firstOrNull()
+                                                file?.apply {
+                                                    if (this.extension == "zip") {
+                                                        importFile.value = this
+                                                        showImportWarning.value = true
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    openFilePicker(
+                                        IMPORT_CODE,
+                                        filterMimeTypes = arrayOf("application/zip")
+                                    )
+                                }
+                            }) {
+                                Text(text = "Import App Data")
+                            }
+
+                            if (showImportWarning.value) {
+                                AlertDialog(onDismissRequest = {
+                                    showImportWarning.value = false
+                                    importFile.value = null
+                                }) {
+                                    Card(
+                                        modifier = Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.medium
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth()
+                                        ) {
+                                            Text(text = "Importing app data will delete your current profile. Do you still want to continue?")
+                                            Row(
+                                                horizontalArrangement = Arrangement.End,
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Button(onClick = {
+                                                    val file = importFile.value
+                                                    showImportWarning.value = false
+                                                    importFile.value = null
+                                                    file?.apply {
+                                                        thread {
+                                                            Helpers.importAppData(this, isImporting)
+                                                            showImportCompletion.value = true
+                                                            mainViewModel.requestUserRefresh()
+                                                        }
+                                                    }
+                                                }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                    Text(text = "Yes")
+                                                }
+                                                Button(onClick = {
+                                                    showImportWarning.value = false
+                                                    importFile.value = null
+                                                }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                    Text(text = "No")
+                                                }
+                                            }
+                                        }
+
+                                    }
+                                }
+                            }
+
+                            if (showImportCompletion.value) {
+                                AlertDialog(onDismissRequest = {
+                                    showImportCompletion.value = false
+                                    importFile.value = null
+                                    mainViewModel.requestUserRefresh()
+                                    mainViewModel.homeViewModel.clearLoadedCache()
+                                }) {
+                                    Card(
+                                        modifier = Modifier,
+                                        shape = MaterialTheme.shapes.medium
+                                    ) {
+                                        Text(modifier = Modifier
+                                            .padding(24.dp),
+                                            text = "App Data import completed.")
+                                    }
+                                }
+                            }
+
+                            if (isImporting.value) {
+                                Text(text = "Importing Files")
+
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                )
+                            }
                         }
                     }
                     ExpandableView(onCardArrowClick = { }, title = "Graphics") {
@@ -257,14 +382,14 @@ class SettingViews {
                                     text = "Resolution Scale",
                                     modifier = Modifier.align(Alignment.CenterVertically)
                                 )
-                                Text(text = resScale.value.toString() +"x")
+                                Text(text = resScale.value.toString() + "x")
                             }
                             Slider(value = resScale.value,
                                 valueRange = 0.5f..4f,
                                 steps = 6,
                                 onValueChange = { it ->
                                     resScale.value = it
-                                } )
+                                })
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -276,9 +401,12 @@ class SettingViews {
                                     text = "Enable Texture Recompression",
                                     modifier = Modifier.align(Alignment.CenterVertically)
                                 )
-                                Switch(checked = enableTextureRecompression.value, onCheckedChange = {
-                                    enableTextureRecompression.value = !enableTextureRecompression.value
-                                })
+                                Switch(
+                                    checked = enableTextureRecompression.value,
+                                    onCheckedChange = {
+                                        enableTextureRecompression.value =
+                                            !enableTextureRecompression.value
+                                    })
                             }
                             Row(
                                 modifier = Modifier
@@ -290,7 +418,8 @@ class SettingViews {
                                 var isDriverSelectorOpen = remember {
                                     mutableStateOf(false)
                                 }
-                                var driverViewModel = VulkanDriverViewModel(settingsViewModel.activity)
+                                var driverViewModel =
+                                    VulkanDriverViewModel(settingsViewModel.activity)
                                 var isChanged = remember {
                                     mutableStateOf(false)
                                 }
@@ -302,16 +431,16 @@ class SettingViews {
                                     mutableStateOf(0)
                                 }
 
-                                if(refresh.value) {
+                                if (refresh.value) {
                                     isChanged.value = true
                                     refresh.value = false
                                 }
 
-                                if(isDriverSelectorOpen.value){
+                                if (isDriverSelectorOpen.value) {
                                     AlertDialog(onDismissRequest = {
                                         isDriverSelectorOpen.value = false
 
-                                        if(isChanged.value){
+                                        if (isChanged.value) {
                                             driverViewModel.saveSelected()
                                         }
                                     }) {
@@ -329,11 +458,15 @@ class SettingViews {
                                                     isChanged.value = true
                                                 }
                                                 Column {
-                                                    Column (modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .height(300.dp)) {
+                                                    Column(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(300.dp)
+                                                    ) {
                                                         Row(
-                                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(8.dp),
                                                             verticalAlignment = Alignment.CenterVertically
                                                         ) {
                                                             RadioButton(
@@ -359,7 +492,9 @@ class SettingViews {
                                                         for (driver in drivers) {
                                                             var ind = driverIndex
                                                             Row(
-                                                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                                    .padding(8.dp),
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
                                                                 RadioButton(
@@ -378,15 +513,21 @@ class SettingViews {
                                                                     driverViewModel.selected =
                                                                         driver.driverPath
                                                                 }) {
-                                                                    Text(text = driver.libraryName,
+                                                                    Text(
+                                                                        text = driver.libraryName,
                                                                         modifier = Modifier
-                                                                            .fillMaxWidth())
-                                                                    Text(text = driver.driverVersion,
+                                                                            .fillMaxWidth()
+                                                                    )
+                                                                    Text(
+                                                                        text = driver.driverVersion,
                                                                         modifier = Modifier
-                                                                            .fillMaxWidth())
-                                                                    Text(text = driver.description,
+                                                                            .fillMaxWidth()
+                                                                    )
+                                                                    Text(
+                                                                        text = driver.description,
                                                                         modifier = Modifier
-                                                                            .fillMaxWidth())
+                                                                            .fillMaxWidth()
+                                                                    )
                                                                 }
                                                             }
 
@@ -425,7 +566,7 @@ class SettingViews {
                                         isDriverSelectorOpen.value = !isDriverSelectorOpen.value
                                     },
                                     modifier = Modifier.align(Alignment.CenterVertically)
-                                ){
+                                ) {
                                     Text(text = "Drivers")
                                 }
                             }
@@ -485,24 +626,6 @@ class SettingViews {
                 }
             }
             val transition = updateTransition(transitionState, label = "transition")
-            val cardPaddingHorizontal by transition.animateDp({
-                tween(durationMillis = EXPANSTION_TRANSITION_DURATION)
-            }, label = "paddingTransition") {
-                if (mutableExpanded.value) 48.dp else 24.dp
-            }
-            val cardElevation by transition.animateDp({
-                tween(durationMillis = EXPANSTION_TRANSITION_DURATION)
-            }, label = "elevationTransition") {
-                if (mutableExpanded.value) 24.dp else 4.dp
-            }
-            val cardRoundedCorners by transition.animateDp({
-                tween(
-                    durationMillis = EXPANSTION_TRANSITION_DURATION,
-                    easing = FastOutSlowInEasing
-                )
-            }, label = "cornersTransition") {
-                if (mutableExpanded.value) 0.dp else 16.dp
-            }
             val arrowRotationDegree by transition.animateFloat({
                 tween(durationMillis = EXPANSTION_TRANSITION_DURATION)
             }, label = "rotationDegreeTransition") {
@@ -514,7 +637,7 @@ class SettingViews {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
-                        horizontal = cardPaddingHorizontal,
+                        horizontal = 24.dp,
                         vertical = 8.dp
                     )
             ) {

@@ -27,11 +27,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.ryujinx.android.viewmodels.TitleUpdateViewModel
+import java.io.File
 
 class TitleUpdateViews {
     companion object {
         @Composable
-        fun Main(titleId: String, name: String, openDialog: MutableState<Boolean>) {
+        fun Main(titleId: String, name: String, openDialog: MutableState<Boolean>, canClose: MutableState<Boolean>) {
             val viewModel = TitleUpdateViewModel(titleId)
 
             val selected = remember { mutableStateOf(0) }
@@ -45,6 +46,9 @@ class TitleUpdateViews {
                 }
                 val copyProgress = remember {
                     mutableStateOf(0.0f)
+                }
+                var currentProgressName = remember {
+                    mutableStateOf("Starting Copy")
                 }
                 Column {
                     Text(text = "Updates for ${name}", textAlign = TextAlign.Center)
@@ -77,7 +81,7 @@ class TitleUpdateViews {
                                 mutableStateListOf<String>()
                             }
 
-                            viewModel.setPaths(paths)
+                            viewModel.setPaths(paths, canClose)
                             var index = 1
                             for (path in paths) {
                                 val i = index
@@ -86,7 +90,7 @@ class TitleUpdateViews {
                                         selected = (selected.value == i),
                                         onClick = { selected.value = i })
                                     Text(
-                                        text = path,
+                                        text = File(path).name,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .align(Alignment.CenterVertically)
@@ -111,7 +115,7 @@ class TitleUpdateViews {
 
                         IconButton(
                             onClick = {
-                                viewModel.Add()
+                                viewModel.Add(isCopying, copyProgress, currentProgressName)
                             }
                         ) {
                             Icon(
@@ -122,22 +126,33 @@ class TitleUpdateViews {
                     }
 
                 }
-                var currentProgressName = remember {
-                    mutableStateOf("Starting Copy")
-                }
                 if (isCopying.value) {
                     Text(text = "Copying updates to local storage")
                     Text(text = currentProgressName.value)
-                    LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth(),
-                        progress = copyProgress.value
-                    )
+                    Row {
+                        LinearProgressIndicator(
+                            modifier = Modifier.fillMaxWidth(),
+                            progress = copyProgress.value
+                        )
+                        TextButton(
+                            onClick = {
+                                isCopying.value = false
+                                canClose.value = true
+                                viewModel.refreshPaths()
+                            },
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
                 }
                 Spacer(modifier = Modifier.height(18.dp))
                 TextButton(
                     modifier = Modifier.align(Alignment.End),
                     onClick = {
-                        viewModel.save(selected.value, isCopying, openDialog, copyProgress, currentProgressName)
+                        if (!isCopying.value) {
+                            canClose.value = true
+                            viewModel.save(selected.value, openDialog)
+                        }
                     },
                 ) {
                     Text("Save")

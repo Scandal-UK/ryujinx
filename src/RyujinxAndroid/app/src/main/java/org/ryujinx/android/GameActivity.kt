@@ -6,7 +6,6 @@ import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.MotionEvent
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +50,7 @@ import org.ryujinx.android.viewmodels.QuickSettings
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-class GameActivity : ComponentActivity() {
+class GameActivity : BaseActivity() {
     private var physicalControllerManager: PhysicalControllerManager =
         PhysicalControllerManager(this)
 
@@ -355,6 +354,7 @@ class GameActivity : ComponentActivity() {
                                         .padding(16.dp)
                                 ) {
                                     Button(onClick = {
+                                        showBackNotice.value = false
                                         mainViewModel.closeGame()
                                         setFullScreen(false)
                                         finishActivity(0)

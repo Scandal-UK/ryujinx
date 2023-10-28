@@ -18,6 +18,7 @@ using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -39,6 +40,9 @@ namespace LibRyujinx
 
         [DllImport("libryujinxjni")]
         private extern static JStringLocalRef createString(JEnvRef jEnv, IntPtr ch);
+
+        [DllImport("libryujinxjni")]
+        private extern static void pushString(string ch);
 
         [DllImport("libryujinxjni")]
         internal extern static void setRenderingThread();
@@ -95,6 +99,12 @@ namespace LibRyujinx
             return s;
         }
 
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceReloadFilesystem")]
+        public static void JniReloadFileSystem()
+        {
+            SwitchDevice?.ReloadFileSystem();
+        }
+        
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceInitialize")]
         public static JBoolean JniInitializeDeviceNative(JEnvRef jEnv,
                                                          JObjectLocalRef jObj,
@@ -501,6 +511,89 @@ namespace LibRyujinx
         public static JInt JniConnectGamepad(JEnvRef jEnv, JObjectLocalRef jObj, JInt index)
         {
             return ConnectGamepad(index);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetOpenedUser")]
+        public static void JniGetOpenedUser(JEnvRef jEnv, JObjectLocalRef jObj)
+        {
+            var userId = GetOpenedUser();
+
+            pushString(userId);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetUserPicture")]
+        public static JStringLocalRef JniGetUserPicture(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+
+            return CreateString(jEnv, GetUserPicture(userId));
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userSetUserPicture")]
+        public static void JniGetUserPicture(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr, JStringLocalRef picturePtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+            var picture = GetString(jEnv, picturePtr) ?? "";
+
+            SetUserPicture(userId, picture);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetUserName")]
+        public static JStringLocalRef JniGetUserName(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+
+            return CreateString(jEnv, GetUserName(userId));
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userSetUserName")]
+        public static void JniSetUserName(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr, JStringLocalRef userNamePtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+            var userName = GetString(jEnv, userNamePtr) ?? "";
+
+            SetUserName(userId, userName);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetAllUsers")]
+        public static JArrayLocalRef JniGetAllUsers(JEnvRef jEnv, JObjectLocalRef jObj)
+        {
+            var users = GetAllUsers();
+
+            return CreateStringArray(jEnv, users.ToList());
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userAddUser")]
+        public static void JniAddUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userNamePtr, JStringLocalRef picturePtr)
+        {
+            var userName = GetString(jEnv, userNamePtr) ?? "";
+            var picture = GetString(jEnv, picturePtr) ?? "";
+
+            AddUser(userName, picture);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userDeleteUser")]
+        public static void JniDeleteUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+
+            DeleteUser(userId);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userOpenUser")]
+        public static void JniOpenUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+
+            OpenUser(userId);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userCloseUser")]
+        public static void JniCloseUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        {
+            var userId = GetString(jEnv, userIdPtr) ?? "";
+
+            CloseUser(userId);
         }
 
         private static FileStream OpenFile(int descriptor)

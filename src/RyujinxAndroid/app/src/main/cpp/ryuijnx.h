@@ -45,5 +45,6 @@ long _currentRenderingThreadId = 0;
 JavaVM* _vm = nullptr;
 jobject _mainActivity = nullptr;
 jclass _mainActivityClass = nullptr;
+std::string _currentString = "";
 
 #endif //RYUJINXNATIVE_RYUIJNX_H

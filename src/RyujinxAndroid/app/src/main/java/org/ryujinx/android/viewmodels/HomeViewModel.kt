@@ -68,7 +68,7 @@ class HomeViewModel(
             )
     }
 
-    fun reloadGameList() {
+    fun reloadGameList(ignoreCache: Boolean = false) {
         var storage = activity?.storageHelper ?: return
         
         if(isLoading)
@@ -77,26 +77,31 @@ class HomeViewModel(
         
         isLoading = true
 
-        val files = mutableListOf<GameModel>()
+        if(!ignoreCache) {
+            val files = mutableListOf<GameModel>()
 
-        thread {
-            try {
-                for (file in folder.search(false, DocumentFileType.FILE)) {
-                    if (file.extension == "xci" || file.extension == "nsp")
-                        activity.let {
-                            files.add(GameModel(file, it))
-                        }
+            thread {
+                try {
+                    for (file in folder.search(false, DocumentFileType.FILE)) {
+                        if (file.extension == "xci" || file.extension == "nsp")
+                            activity.let {
+                                files.add(GameModel(file, it))
+                            }
+                    }
+
+                    loadedCache = files.toList()
+
+                    isLoading = false
+
+                    applyFilter()
+                } finally {
+                    isLoading = false
                 }
-
-                loadedCache = files.toList()
-
-                isLoading = false
-
-                applyFilter()
             }
-            finally {
-                isLoading = false
-            }
+        }
+        else{
+            isLoading = false
+            applyFilter()
         }
     }
 
@@ -109,6 +114,10 @@ class HomeViewModel(
 
     fun setViewList(list: SnapshotStateList<GameModel>) {
         gameList = list
-        applyFilter()
+        reloadGameList(loadedCache.isNotEmpty())
+    }
+
+    fun clearLoadedCache(){
+        loadedCache = listOf()
     }
 }

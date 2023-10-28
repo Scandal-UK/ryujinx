@@ -11,8 +11,8 @@ android {
         applicationId "org.ryujinx.android"
         minSdk 30
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
+        versionCode 10001
+        versionName '1.0.1'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -99,6 +99,7 @@ dependencies {
     implementation "androidx.preference:preference-ktx:1.2.0"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2'
     implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'net.lingala.zip4j:zip4j:2.11.5'
     implementation("br.com.devsrsouza.compose.icons:css-gg:1.1.0")
     implementation "io.coil-kt:coil-compose:2.4.0"
     testImplementation 'junit:junit:4.13.2'
