@@ -38,6 +38,7 @@ class RyujinxNative {
     external fun graphicsRendererSetSize(width: Int, height: Int)
     external fun graphicsRendererSetVsync(enabled: Boolean)
     external fun graphicsRendererRunLoop()
+    external fun deviceReloadFilesystem()
     external fun inputInitialize(width: Int, height: Int)
     external fun inputSetClientSize(width: Int, height: Int)
     external fun inputSetTouchPoint(x: Int, y: Int)
@@ -52,4 +53,14 @@ class RyujinxNative {
     external fun deviceSignalEmulationClose()
     external fun deviceGetDlcTitleId(path: String, ncaPath: String) : String
     external fun deviceGetDlcContentList(path: String, titleId: Long) : Array<String>
+    external fun userGetOpenedUser()
+    external fun userGetUserPicture(userId: String) : String
+    external fun userSetUserPicture(userId: String, picture: String)
+    external fun userGetUserName(userId: String) : String
+    external fun userSetUserName(userId: String, userName: String)
+    external fun userGetAllUsers() : Array<String>
+    external fun userAddUser(username: String, picture: String)
+    external fun userDeleteUser(userId: String)
+    external fun userOpenUser(userId: String)
+    external fun userCloseUser(userId: String)
 }

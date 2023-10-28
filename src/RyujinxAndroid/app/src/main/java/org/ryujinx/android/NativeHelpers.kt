@@ -28,4 +28,6 @@ class NativeHelpers {
     external fun setSwapInterval(nativeWindow: Long, swapInterval: Int): Int
     external fun getProgressInfo() : String
     external fun getProgressValue() : Float
+    external fun pushStringJava(string: String)
+    external fun popStringJava() : String
 }

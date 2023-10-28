@@ -311,3 +311,25 @@ JNIEXPORT jstring JNICALL
 Java_org_ryujinx_android_NativeHelpers_getProgressInfo(JNIEnv *env, jobject thiz) {
     return createStringFromStdString(env, progressInfo);
 }
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_org_ryujinx_android_NativeHelpers_popStringJava(JNIEnv *env, jobject thiz) {
+    return createStringFromStdString(env, _currentString);
+}
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_ryujinx_android_NativeHelpers_pushStringJava(JNIEnv *env, jobject thiz, jstring string) {
+    _currentString = getStringPointer(env, string);
+}
+
+
+extern "C"
+void pushString(char* str){
+    _currentString = str;
+}
+
+extern "C"
+const char* popString(){
+    return _currentString.c_str();
+}
