@@ -4,7 +4,7 @@ import android.view.SurfaceView
 
 class NativeWindow(val surface: SurfaceView) {
     var nativePointer: Long
-    var nativeHelpers: NativeHelpers = NativeHelpers()
+    var nativeHelpers: NativeHelpers = NativeHelpers.instance
     private var _swapInterval : Int = 0
 
     var maxSwapInterval : Int = 0

@@ -11,6 +11,7 @@ import com.anggrayudi.storage.file.getAbsolutePath
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.ryujinx.android.MainActivity
+import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 import java.io.File
 
@@ -39,8 +40,8 @@ class DlcViewModel(val titleId: String) {
                         val path = file.getAbsolutePath(storageHelper.storage.context)
                         if (path.isNotEmpty()) {
                             data?.apply {
-                                var contents = RyujinxNative().deviceGetDlcContentList(
-                                    path,
+                                var contents = RyujinxNative.instance.deviceGetDlcContentList(
+                                    NativeHelpers.instance.storeStringJava(path),
                                     titleId.toLong(16)
                                 )
 
@@ -101,7 +102,7 @@ class DlcViewModel(val titleId: String) {
                             enabled,
                             containerPath,
                             dlc.fullPath,
-                            RyujinxNative().deviceGetDlcTitleId(containerPath, dlc.fullPath)
+                            NativeHelpers.instance.getStringJava(RyujinxNative.instance.deviceGetDlcTitleId(NativeHelpers.instance.storeStringJava(containerPath), NativeHelpers.instance.storeStringJava(dlc.fullPath)))
                         )
                     )
                 }

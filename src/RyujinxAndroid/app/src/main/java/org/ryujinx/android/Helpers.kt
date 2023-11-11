@@ -216,7 +216,7 @@ class Helpers {
                 }
             } finally {
                 isImporting.value = false
-                RyujinxNative().deviceReloadFilesystem()
+                RyujinxNative.instance.deviceReloadFilesystem()
             }
         }
     }

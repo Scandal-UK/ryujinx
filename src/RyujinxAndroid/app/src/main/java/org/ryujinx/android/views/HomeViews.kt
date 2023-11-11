@@ -48,7 +48,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -58,14 +57,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.anggrayudi.storage.extension.launchOnUiThread
-import org.ryujinx.android.MainActivity
-import org.ryujinx.android.NativeHelpers
-import org.ryujinx.android.RyujinxNative
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.HomeViewModel
-import java.io.File
 import java.util.Base64
 import java.util.Locale
 import kotlin.concurrent.thread
@@ -81,7 +75,6 @@ class HomeViews {
             viewModel: HomeViewModel = HomeViewModel(),
             navController: NavHostController? = null
         ) {
-            val native = RyujinxNative()
             val showAppActions = remember { mutableStateOf(false) }
             val showLoading = remember { mutableStateOf(false) }
             val openTitleUpdateDialog = remember { mutableStateOf(false) }
@@ -90,31 +83,7 @@ class HomeViews {
             val query = remember {
                 mutableStateOf("")
             }
-            val refresh = remember {
-                mutableStateOf(true)
-            }
-            val refreshUser = remember {
-                mutableStateOf(true)
-            }
 
-            viewModel.mainViewModel?.setRefreshUserState(refreshUser)
-            val user = remember {
-                mutableStateOf("")
-            }
-            val pic = remember {
-                mutableStateOf(ByteArray(0))
-            }
-
-            if (refreshUser.value) {
-                native.userGetOpenedUser()
-                user.value = NativeHelpers().popStringJava()
-                if (user.value.isNotEmpty()) {
-                    val decoder = Base64.getDecoder()
-                    pic.value = decoder.decode(native.userGetUserPicture(user.value))
-                }
-
-                refreshUser.value = false;
-            }
             Scaffold(
                 modifier = Modifier.fillMaxSize(),
                 topBar = {
@@ -148,12 +117,14 @@ class HomeViews {
                             IconButton(onClick = {
                                 navController?.navigate("user")
                             }) {
-                                if (pic.value.isNotEmpty()) {
+                                if (viewModel.mainViewModel?.userViewModel?.openedUser?.userPicture?.isNotEmpty() == true) {
+                                    val pic =
+                                        viewModel.mainViewModel.userViewModel.openedUser.userPicture
                                     Image(
                                         bitmap = BitmapFactory.decodeByteArray(
-                                            pic.value,
+                                            pic,
                                             0,
-                                            pic.value.size
+                                            pic?.size ?: 0
                                         )
                                             .asImageBitmap(),
                                         contentDescription = "user image",
@@ -184,9 +155,26 @@ class HomeViews {
                     )
                 },
                 bottomBar = {
-                    BottomAppBar(actions = {
+                    BottomAppBar(
+                        actions = {
                         if (showAppActions.value) {
                             IconButton(onClick = {
+                                if(viewModel.mainViewModel?.selected != null) {
+                                    thread {
+                                        showLoading.value = true
+                                        val success =
+                                            viewModel.mainViewModel?.loadGame(viewModel.mainViewModel.selected!!)
+                                                ?: false
+                                        if (success) {
+                                            launchOnUiThread {
+                                                viewModel.mainViewModel?.navigateToGame()
+                                            }
+                                        } else {
+                                            viewModel.mainViewModel?.selected!!.close()
+                                        }
+                                        showLoading.value = false
+                                    }
+                                }
                             }) {
                                 Icon(
                                     org.ryujinx.android.Icons.playArrow(MaterialTheme.colorScheme.onSurface),
@@ -210,13 +198,17 @@ class HomeViews {
                                         Text(text = "Clear PPTC Cache")
                                     }, onClick = {
                                         showAppMenu.value = false
-                                        viewModel.mainViewModel?.clearPptcCache(viewModel.mainViewModel?.selected?.titleId ?: "")
+                                        viewModel.mainViewModel?.clearPptcCache(
+                                            viewModel.mainViewModel?.selected?.titleId ?: ""
+                                        )
                                     })
                                     DropdownMenuItem(text = {
                                         Text(text = "Purge Shader Cache")
                                     }, onClick = {
                                         showAppMenu.value = false
-                                        viewModel.mainViewModel?.purgeShaderCache(viewModel.mainViewModel?.selected?.titleId ?: "")
+                                        viewModel.mainViewModel?.purgeShaderCache(
+                                            viewModel.mainViewModel?.selected?.titleId ?: ""
+                                        )
                                     })
                                     DropdownMenuItem(text = {
                                         Text(text = "Manage Updates")
@@ -233,6 +225,39 @@ class HomeViews {
                                 }
                             }
                         }
+
+                        /*\val showAppletMenu = remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(onClick = {
+                                showAppletMenu.value = true
+                            }) {
+                                Icon(
+                                    org.ryujinx.android.Icons.applets(MaterialTheme.colorScheme.onSurface),
+                                    contentDescription = "Applets"
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showAppletMenu.value,
+                                onDismissRequest = { showAppletMenu.value = false }) {
+                                DropdownMenuItem(text = {
+                                    Text(text = "Launch Mii Editor")
+                                }, onClick = {
+                                    showAppletMenu.value = false
+                                    showLoading.value = true
+                                    thread {
+                                        val success =
+                                            viewModel.mainViewModel?.loadMiiEditor() ?: false
+                                        if (success) {
+                                            launchOnUiThread {
+                                                viewModel.mainViewModel?.navigateToGame()
+                                            }
+                                        } else
+                                            viewModel.mainViewModel!!.isMiiEditorLaunched = false
+                                        showLoading.value = false
+                                    }
+                                })
+                            }
+                        }*/
                     },
                         floatingActionButton = {
                             FloatingActionButton(
@@ -255,12 +280,7 @@ class HomeViews {
             ) { contentPadding ->
                 Box(modifier = Modifier.padding(contentPadding)) {
                     val list = remember {
-                        mutableStateListOf<GameModel>()
-                    }
-                    if (refresh.value) {
-                        viewModel.setViewList(list)
-                        refresh.value = false
-                        showAppActions.value = false
+                        viewModel.gameList
                     }
                     val selectedModel = remember {
                         mutableStateOf(viewModel.mainViewModel?.selected)
@@ -365,6 +385,7 @@ class HomeViews {
             val color =
                 if (selectedModel.value == gameModel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
 
+            val decoder = Base64.getDecoder()
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = color,
@@ -409,13 +430,12 @@ class HomeViews {
                 ) {
                     Row {
                         if (!gameModel.titleId.isNullOrEmpty() && gameModel.titleId != "0000000000000000") {
-                            val iconSource =
-                                MainActivity.AppPath + "/iconCache/" + gameModel.iconCache
-                            val imageFile = File(iconSource)
-                            if (imageFile.exists()) {
+                            if (gameModel.icon?.isNotEmpty() == true) {
+                                val pic = decoder.decode(gameModel.icon)
                                 val size = ImageSize / Resources.getSystem().displayMetrics.density
-                                AsyncImage(
-                                    model = imageFile,
+                                Image(
+                                    bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.size)
+                                        .asImageBitmap(),
                                     contentDescription = gameModel.titleName + " icon",
                                     modifier = Modifier
                                         .padding(end = 8.dp)

@@ -4,10 +4,10 @@ import org.ryujinx.android.viewmodels.GameInfo
 
 @Suppress("KotlinJniMissingFunction")
 class RyujinxNative {
-
-    external fun initialize(appPath: String, enableDebugLogs : Boolean): Boolean
+    external fun initialize(appPath: Long, enableDebugLogs : Boolean): Boolean
 
     companion object {
+        val instance: RyujinxNative = RyujinxNative()
         init {
             System.loadLibrary("ryujinx")
         }
@@ -20,7 +20,7 @@ class RyujinxNative {
                                   enableDockedMode : Boolean,
                                   enablePtc : Boolean,
                                   enableInternetAccess : Boolean,
-                                  timeZone : String,
+                                  timeZone : Long,
                                   ignoreMissingServices : Boolean): Boolean
     external fun graphicsInitialize(configuration: GraphicsConfiguration): Boolean
     external fun graphicsInitializeRenderer(
@@ -29,6 +29,7 @@ class RyujinxNative {
     ): Boolean
 
     external fun deviceLoad(game: String): Boolean
+    external fun deviceLaunchMiiEditor(): Boolean
     external fun deviceGetGameFrameRate(): Double
     external fun deviceGetGameFrameTime(): Double
     external fun deviceGetGameFifo(): Double
@@ -51,16 +52,16 @@ class RyujinxNative {
     external fun graphicsSetSurface(surface: Long, window: Long)
     external fun deviceCloseEmulation()
     external fun deviceSignalEmulationClose()
-    external fun deviceGetDlcTitleId(path: String, ncaPath: String) : String
-    external fun deviceGetDlcContentList(path: String, titleId: Long) : Array<String>
-    external fun userGetOpenedUser()
-    external fun userGetUserPicture(userId: String) : String
+    external fun deviceGetDlcTitleId(path: Long, ncaPath: Long) : Long
+    external fun deviceGetDlcContentList(path: Long, titleId: Long) : Array<String>
+    external fun userGetOpenedUser() : Long
+    external fun userGetUserPicture(userId: Long) : Long
     external fun userSetUserPicture(userId: String, picture: String)
-    external fun userGetUserName(userId: String) : String
+    external fun userGetUserName(userId: Long) : Long
     external fun userSetUserName(userId: String, userName: String)
     external fun userGetAllUsers() : Array<String>
     external fun userAddUser(username: String, picture: String)
     external fun userDeleteUser(userId: String)
-    external fun userOpenUser(userId: String)
+    external fun userOpenUser(userId: Long)
     external fun userCloseUser(userId: String)
 }

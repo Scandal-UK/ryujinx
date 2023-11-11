@@ -26,6 +26,7 @@ using LibHac.FsSystem;
 using LibHac.Fs;
 using Path = System.IO.Path;
 using LibHac;
+using OpenTK.Audio.OpenAL;
 using Ryujinx.HLE.Loaders.Npdm;
 using Ryujinx.Common.Utilities;
 using System.Globalization;
@@ -76,6 +77,8 @@ namespace LibRyujinx
                 Console.WriteLine(ex);
                 return false;
             }
+            
+            OpenALLibraryNameContainer.OverridePath = "libopenal.so";
 
             return true;
         }

@@ -17,6 +17,7 @@ class MainView {
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") { HomeViews.Home(mainViewModel.homeViewModel, navController) }
                 composable("user") { UserViews.Main(mainViewModel, navController) }
+                composable("game") { GameViews.Main() }
                 composable("settings") {
                     SettingViews.Main(
                         SettingsViewModel(
