@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include "libraries/adrenotools/include/adrenotools/driver.h"
 #include "native_window.h"
+#include "string_helper.h"
 
 // A macro to pass call to Vulkan and check for return value for success
 #define CALL_VK(func)                                                 \
@@ -46,5 +47,6 @@ JavaVM* _vm = nullptr;
 jobject _mainActivity = nullptr;
 jclass _mainActivityClass = nullptr;
 std::string _currentString = "";
+string_helper str_helper = string_helper();
 
 #endif //RYUJINXNATIVE_RYUIJNX_H

@@ -26,6 +26,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,40 +37,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import org.ryujinx.android.NativeHelpers
-import org.ryujinx.android.RyujinxNative
 import org.ryujinx.android.viewmodels.MainViewModel
-import java.util.Base64
 
 class UserViews {
     companion object {
         @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
         @Composable
         fun Main(viewModel: MainViewModel? = null, navController: NavHostController? = null) {
-            val ryujinxNative = RyujinxNative()
-            val decoder = Base64.getDecoder()
-            ryujinxNative.userGetOpenedUser()
-            val openedUser = remember {
-                mutableStateOf(NativeHelpers().popStringJava())
+            val reload = remember {
+                mutableStateOf(true)
             }
-
-            val openedUserPic = remember {
-                mutableStateOf(decoder.decode(ryujinxNative.userGetUserPicture(openedUser.value)))
-            }
-            val openedUserName = remember {
-                mutableStateOf(ryujinxNative.userGetUserName(openedUser.value))
-            }
-
-            val userList = remember {
-                mutableListOf("")
-            }
-
             fun refresh() {
-                userList.clear()
-                userList.addAll(ryujinxNative.userGetAllUsers())
+                viewModel?.userViewModel?.refreshUsers()
+                reload.value = true
             }
-
-            refresh()
+            LaunchedEffect(reload.value) {
+                reload.value = false
+            }
 
             Scaffold(modifier = Modifier.fillMaxSize(),
                 topBar = {
@@ -102,25 +86,28 @@ class UserViews {
                                 .padding(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Image(
-                                bitmap = BitmapFactory.decodeByteArray(
-                                    openedUserPic.value,
-                                    0,
-                                    openedUserPic.value.size
-                                ).asImageBitmap(),
-                                contentDescription = "selected image",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .size(96.dp)
-                                    .clip(CircleShape)
-                            )
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(text = openedUserName.value)
-                                Text(text = openedUser.value)
+                            if (viewModel?.userViewModel?.openedUser?.id?.isNotEmpty() == true) {
+                                val openUser = viewModel.userViewModel.openedUser
+                                Image(
+                                    bitmap = BitmapFactory.decodeByteArray(
+                                        openUser.userPicture,
+                                        0,
+                                        openUser.userPicture?.size ?: 0
+                                    ).asImageBitmap(),
+                                    contentDescription = "selected image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .padding(4.dp)
+                                        .size(96.dp)
+                                        .clip(CircleShape)
+                                )
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(text = openUser.username)
+                                    Text(text = openUser.id)
+                                }
                             }
                         }
 
@@ -139,34 +126,32 @@ class UserViews {
                                 )
                             }
                         }
+
                         LazyVerticalGrid(
                             columns = GridCells.Adaptive(minSize = 96.dp),
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(4.dp)
                         ) {
-                            items(userList) { user ->
-                                val pic = decoder.decode(ryujinxNative.userGetUserPicture(user))
-                                val name = ryujinxNative.userGetUserName(user)
-                                Image(
-                                    bitmap = BitmapFactory.decodeByteArray(pic, 0, pic.size)
-                                        .asImageBitmap(),
-                                    contentDescription = "selected image",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(4.dp)
-                                        .clip(CircleShape)
-                                        .align(Alignment.CenterHorizontally)
-                                        .combinedClickable(
-                                            onClick = {
-                                                ryujinxNative.userOpenUser(user)
-                                                openedUser.value = user
-                                                openedUserPic.value = pic
-                                                openedUserName.value = name
-                                                viewModel?.requestUserRefresh()
-                                            })
-                                )
+                            if(viewModel?.userViewModel?.userList?.isNotEmpty() == true) {
+                                items(viewModel.userViewModel.userList) { user ->
+                                    Image(
+                                        bitmap = BitmapFactory.decodeByteArray(user.userPicture, 0, user.userPicture?.size ?: 0)
+                                            .asImageBitmap(),
+                                        contentDescription = "selected image",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(4.dp)
+                                            .clip(CircleShape)
+                                            .align(Alignment.CenterHorizontally)
+                                            .combinedClickable(
+                                                onClick = {
+                                                    viewModel.userViewModel.openUser(user)
+                                                    reload.value = true
+                                                })
+                                    )
+                                }
                             }
                         }
                     }

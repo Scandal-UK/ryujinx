@@ -96,7 +96,7 @@ class GameController(var activity: Activity) {
         rightGamePad.gravityX = 1f
         rightGamePad.gravityY = 1f
 
-        ryujinxNative = RyujinxNative()
+        ryujinxNative = RyujinxNative.instance
     }
 
     fun setVisible(isVisible: Boolean){
@@ -110,7 +110,7 @@ class GameController(var activity: Activity) {
 
     fun connect(){
         if(controllerId == -1)
-            controllerId = RyujinxNative().inputConnectGamepad(0)
+            controllerId = RyujinxNative.instance.inputConnectGamepad(0)
     }
 
     private fun handleEvent(ev: Event) {

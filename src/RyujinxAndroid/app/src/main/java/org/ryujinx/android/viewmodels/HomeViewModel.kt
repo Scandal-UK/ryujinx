@@ -18,10 +18,10 @@ class HomeViewModel(
     val mainViewModel: MainViewModel? = null
 ) {
     private var isLoading: Boolean = false
-    private var gameList: SnapshotStateList<GameModel>? = null
     private var loadedCache: List<GameModel> = listOf()
     private var gameFolderPath: DocumentFile? = null
     private var sharedPref: SharedPreferences? = null
+    val gameList: SnapshotStateList<GameModel> = SnapshotStateList()
 
     init {
         if (activity != null) {
@@ -68,53 +68,35 @@ class HomeViewModel(
             )
     }
 
-    fun reloadGameList(ignoreCache: Boolean = false) {
+    fun reloadGameList() {
         var storage = activity?.storageHelper ?: return
         
         if(isLoading)
             return
         val folder = gameFolderPath ?: return
+
+        gameList.clear()
         
         isLoading = true
-
-        if(!ignoreCache) {
-            val files = mutableListOf<GameModel>()
-
-            thread {
-                try {
-                    for (file in folder.search(false, DocumentFileType.FILE)) {
-                        if (file.extension == "xci" || file.extension == "nsp")
-                            activity.let {
-                                files.add(GameModel(file, it))
-                            }
-                    }
-
-                    loadedCache = files.toList()
-
-                    isLoading = false
-
-                    applyFilter()
-                } finally {
-                    isLoading = false
+        thread {
+            try {
+                val files = mutableListOf<GameModel>()
+                for (file in folder.search(false, DocumentFileType.FILE)) {
+                    if (file.extension == "xci" || file.extension == "nsp")
+                        activity.let {
+                            val item = GameModel(file, it)
+                            files.add(item)
+                            gameList.add(item)
+                        }
                 }
+
+                loadedCache = files.toList()
+
+                isLoading = false
+            } finally {
+                isLoading = false
             }
         }
-        else{
-            isLoading = false
-            applyFilter()
-        }
-    }
-
-    private fun applyFilter() {
-        if(isLoading)
-            return
-        gameList?.clear()
-        gameList?.addAll(loadedCache)
-    }
-
-    fun setViewList(list: SnapshotStateList<GameModel>) {
-        gameList = list
-        reloadGameList(loadedCache.isNotEmpty())
     }
 
     fun clearLoadedCache(){

@@ -11,8 +11,8 @@ android {
         applicationId "org.ryujinx.android"
         minSdk 30
         targetSdk 33
-        versionCode 10001
-        versionName '1.0.1'
+        versionCode 10004
+        versionName '1.0.4'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -94,7 +94,6 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     implementation 'com.github.swordfish90:radialgamepad:2.0.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'com.google.oboe:oboe:1.7.0'
     implementation "com.anggrayudi:storage:1.5.5"
     implementation "androidx.preference:preference-ktx:1.2.0"
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.2'

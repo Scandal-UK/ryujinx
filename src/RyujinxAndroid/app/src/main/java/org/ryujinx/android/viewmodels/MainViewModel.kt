@@ -2,7 +2,6 @@ package org.ryujinx.android.viewmodels
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.PerformanceHintManager
 import androidx.compose.runtime.MutableState
@@ -10,7 +9,6 @@ import androidx.navigation.NavHostController
 import com.anggrayudi.storage.extension.launchOnUiThread
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
-import org.ryujinx.android.GameActivity
 import org.ryujinx.android.GameController
 import org.ryujinx.android.GameHost
 import org.ryujinx.android.GraphicsConfiguration
@@ -31,6 +29,8 @@ class MainViewModel(val activity: MainActivity) {
     var controller: GameController? = null
     var performanceManager: PerformanceManager? = null
     var selected: GameModel? = null
+    var isMiiEditorLaunched = false
+    val userViewModel = UserViewModel()
     private var gameTimeState: MutableState<Double>? = null
     private var gameFpsState: MutableState<Double>? = null
     private var fifoState: MutableState<Double>? = null
@@ -56,13 +56,13 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun closeGame() {
-        RyujinxNative().deviceSignalEmulationClose()
+        RyujinxNative.instance.deviceSignalEmulationClose()
         gameHost?.close()
-        RyujinxNative().deviceCloseEmulation()
+        RyujinxNative.instance.deviceCloseEmulation()
     }
 
     fun loadGame(game:GameModel) : Boolean {
-        val nativeRyujinx = RyujinxNative()
+        val nativeRyujinx = RyujinxNative.instance
 
         val descriptor = game.open()
 
@@ -70,6 +70,7 @@ class MainViewModel(val activity: MainActivity) {
             return false
 
         gameModel = game
+        isMiiEditorLaunched = false
 
         val settings = QuickSettings(activity)
 
@@ -83,7 +84,7 @@ class MainViewModel(val activity: MainActivity) {
         if (!success)
             return false
 
-        val nativeHelpers = NativeHelpers()
+        val nativeHelpers = NativeHelpers.instance
         val nativeInterop = NativeGraphicsInterop()
         nativeInterop.VkRequiredExtensions = arrayOf(
             "VK_KHR_surface", "VK_KHR_android_surface"
@@ -118,7 +119,7 @@ class MainViewModel(val activity: MainActivity) {
                     }
                 }
 
-                driverHandle = NativeHelpers().loadDriver(
+                driverHandle = NativeHelpers.instance.loadDriver(
                     activity.applicationInfo.nativeLibraryDir!! + "/",
                     privateDriverPath,
                     this.libraryName
@@ -148,7 +149,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.enableDocked,
                     settings.enablePtc,
                     false,
-                    "UTC",
+                    NativeHelpers.instance.storeStringJava("UTC"),
                     settings.ignoreMissingServices
                 )
 
@@ -162,6 +163,112 @@ class MainViewModel(val activity: MainActivity) {
             return false
 
         success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.isXci())
+
+        if (!success)
+            return false
+
+        return true
+    }
+
+
+
+    fun loadMiiEditor() : Boolean {
+        val nativeRyujinx = RyujinxNative.instance
+
+        gameModel = null
+        isMiiEditorLaunched = true
+
+        val settings = QuickSettings(activity)
+
+        var success = nativeRyujinx.graphicsInitialize(GraphicsConfiguration().apply {
+            EnableShaderCache = settings.enableShaderCache
+            EnableTextureRecompression = settings.enableTextureRecompression
+            ResScale = settings.resScale
+            BackendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
+        })
+
+        if (!success)
+            return false
+
+        val nativeHelpers = NativeHelpers.instance
+        val nativeInterop = NativeGraphicsInterop()
+        nativeInterop.VkRequiredExtensions = arrayOf(
+            "VK_KHR_surface", "VK_KHR_android_surface"
+        )
+        nativeInterop.VkCreateSurface = nativeHelpers.getCreateSurfacePtr()
+        nativeInterop.SurfaceHandle = 0
+
+        val driverViewModel = VulkanDriverViewModel(activity)
+        val drivers = driverViewModel.getAvailableDrivers()
+
+        var driverHandle = 0L
+
+        if (driverViewModel.selected.isNotEmpty()) {
+            val metaData = drivers.find { it.driverPath == driverViewModel.selected }
+
+            metaData?.apply {
+                val privatePath = activity.filesDir
+                val privateDriverPath = privatePath.canonicalPath + "/driver/"
+                val pD = File(privateDriverPath)
+                if (pD.exists())
+                    pD.deleteRecursively()
+
+                pD.mkdirs()
+
+                val driver = File(driverViewModel.selected)
+                val parent = driver.parentFile
+                if (parent != null) {
+                    for (file in parent.walkTopDown()) {
+                        if (file.absolutePath == parent.absolutePath)
+                            continue
+                        file.copyTo(File(privateDriverPath + file.name), true)
+                    }
+                }
+
+                driverHandle = NativeHelpers.instance.loadDriver(
+                    activity.applicationInfo.nativeLibraryDir!! + "/",
+                    privateDriverPath,
+                    this.libraryName
+                )
+            }
+
+        }
+
+        success = nativeRyujinx.graphicsInitializeRenderer(
+            nativeInterop.VkRequiredExtensions!!,
+            driverHandle
+        )
+        if (!success)
+            return false
+
+        val semaphore = Semaphore(1, 0)
+        runBlocking {
+            semaphore.acquire()
+            launchOnUiThread {
+                // We are only able to initialize the emulation context on the main thread
+                success = nativeRyujinx.deviceInitialize(
+                    settings.isHostMapped,
+                    settings.useNce,
+                    SystemLanguage.AmericanEnglish.ordinal,
+                    RegionCode.USA.ordinal,
+                    settings.enableVsync,
+                    settings.enableDocked,
+                    settings.enablePtc,
+                    false,
+                    NativeHelpers.instance.storeStringJava("UTC"),
+                    settings.ignoreMissingServices
+                )
+
+                semaphore.release()
+            }
+            semaphore.acquire()
+            semaphore.release()
+        }
+
+        if (!success)
+            return false
+
+        success = nativeRyujinx.deviceLaunchMiiEditor()
 
         if (!success)
             return false
@@ -241,8 +348,9 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun navigateToGame() {
-        val intent = Intent(activity, GameActivity::class.java)
-        activity.startActivity(intent)
+        activity.setFullScreen(true)
+        navController?.navigate("game")
+        activity.isGameRunning = true
     }
 
     fun setProgressStates(
@@ -254,16 +362,5 @@ class MainViewModel(val activity: MainActivity) {
         this.progressValue = progressValue
         this.progress = progress
         gameHost?.setProgressStates(showLoading, progressValue, progress)
-    }
-
-    fun setRefreshUserState(refreshUser: MutableState<Boolean>)
-    {
-        this.refreshUser = refreshUser
-    }
-
-    fun requestUserRefresh(){
-        refreshUser?.apply {
-            value = true
-        }
     }
 }

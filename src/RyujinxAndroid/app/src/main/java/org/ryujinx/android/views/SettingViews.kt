@@ -306,7 +306,7 @@ class SettingViews {
                                                         thread {
                                                             Helpers.importAppData(this, isImporting)
                                                             showImportCompletion.value = true
-                                                            mainViewModel.requestUserRefresh()
+                                                            mainViewModel.userViewModel.refreshUsers()
                                                         }
                                                     }
                                                 }, modifier = Modifier.padding(horizontal = 8.dp)) {
@@ -329,7 +329,7 @@ class SettingViews {
                                 AlertDialog(onDismissRequest = {
                                     showImportCompletion.value = false
                                     importFile.value = null
-                                    mainViewModel.requestUserRefresh()
+                                    mainViewModel.userViewModel.refreshUsers()
                                     mainViewModel.homeViewModel.clearLoadedCache()
                                 }) {
                                     Card(
@@ -461,7 +461,8 @@ class SettingViews {
                                                     Column(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .height(300.dp)
+                                                            .height(350.dp)
+                                                            .verticalScroll(rememberScrollState())
                                                     ) {
                                                         Row(
                                                             modifier = Modifier
@@ -494,7 +495,7 @@ class SettingViews {
                                                             Row(
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
-                                                                    .padding(8.dp),
+                                                                    .padding(4.dp),
                                                                 verticalAlignment = Alignment.CenterVertically
                                                             ) {
                                                                 RadioButton(

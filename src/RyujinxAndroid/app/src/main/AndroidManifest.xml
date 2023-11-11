@@ -28,13 +28,9 @@
         android:theme="@style/Theme.RyujinxAndroid"
         tools:targetApi="31">
         <activity
-            android:name=".GameActivity"
-            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
-            android:launchMode="singleTask"
-            android:theme="@style/Theme.RyujinxAndroid" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|uiMode"
             android:hardwareAccelerated="true"
             android:theme="@style/Theme.RyujinxAndroid">
             <intent-filter>

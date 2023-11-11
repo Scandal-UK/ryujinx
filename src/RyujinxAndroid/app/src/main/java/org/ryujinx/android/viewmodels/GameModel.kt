@@ -15,12 +15,12 @@ class GameModel(var file: DocumentFile, val context: Context) {
     var titleId: String? = null
     var developer: String? = null
     var version: String? = null
-    var iconCache: String? = null
+    var icon: String? = null
 
     init {
         fileName = file.name
         var pid = open()
-        val gameInfo = RyujinxNative().deviceGetGameInfo(pid, file.extension.contains("xci"))
+        val gameInfo = RyujinxNative.instance.deviceGetGameInfo(pid, file.extension.contains("xci"))
         close()
 
         fileSize = gameInfo.FileSize
@@ -28,7 +28,7 @@ class GameModel(var file: DocumentFile, val context: Context) {
         titleName = gameInfo.TitleName
         developer = gameInfo.Developer
         version = gameInfo.Version
-        iconCache = gameInfo.IconCache
+        icon = gameInfo.Icon
     }
 
     fun open() : Int {
@@ -53,5 +53,5 @@ class GameInfo {
     var TitleId: String? = null
     var Developer: String? = null
     var Version: String? = null
-    var IconCache: String? = null
+    var Icon: String? = null
 }
