@@ -135,7 +135,7 @@ namespace Ryujinx.Common.Logging
 
             _time = Stopwatch.StartNew();
 
-            if (!Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (!Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 // Logger should log to console by default
                 AddTarget(new AsyncLogTargetWrapper(

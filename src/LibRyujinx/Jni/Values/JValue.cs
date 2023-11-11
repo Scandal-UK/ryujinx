@@ -24,7 +24,7 @@ namespace LibRyujinx.Jni.Values
 
         public Boolean IsDefault => isDefault(this);
 
-        public static JValue Create(ReadOnlySpan<Byte> source)
+        public static JValue Create(in ReadOnlySpan<Byte> source)
         {
             Byte[] result = new Byte[Size];
             for (Int32 i = 0; i < source.Length; i++)
@@ -38,7 +38,10 @@ namespace LibRyujinx.Jni.Values
             => (jValue._value1 + jValue._value2 + jValue._value3) == default
             && jValue._value4 == default;
 
-        private static Boolean DefaultLong(in JValue jValue) =>
-            Unsafe.AsRef(jValue).Transform<JValue, Int64>() == default;
+        private static Boolean DefaultLong(in JValue jValue)
+        {
+            var jv = jValue;
+            return Unsafe.AsRef(ref jv).Transform<JValue, Int64>() == default;
+        }
     }
 }

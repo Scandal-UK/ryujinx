@@ -9,7 +9,6 @@ namespace Ryujinx.UI.Common.SystemInfo
 {
     public class SystemInfo
     {
-        public static bool IsBionic { get; set; }
         public string OsDescription { get; protected set; }
         public string CpuName { get; protected set; }
         public ulong RamTotal { get; protected set; }
@@ -75,11 +74,6 @@ namespace Ryujinx.UI.Common.SystemInfo
             string name = Encoding.ASCII.GetString(MemoryMarshal.Cast<int, byte>(regs)).Replace('\0', ' ').Trim();
 
             return string.IsNullOrEmpty(name) ? null : name;
-        }
-
-        public static bool IsAndroid()
-        {
-            return OperatingSystem.IsAndroid() || IsBionic;
         }
     }
 }

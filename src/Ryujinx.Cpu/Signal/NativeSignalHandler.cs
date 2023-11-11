@@ -88,11 +88,11 @@ namespace Ryujinx.Cpu.Signal
 
                 ref SignalHandlerConfig config = ref GetConfigRef();
 
-                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || PlatformInfo.IsBionic)
                 {
                     _signalHandlerPtr = MapCode(NativeSignalHandlerGenerator.GenerateUnixSignalHandler(_handlerConfig, rangeStructSize));
 
-                    if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                    if (PlatformInfo.IsBionic)
                     {
                         config.StructAddressOffset = 16; // si_addr
                         config.StructWriteOffset = 8; // si_code

@@ -25,7 +25,7 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
                 IsAnyInternetRequestAccepted = true, // NOTE: Why not accept any internet request?
             };
             
-            if (!Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+            if (!Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 NetworkChange.NetworkAddressChanged += LocalInterfaceCacheHandler;
             }
@@ -199,7 +199,7 @@ namespace Ryujinx.HLE.HOS.Services.Nifm.StaticService
         {
             if (isDisposing)
             {
-                if (!Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+                if (!Ryujinx.Common.PlatformInfo.IsBionic)
                 {
                     NetworkChange.NetworkAddressChanged -= LocalInterfaceCacheHandler;
                 }

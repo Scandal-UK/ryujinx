@@ -111,7 +111,7 @@ namespace ARMeilleure.Signal
                     return context.BitwiseAnd(err, Const(2ul));
                 }
             }
-            else if (OperatingSystem.IsLinux() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            else if (OperatingSystem.IsLinux())
             {
                 if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
                 {
