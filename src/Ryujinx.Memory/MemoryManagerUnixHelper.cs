@@ -113,7 +113,7 @@ namespace Ryujinx.Memory
 
             if (flags.HasFlag(MmapFlags.MAP_ANONYMOUS))
             {
-                if (OperatingSystem.IsLinux() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                if (OperatingSystem.IsLinux() || Ryujinx.Common.PlatformInfo.IsBionic)
                 {
                     result |= MAP_ANONYMOUS_LINUX_GENERIC;
                 }
@@ -129,7 +129,7 @@ namespace Ryujinx.Memory
 
             if (flags.HasFlag(MmapFlags.MAP_NORESERVE))
             {
-                if (OperatingSystem.IsLinux() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                if (OperatingSystem.IsLinux() || Ryujinx.Common.PlatformInfo.IsBionic)
                 {
                     result |= MAP_NORESERVE_LINUX_GENERIC;
                 }
@@ -145,7 +145,7 @@ namespace Ryujinx.Memory
 
             if (flags.HasFlag(MmapFlags.MAP_UNLOCKED))
             {
-                if (OperatingSystem.IsLinux() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+                if (OperatingSystem.IsLinux() || Ryujinx.Common.PlatformInfo.IsBionic)
                 {
                     result |= MAP_UNLOCKED_LINUX_GENERIC;
                 }

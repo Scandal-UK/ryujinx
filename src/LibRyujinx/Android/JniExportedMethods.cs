@@ -7,10 +7,10 @@ using LibRyujinx.Shared.Audio.Oboe;
 using Microsoft.Win32.SafeHandles;
 using Rxmxnx.PInvoke;
 using Ryujinx.Audio.Backends.OpenAL;
+using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Logging;
 using Ryujinx.Common.Logging.Targets;
-using Ryujinx.Common.SystemInfo;
 using Ryujinx.HLE.HOS.SystemState;
 using Ryujinx.Input;
 using Silk.NET.Core.Loader;
@@ -87,7 +87,7 @@ namespace LibRyujinx
         public static JBoolean JniInitialize(JEnvRef jEnv, JObjectLocalRef jObj, JLong jpathId, JBoolean enableDebugLogs)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            SystemInfo.IsBionic = true;
+            PlatformInfo.IsBionic = true;
 
             Logger.AddTarget(
                 new AsyncLogTargetWrapper(

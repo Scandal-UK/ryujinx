@@ -426,7 +426,7 @@ namespace Ryujinx.Memory
                     return OperatingSystem.IsWindowsVersionAtLeast(10, 0, 17134);
                 }
 
-                return OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid();
+                return OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || Ryujinx.Common.PlatformInfo.IsBionic;
             }
 
             return true;

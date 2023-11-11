@@ -68,7 +68,7 @@ namespace Ryujinx.Cpu.Signal
             int result;
             SigAction old;
 
-            if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 result = sigaction(SIGSEGV, IntPtr.Zero, out SigActionBionic tmp);
 
@@ -98,7 +98,7 @@ namespace Ryujinx.Cpu.Signal
             int result;
             SigAction old;
 
-            if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 SigActionBionic sig = new()
                 {
@@ -185,7 +185,7 @@ namespace Ryujinx.Cpu.Signal
         {
             int result;
 
-            if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 SigActionBionic sig = new()
                 {
@@ -233,7 +233,7 @@ namespace Ryujinx.Cpu.Signal
 
         public static bool RestoreExceptionHandler(SigAction oldAction)
         {
-            if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 SigActionBionic tmp = new SigActionBionic
                 {

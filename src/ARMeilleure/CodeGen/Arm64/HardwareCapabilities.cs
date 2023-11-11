@@ -14,7 +14,7 @@ namespace ARMeilleure.CodeGen.Arm64
                 return;
             }
 
-            if (OperatingSystem.IsLinux() || Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            if (OperatingSystem.IsLinux())
             {
                 LinuxFeatureInfoHwCap = (LinuxFeatureFlagsHwCap)getauxval(AT_HWCAP);
                 LinuxFeatureInfoHwCap2 = (LinuxFeatureFlagsHwCap2)getauxval(AT_HWCAP2);

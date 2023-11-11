@@ -159,7 +159,7 @@ namespace Ryujinx.Memory
                     }
                 }
             }
-            else if (Ryujinx.Common.SystemInfo.SystemInfo.IsAndroid())
+            else if (Ryujinx.Common.PlatformInfo.IsBionic)
             {
                 byte[] memName = "Ryujinx-XXXXXX"u8.ToArray();
 

@@ -7,13 +7,15 @@
   </PropertyGroup>
   <PropertyGroup>
     <PublishAot>true</PublishAot>
+    <NativeLib>Shared</NativeLib>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <InvariantGlobalization>true</InvariantGlobalization>
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-      <OptimizationPreference>Speed</OptimizationPreference>
+    <Optimize>true</Optimize>
+    <OptimizationPreference>Speed</OptimizationPreference>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ryujinx.Audio.Backends.OpenAL\Ryujinx.Audio.Backends.OpenAL.csproj" />
