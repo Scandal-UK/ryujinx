@@ -17,7 +17,7 @@
 #include <vulkan/vulkan_android.h>
 #include <cassert>
 #include <fcntl.h>
-#include "libraries/adrenotools/include/adrenotools/driver.h"
+#include "adrenotools/driver.h"
 #include "native_window.h"
 #include "string_helper.h"
 

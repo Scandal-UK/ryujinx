@@ -1,3 +1,4 @@
+include(FetchContent)
 
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html
@@ -13,7 +14,13 @@ project("ryujinxjni")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-add_subdirectory("libraries/adrenotools")
+FetchContent_Declare(
+    adrenotools
+    GIT_REPOSITORY https://github.com/bylaws/libadrenotools.git
+    GIT_TAG        deec5f75ee1a8ccbe32c8780b1d17284fc87b0f1 # v1.0-14-gdeec5f7
+)
+
+FetchContent_MakeAvailable(adrenotools)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
