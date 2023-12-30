@@ -35,6 +35,7 @@ using Ryujinx.Common.Logging.Targets;
 using System.Collections.Generic;
 using System.Text;
 using Ryujinx.HLE.UI;
+using LibRyujinx.Android;
 
 namespace LibRyujinx
 {
@@ -656,6 +657,38 @@ namespace LibRyujinx
             }
 
             return paths;
+        }
+
+        public static void SetupUiHandler()
+        {
+            if (SwitchDevice is { } switchDevice)
+            {
+                switchDevice.HostUiHandler = new AndroidUiHandler();
+            }
+        }
+
+        public static void WaitUiHandler()
+        {
+            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            {
+                uiHandler.Wait();
+            }
+        }
+
+        public static void StopUiHandlerWait()
+        {
+            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            {
+                uiHandler.Set();
+            }
+        }
+
+        public static void SetUiHandlerResponse(bool isOkPressed, long input)
+        {
+            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            {
+                uiHandler.SetResponse(isOkPressed, input);
+            }
         }
     }
 
