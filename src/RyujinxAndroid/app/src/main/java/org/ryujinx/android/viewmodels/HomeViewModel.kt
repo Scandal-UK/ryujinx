@@ -6,19 +6,20 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.preference.PreferenceManager
 import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.DocumentFileType
-import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.extension
-import com.anggrayudi.storage.file.getAbsolutePath
 import com.anggrayudi.storage.file.search
 import org.ryujinx.android.MainActivity
+import java.util.Locale
 import kotlin.concurrent.thread
 
 class HomeViewModel(
     val activity: MainActivity? = null,
     val mainViewModel: MainViewModel? = null
 ) {
+    private var shouldReload: Boolean = false
+    private var savedFolder: String = ""
     private var isLoading: Boolean = false
-    private var loadedCache: List<GameModel> = listOf()
+    private var loadedCache: MutableList<GameModel> = mutableListOf()
     private var gameFolderPath: DocumentFile? = null
     private var sharedPref: SharedPreferences? = null
     val gameList: SnapshotStateList<GameModel> = SnapshotStateList()
@@ -26,46 +27,34 @@ class HomeViewModel(
     init {
         if (activity != null) {
             sharedPref = PreferenceManager.getDefaultSharedPreferences(activity)
-            activity.storageHelper!!.onFolderSelected = { requestCode, folder ->
-                run {
-                    gameFolderPath = folder
-                    val p = folder.getAbsolutePath(activity!!)
-                    val editor = sharedPref?.edit()
-                    editor?.putString("gameFolder", p)
-                    editor?.apply()
-                    reloadGameList()
-                }
-            }
-
-            val savedFolder = sharedPref?.getString("gameFolder", "") ?: ""
-
-            if (savedFolder.isNotEmpty()) {
-                try {
-                    gameFolderPath = DocumentFileCompat.fromFullPath(
-                        activity,
-                        savedFolder,
-                        documentType = DocumentFileType.FOLDER,
-                        requiresWriteAccess = true
-                    )
-
-                    reloadGameList()
-                } catch (e: Exception) {
-
-                }
-            }
         }
     }
 
-    fun openGameFolder() {
-        val path = sharedPref?.getString("gameFolder", "") ?: ""
+    fun ensureReloadIfNecessary() {
+        val oldFolder = savedFolder
+        savedFolder = sharedPref?.getString("gameFolder", "") ?: ""
 
-        if (path.isEmpty())
-            activity?.storageHelper?.storage?.openFolderPicker()
-        else
-            activity?.storageHelper?.storage?.openFolderPicker(
-                activity.storageHelper!!.storage.requestCodeFolderPicker,
-                FileFullPath(activity, path)
+        if (savedFolder.isNotEmpty() && (shouldReload || savedFolder != oldFolder)) {
+            gameFolderPath = DocumentFileCompat.fromFullPath(
+                mainViewModel?.activity!!,
+                savedFolder,
+                documentType = DocumentFileType.FOLDER,
+                requiresWriteAccess = true
             )
+
+            reloadGameList()
+        }
+    }
+
+    fun filter(query : String){
+        gameList.clear()
+        gameList.addAll(loadedCache.filter { it.titleName != null && it.titleName!!.isNotEmpty() && (query.trim()
+            .isEmpty() || it.titleName!!.lowercase(Locale.getDefault())
+            .contains(query)) })
+    }
+
+    fun requestReload(){
+        shouldReload = true
     }
 
     fun reloadGameList() {
@@ -80,26 +69,24 @@ class HomeViewModel(
         isLoading = true
         thread {
             try {
+                loadedCache.clear()
                 val files = mutableListOf<GameModel>()
                 for (file in folder.search(false, DocumentFileType.FILE)) {
-                    if (file.extension == "xci" || file.extension == "nsp")
+                    if (file.extension == "xci" || file.extension == "nsp" || file.extension == "nro")
                         activity.let {
                             val item = GameModel(file, it)
-                            files.add(item)
-                            gameList.add(item)
+
+                            if(item.titleId?.isNotEmpty() == true && item.titleName?.isNotEmpty() == true) {
+                                loadedCache.add(item)
+                                gameList.add(item)
+                            }
                         }
                 }
-
-                loadedCache = files.toList()
 
                 isLoading = false
             } finally {
                 isLoading = false
             }
         }
-    }
-
-    fun clearLoadedCache(){
-        loadedCache = listOf()
     }
 }

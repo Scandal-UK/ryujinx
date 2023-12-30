@@ -11,8 +11,8 @@ android {
         applicationId "org.ryujinx.android"
         minSdk 30
         targetSdk 33
-        versionCode 10004
-        versionName '1.0.4'
+        versionCode 10010
+        versionName '1.0.10'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -49,6 +49,7 @@ android {
     buildFeatures {
         compose true
         prefab true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.3.2'

@@ -8,7 +8,6 @@ import android.view.SurfaceView
 import androidx.compose.runtime.MutableState
 import org.ryujinx.android.viewmodels.GameModel
 import org.ryujinx.android.viewmodels.MainViewModel
-import org.ryujinx.android.viewmodels.QuickSettings
 import kotlin.concurrent.thread
 
 @SuppressLint("ViewConstructor")
@@ -76,6 +75,8 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         _isInit = false
         _isStarted = false
 
+        mainViewModel.activity.uiHandler.stop()
+
         _updateThread?.join()
         _renderingThreadWatcher?.join()
     }
@@ -88,20 +89,15 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         _nativeRyujinx.inputInitialize(width, height)
 
-        val settings = QuickSettings(mainViewModel.activity)
-
-        if (!settings.useVirtualController) {
-            mainViewModel.controller?.setVisible(false)
-        } else {
-            mainViewModel.controller?.connect()
-        }
-
-        mainViewModel.physicalControllerManager?.connect()
+        val id = mainViewModel.physicalControllerManager?.connect()
+        mainViewModel.motionSensorManager?.setControllerId(id ?: -1)
 
         _nativeRyujinx.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
             surfaceHolder.surfaceFrame.height()
         )
+
+        NativeHelpers.instance.setIsInitialOrientationFlipped(mainViewModel.activity.display?.rotation == 3)
 
         _guestThread = thread(start = true) {
             runGame()
@@ -166,6 +162,10 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
                 }
                 mainViewModel.performanceManager?.closeCurrentRenderingSession()
             }
+        }
+
+        thread {
+            mainViewModel.activity.uiHandler.listen()
         }
         _nativeRyujinx.graphicsRendererRunLoop()
 

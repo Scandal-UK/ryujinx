@@ -1,12 +1,15 @@
 package org.ryujinx.android.viewmodels
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.toLowerCase
+import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.SimpleStorageHelper
+import com.anggrayudi.storage.file.extension
 import com.google.gson.Gson
-import org.ryujinx.android.Helpers
 import org.ryujinx.android.MainActivity
 import java.io.File
 import kotlin.math.max
@@ -16,29 +19,32 @@ class TitleUpdateViewModel(val titleId: String) {
     private var basePath: String
     private var updateJsonName = "updates.json"
     private var storageHelper: SimpleStorageHelper
+    var currentPaths: MutableList<String> = mutableListOf()
     var pathsState: SnapshotStateList<String>? = null
 
     companion object {
         const val UpdateRequestCode = 1002
     }
 
-    fun Remove(index: Int) {
+    fun remove(index: Int) {
         if (index <= 0)
             return
 
         data?.paths?.apply {
-            val removed = removeAt(index - 1)
-            File(removed).deleteRecursively()
+            val str = removeAt(index - 1)
+            Uri.parse(str)?.apply {
+                storageHelper.storage.context.contentResolver.releasePersistableUriPermission(
+                    this,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }
             pathsState?.clear()
             pathsState?.addAll(this)
+            currentPaths = this
         }
     }
 
-    fun Add(
-        isCopying: MutableState<Boolean>,
-        copyProgress: MutableState<Float>,
-        currentProgressName: MutableState<String>
-    ) {
+    fun add() {
         val callBack = storageHelper.onFileSelected
 
         storageHelper.onFileSelected = { requestCode, files ->
@@ -47,29 +53,29 @@ class TitleUpdateViewModel(val titleId: String) {
                 if (requestCode == UpdateRequestCode) {
                     val file = files.firstOrNull()
                     file?.apply {
-                        // Copy updates to internal data folder
-                        val updatePath = "$basePath/update"
-                        File(updatePath).mkdirs()
-                        Helpers.copyToData(
-                            this,
-                            updatePath,
-                            storageHelper,
-                            isCopying,
-                            copyProgress,
-                            currentProgressName, ::refreshPaths
-                        )
+                        if(file.extension == "nsp"){
+                            storageHelper.storage.context.contentResolver.takePersistableUriPermission(file.uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            currentPaths.add(file.uri.toString())
+                        }
                     }
+
+                    refreshPaths()
                 }
             }
         }
         storageHelper.openFilePicker(UpdateRequestCode)
     }
 
-    fun refreshPaths() {
+    private fun refreshPaths() {
         data?.apply {
-            val updatePath = "$basePath/update"
             val existingPaths = mutableListOf<String>()
-            File(updatePath).listFiles()?.forEach { existingPaths.add(it.absolutePath) }
+            currentPaths.forEach {
+                val uri = Uri.parse(it)
+                val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
+                if(file?.exists() == true){
+                    existingPaths.add(it)
+                }
+            }
 
             if (!existingPaths.contains(selected)) {
                 selected = ""
@@ -88,7 +94,6 @@ class TitleUpdateViewModel(val titleId: String) {
         openDialog: MutableState<Boolean>
     ) {
         data?.apply {
-            val updatePath = "$basePath/update"
             this.selected = ""
             if (paths.isNotEmpty() && index > 0) {
                 val ind = max(index - 1, paths.count() - 1)
@@ -98,18 +103,29 @@ class TitleUpdateViewModel(val titleId: String) {
             File(basePath).mkdirs()
 
 
-            var metadata = TitleUpdateMetadata()
+            val metadata = TitleUpdateMetadata()
             val savedUpdates = mutableListOf<String>()
-            File(updatePath).listFiles()?.forEach { savedUpdates.add(it.absolutePath) }
+            currentPaths.forEach {
+                val uri = Uri.parse(it)
+                val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
+                if(file?.exists() == true){
+                    savedUpdates.add(it)
+                }
+            }
             metadata.paths = savedUpdates
 
-            val selectedName = File(selected).name
-            val newSelectedPath = "$updatePath/$selectedName"
-            if (File(newSelectedPath).exists()) {
-                metadata.selected = newSelectedPath
+            if(selected.isNotEmpty()){
+                val uri = Uri.parse(selected)
+                val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
+                if(file?.exists() == true){
+                    metadata.selected = selected
+                }
+            }
+            else {
+                metadata.selected = selected
             }
 
-            var json = gson.toJson(metadata)
+            val json = gson.toJson(metadata)
             File("$basePath/$updateJsonName").writeText(json)
 
             openDialog.value = false
@@ -137,10 +153,13 @@ class TitleUpdateViewModel(val titleId: String) {
             val gson = Gson()
             data = gson.fromJson(File(jsonPath).readText(), TitleUpdateMetadata::class.java)
 
-            refreshPaths()
         }
-
+        currentPaths = data?.paths ?: mutableListOf()
         storageHelper = MainActivity.StorageHelper!!
+        refreshPaths()
+
+        File("$basePath/update").deleteRecursively()
+
     }
 }
 

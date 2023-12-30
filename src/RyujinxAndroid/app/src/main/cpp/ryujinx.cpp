@@ -185,6 +185,8 @@ void setProgressInfo(char* info, float progressValue) {
     progress = progressValue;
 }
 
+bool isInitialOrientationFlipped = true;
+
 extern "C"
 void setCurrentTransform(long native_window, int transform){
     if(native_window == 0 || native_window == -1)
@@ -201,10 +203,10 @@ void setCurrentTransform(long native_window, int transform){
             nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY;
             break;
         case 0x2:
-            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_90;
+            nativeTransform =  ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_90;
             break;
         case 0x4:
-            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_180;
+            nativeTransform = isInitialOrientationFlipped ? ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY : ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_180;
             break;
         case 0x8:
             nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_270;
@@ -326,6 +328,37 @@ const char* getString(long id){
 }
 
 extern "C"
+{
+void setUiHandlerTitle(long title) {
+    ui_handler.setTitle(title);
+}
+void setUiHandlerMessage(long message) {
+    ui_handler.setMessage(message);
+}
+void setUiHandlerWatermark(long wm) {
+    ui_handler.setWatermark(wm);
+}
+void setUiHandlerType(int type) {
+    ui_handler.setType(type);
+}
+void setUiHandlerKeyboardMode(int mode) {
+    ui_handler.setMode(mode);
+}
+void setUiHandlerMinLength(int length) {
+    ui_handler.setMinLength(length);
+}
+void setUiHandlerMaxLength(int length) {
+    ui_handler.setMaxLength(length);
+}
+void setUiHandlerInitialText(long text) {
+    ui_handler.setInitialText(text);
+}
+void setUiHandlerSubtitle(long text) {
+    ui_handler.setSubtitle(text);
+}
+}
+
+extern "C"
 JNIEXPORT jlong JNICALL
 Java_org_ryujinx_android_NativeHelpers_storeStringJava(JNIEnv *env, jobject thiz, jstring string) {
     auto str = getStringPointer(env, string);
@@ -335,5 +368,154 @@ Java_org_ryujinx_android_NativeHelpers_storeStringJava(JNIEnv *env, jobject thiz
 extern "C"
 JNIEXPORT jstring JNICALL
 Java_org_ryujinx_android_NativeHelpers_getStringJava(JNIEnv *env, jobject thiz, jlong id) {
-    return createStringFromStdString(env, str_helper.get_stored(id));
+    return createStringFromStdString(env, id > -1 ? str_helper.get_stored(id) : "");
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_org_ryujinx_android_NativeHelpers_setIsInitialOrientationFlipped(JNIEnv *env, jobject thiz,
+                                                                      jboolean is_flipped) {
+    isInitialOrientationFlipped = is_flipped;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestType(JNIEnv *env, jobject thiz) {
+    return  ui_handler.type;
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestTitle(JNIEnv *env, jobject thiz) {
+    return ui_handler.getTitle();
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestMessage(JNIEnv *env, jobject thiz) {
+    return ui_handler.getMessage();
+}
+
+
+void UiHandler::setTitle(long storedTitle) {
+    if(title != -1){
+        str_helper.get_stored(title);
+        title = -1;
+    }
+
+    title = storedTitle;
+}
+
+void UiHandler::setMessage(long storedMessage) {
+    if(message != -1){
+        str_helper.get_stored(message);
+        message = -1;
+    }
+
+    message = storedMessage;
+}
+
+void UiHandler::setType(int t) {
+    this->type = t;
+}
+
+long UiHandler::getTitle() {
+    auto v = title;
+    title = -1;
+    return v;
+}
+
+long UiHandler::getMessage() {
+    auto v = message;
+    message = -1;
+    return v;
+}
+
+void UiHandler::setWatermark(long wm) {
+    if(watermark != -1){
+        str_helper.get_stored(watermark);
+        watermark = -1;
+    }
+
+    watermark = wm;
+}
+
+void UiHandler::setMinLength(int t) {
+    this->min_length = t;
+}
+
+void UiHandler::setMaxLength(int t) {
+    this->max_length = t;
+}
+
+long UiHandler::getWatermark() {
+    auto v = watermark;
+    watermark = -1;
+    return v;
+}
+
+void UiHandler::setInitialText(long text) {
+    if(initialText != -1){
+        str_helper.get_stored(watermark);
+        initialText = -1;
+    }
+
+    initialText = text;
+}
+
+void UiHandler::setSubtitle(long text) {
+    if(subtitle != -1){
+        str_helper.get_stored(subtitle);
+        subtitle = -1;
+    }
+
+    subtitle = text;
+}
+
+long UiHandler::getInitialText() {
+    auto v = initialText;
+    initialText = -1;
+    return v;
+}
+
+long UiHandler::getSubtitle() {
+    auto v = subtitle;
+    subtitle = -1;
+    return v;
+}
+
+void UiHandler::setMode(int t) {
+    keyboardMode = t;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerMinLength(JNIEnv *env, jobject thiz) {
+    return  ui_handler.min_length;
+}
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerMaxLength(JNIEnv *env, jobject thiz) {
+    return  ui_handler.max_length;
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestWatermark(JNIEnv *env, jobject thiz) {
+    return ui_handler.getWatermark();
+}
+
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestInitialText(JNIEnv *env, jobject thiz) {
+    return ui_handler.getInitialText();
+}
+extern "C"
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestSubtitle(JNIEnv *env, jobject thiz) {
+    return ui_handler.getSubtitle();
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_org_ryujinx_android_NativeHelpers_getUiHandlerKeyboardMode(JNIEnv *env, jobject thiz) {
+    return ui_handler.keyboardMode;
 }

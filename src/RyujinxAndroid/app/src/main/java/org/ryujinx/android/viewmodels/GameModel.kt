@@ -1,13 +1,17 @@
 package org.ryujinx.android.viewmodels
 
 import android.content.Context
+import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
+import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 
 
 class GameModel(var file: DocumentFile, val context: Context) {
+    private var updateDescriptor: ParcelFileDescriptor? = null
+    var type: FileType
     var descriptor: ParcelFileDescriptor? = null
     var fileName: String?
     var fileSize = 0.0
@@ -19,8 +23,9 @@ class GameModel(var file: DocumentFile, val context: Context) {
 
     init {
         fileName = file.name
-        var pid = open()
-        val gameInfo = RyujinxNative.instance.deviceGetGameInfo(pid, file.extension.contains("xci"))
+        val pid = open()
+        val ext = NativeHelpers.instance.storeStringJava(file.extension)
+        val gameInfo = RyujinxNative.instance.deviceGetGameInfo(pid, ext)
         close()
 
         fileSize = gameInfo.FileSize
@@ -29,6 +34,16 @@ class GameModel(var file: DocumentFile, val context: Context) {
         developer = gameInfo.Developer
         version = gameInfo.Version
         icon = gameInfo.Icon
+        type = when {
+            (file.extension == "xci") -> FileType.Xci
+            (file.extension == "nsp") -> FileType.Nsp
+            (file.extension == "nro") -> FileType.Nro
+            else -> FileType.None
+        }
+
+        if (type == FileType.Nro && (titleName.isNullOrEmpty() || titleName == "Unknown")) {
+            titleName = file.name
+        }
     }
 
     fun open() : Int {
@@ -37,13 +52,29 @@ class GameModel(var file: DocumentFile, val context: Context) {
         return descriptor?.fd ?: 0
     }
 
+    fun openUpdate() : Int {
+        if(titleId?.isNotEmpty() == true) {
+            val vm = TitleUpdateViewModel(titleId ?: "")
+
+            if(vm.data?.selected?.isNotEmpty() == true){
+                val uri = Uri.parse(vm.data?.selected)
+                val file = DocumentFile.fromSingleUri(context, uri)
+                if(file?.exists() == true){
+                    updateDescriptor = context.contentResolver.openFileDescriptor(file.uri, "rw")
+
+                    return updateDescriptor ?.fd ?: -1;
+                }
+            }
+        }
+
+        return -1;
+    }
+
     fun close() {
         descriptor?.close()
         descriptor = null
-    }
-
-    fun isXci() : Boolean {
-        return file.extension == "xci"
+        updateDescriptor?.close()
+        updateDescriptor = null
     }
 }
 
@@ -54,4 +85,11 @@ class GameInfo {
     var Developer: String? = null
     var Version: String? = null
     var Icon: String? = null
+}
+
+enum class FileType{
+    None,
+    Nsp,
+    Xci,
+    Nro
 }

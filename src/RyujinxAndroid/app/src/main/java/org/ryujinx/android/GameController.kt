@@ -11,8 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.isVisible
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.lifecycleScope
 import com.swordfish.radialgamepad.library.RadialGamePad
 import com.swordfish.radialgamepad.library.config.ButtonConfig
@@ -29,6 +27,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import org.ryujinx.android.viewmodels.MainViewModel
+import org.ryujinx.android.viewmodels.QuickSettings
 
 typealias GamePad = RadialGamePad
 typealias GamePadConfig = RadialGamePadConfig
@@ -65,6 +64,7 @@ class GameController(var activity: Activity) {
                     }
                     controller.controllerView = c
                     viewModel.setGameController(controller)
+                    controller.setVisible(QuickSettings(viewModel.activity).useVirtualController)
                     c
                 })
         }

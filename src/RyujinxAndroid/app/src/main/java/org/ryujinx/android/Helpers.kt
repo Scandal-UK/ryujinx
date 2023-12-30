@@ -72,6 +72,7 @@ class Helpers {
             }
             return null
         }
+
         fun copyToData(
             file: DocumentFile, path: String, storageHelper: SimpleStorageHelper,
             isCopying: MutableState<Boolean>,
@@ -79,17 +80,18 @@ class Helpers {
             currentProgressName: MutableState<String>,
             finish: () -> Unit
         ) {
+            var fPath = path + "/${file.name}";
             var callback: FileCallback? = object : FileCallback() {
                 override fun onFailed(errorCode: FileCallback.ErrorCode) {
                     super.onFailed(errorCode)
-                    File(path).delete()
+                    File(fPath).delete()
                     finish()
                 }
 
                 override fun onStart(file: Any, workerThread: Thread): Long {
                     copyProgress.value = 0f
 
-                    (file as DocumentFile)?.apply {
+                    (file as DocumentFile).apply {
                         currentProgressName.value = "Copying ${file.name}"
                     }
                     return super.onStart(file, workerThread)
@@ -98,7 +100,7 @@ class Helpers {
                 override fun onReport(report: Report) {
                     super.onReport(report)
 
-                    if(!isCopying.value) {
+                    if (!isCopying.value) {
                         Thread.currentThread().interrupt()
                     }
 
@@ -113,17 +115,16 @@ class Helpers {
             }
             val ioScope = CoroutineScope(Dispatchers.IO)
             isCopying.value = true
+            File(fPath).delete()
             file.apply {
-                if (!File(path + "/${file.name}").exists()) {
-                    val f = this
-                    ioScope.launch {
-                        f.copyFileTo(
-                            storageHelper.storage.context,
-                            File(path),
-                            callback = callback!!
-                        )
+                val f = this
+                ioScope.launch {
+                    f.copyFileTo(
+                        storageHelper.storage.context,
+                        File(path),
+                        callback = callback!!
+                    )
 
-                    }
                 }
             }
         }

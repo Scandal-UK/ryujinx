@@ -20,6 +20,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -81,6 +82,9 @@ class GameViews {
                 }
                 val enableVsync = remember {
                     mutableStateOf(QuickSettings(mainViewModel.activity).enableVsync)
+                }
+                val enableMotion = remember {
+                    mutableStateOf(QuickSettings(mainViewModel.activity).enableMotion)
                 }
                 val showMore = remember {
                     mutableStateOf(false)
@@ -169,27 +173,56 @@ class GameViews {
                                 modifier = Modifier.padding(16.dp),
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Row(modifier = Modifier.padding(8.dp)) {
-                                    IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                                        showMore.value = false
-                                        showController.value = !showController.value
-                                        mainViewModel.controller?.setVisible(showController.value)
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.videoGame(),
-                                            contentDescription = "Toggle Virtual Pad"
+                                Column {
+                                    Row(
+                                        modifier = Modifier,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Enable Motion",
+                                            modifier = Modifier
+                                                .align(Alignment.CenterVertically)
+                                                .padding(end = 16.dp)
                                         )
+                                        Switch(checked = enableMotion.value, onCheckedChange = {
+                                            showMore.value = false
+                                            enableMotion.value = !enableMotion.value
+                                            val settings = QuickSettings(mainViewModel.activity)
+                                            settings.enableMotion = enableMotion.value
+                                            settings.save()
+                                            if (enableMotion.value)
+                                                mainViewModel.motionSensorManager?.register()
+                                            else
+                                                mainViewModel.motionSensorManager?.unregister()
+                                        })
                                     }
-                                    IconButton(modifier = Modifier.padding(4.dp), onClick = {
-                                        showMore.value = false
-                                        enableVsync.value = !enableVsync.value
-                                        RyujinxNative.instance.graphicsRendererSetVsync(enableVsync.value)
-                                    }) {
-                                        Icon(
-                                            imageVector = Icons.vSync(),
-                                            tint = if (enableVsync.value) Color.Green else Color.Red,
-                                            contentDescription = "Toggle VSync"
-                                        )
+                                    Row(modifier = Modifier.padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween) {
+                                        IconButton(modifier = Modifier.padding(4.dp), onClick = {
+                                            showMore.value = false
+                                            showController.value = !showController.value
+                                            ryujinxNative.inputReleaseTouchPoint()
+                                            mainViewModel.controller?.setVisible(showController.value)
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.videoGame(),
+                                                contentDescription = "Toggle Virtual Pad"
+                                            )
+                                        }
+                                        IconButton(modifier = Modifier.padding(4.dp), onClick = {
+                                            showMore.value = false
+                                            enableVsync.value = !enableVsync.value
+                                            RyujinxNative.instance.graphicsRendererSetVsync(
+                                                enableVsync.value
+                                            )
+                                        }) {
+                                            Icon(
+                                                imageVector = Icons.vSync(),
+                                                tint = if (enableVsync.value) Color.Green else Color.Red,
+                                                contentDescription = "Toggle VSync"
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -284,6 +317,8 @@ class GameViews {
                         }
                     }
                 }
+
+                mainViewModel.activity.uiHandler.Compose()
             }
         }
 
@@ -301,7 +336,7 @@ class GameViews {
 
             Surface(
                 modifier = Modifier.padding(16.dp),
-                color = MaterialTheme.colorScheme.surface.copy(0.4f)
+                color = MaterialTheme.colorScheme.background.copy(0.4f)
             ) {
                 Column {
                     var gameTimeVal = 0.0

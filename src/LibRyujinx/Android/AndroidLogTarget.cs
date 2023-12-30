@@ -1,4 +1,4 @@
-﻿using Ryujinx.Common.Logging;
+using Ryujinx.Common.Logging;
 using Ryujinx.Common.Logging.Formatters;
 using Ryujinx.Common.Logging.Targets;
 using System;
@@ -12,7 +12,7 @@ namespace LibRyujinx
 
         string ILogTarget.Name { get => _name; }
 
-        public AndroidLogTarget( string name)
+        public AndroidLogTarget(string name)
         {
             _name = name;
             _formatter = new DefaultLogFormatter();

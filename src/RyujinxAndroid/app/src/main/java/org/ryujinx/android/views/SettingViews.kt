@@ -1,6 +1,9 @@
 package org.ryujinx.android.views
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.provider.DocumentsContract
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -14,6 +17,8 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +61,8 @@ import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
 import org.ryujinx.android.Helpers
 import org.ryujinx.android.MainActivity
+import org.ryujinx.android.providers.DocumentProvider
+import org.ryujinx.android.viewmodels.FirmwareInstallState
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.SettingsViewModel
 import org.ryujinx.android.viewmodels.VulkanDriverViewModel
@@ -66,7 +73,7 @@ class SettingViews {
         const val EXPANSTION_TRANSITION_DURATION = 450
         const val IMPORT_CODE = 12341
 
-        @OptIn(ExperimentalMaterial3Api::class)
+        @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
         @Composable
         fun Main(settingsViewModel: SettingsViewModel, mainViewModel: MainViewModel) {
             val loaded = remember {
@@ -103,6 +110,27 @@ class SettingViews {
             val useVirtualController = remember {
                 mutableStateOf(true)
             }
+            val showFirwmareDialog = remember {
+                mutableStateOf(false)
+            }
+            val firmwareInstallState = remember {
+                mutableStateOf(FirmwareInstallState.None)
+            }
+            val firmwareVersion = remember {
+                mutableStateOf(mainViewModel.firmwareVersion)
+            }
+            val isGrid = remember { mutableStateOf(true) }
+            val useSwitchLayout = remember { mutableStateOf(true) }
+            val enableMotion = remember { mutableStateOf(true) }
+
+            val enableDebugLogs = remember { mutableStateOf(true) }
+            val enableStubLogs = remember { mutableStateOf(true) }
+            val enableInfoLogs = remember { mutableStateOf(true) }
+            val enableWarningLogs = remember { mutableStateOf(true) }
+            val enableErrorLogs = remember { mutableStateOf(true) }
+            val enableGuestLogs = remember { mutableStateOf(true) }
+            val enableAccessLogs = remember { mutableStateOf(true) }
+            val enableTraceLogs = remember { mutableStateOf(true) }
 
             if (!loaded.value) {
                 settingsViewModel.initializeState(
@@ -112,7 +140,18 @@ class SettingViews {
                     enableShaderCache,
                     enableTextureRecompression,
                     resScale,
-                    useVirtualController
+                    useVirtualController,
+                    isGrid,
+                    useSwitchLayout,
+                    enableMotion,
+                    enableDebugLogs,
+                    enableStubLogs,
+                    enableInfoLogs,
+                    enableWarningLogs,
+                    enableErrorLogs,
+                    enableGuestLogs,
+                    enableAccessLogs,
+                    enableTraceLogs
                 )
                 loaded.value = true
             }
@@ -134,7 +173,18 @@ class SettingViews {
                                     enableShaderCache,
                                     enableTextureRecompression,
                                     resScale,
-                                    useVirtualController
+                                    useVirtualController,
+                                    isGrid,
+                                    useSwitchLayout,
+                                    enableMotion,
+                                    enableDebugLogs,
+                                    enableStubLogs,
+                                    enableInfoLogs,
+                                    enableWarningLogs,
+                                    enableErrorLogs,
+                                    enableGuestLogs,
+                                    enableAccessLogs,
+                                    enableTraceLogs
                                 )
                                 settingsViewModel.navController.popBackStack()
                             }) {
@@ -145,6 +195,223 @@ class SettingViews {
                 Column(modifier = Modifier
                     .padding(contentPadding)
                     .verticalScroll(rememberScrollState())) {
+                    ExpandableView(onCardArrowClick = { }, title = "App") {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Use Grid",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = isGrid.value, onCheckedChange = {
+                                    isGrid.value = !isGrid.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Game Folder",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Button(onClick = {
+                                    settingsViewModel.openGameFolder()
+                                }) {
+                                    Text(text = "Choose Folder")
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "System Firmware",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Text(
+                                    text = firmwareVersion.value,
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                            }
+
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(onClick = {
+                                    fun createIntent(action: String): Intent {
+                                        val intent = Intent(action)
+                                        intent.addCategory(Intent.CATEGORY_DEFAULT)
+                                        intent.data = DocumentsContract.buildRootUri(
+                                            DocumentProvider.AUTHORITY,
+                                            DocumentProvider.ROOT_ID
+                                        )
+                                        intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or Intent.FLAG_GRANT_PREFIX_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                                        return intent
+                                    }
+                                    try {
+                                        mainViewModel.activity.startActivity(createIntent(Intent.ACTION_VIEW))
+                                        return@Button
+                                    } catch (_: ActivityNotFoundException) {
+                                    }
+                                    try {
+                                        mainViewModel.activity.startActivity(createIntent("android.provider.action.BROWSE"))
+                                        return@Button
+                                    } catch (_: ActivityNotFoundException) {
+                                    }
+                                    try {
+                                        mainViewModel.activity.startActivity(createIntent("com.google.android.documentsui"))
+                                        return@Button
+                                    } catch (_: ActivityNotFoundException) {
+                                    }
+                                    try {
+                                        mainViewModel.activity.startActivity(createIntent("com.android.documentsui"))
+                                        return@Button
+                                    } catch (_: ActivityNotFoundException) {
+                                    }
+                                }) {
+                                    Text(text = "Open App Folder")
+                                }
+
+                                Button(onClick = {
+                                    settingsViewModel.importProdKeys()
+                                }) {
+                                    Text(text = "Import prod Keys")
+                                }
+
+                                Button(onClick = {
+                                    showFirwmareDialog.value = true
+                                }) {
+                                    Text(text = "Install Firmware")
+                                }
+                            }
+                        }
+                    }
+
+                    if(showFirwmareDialog.value) {
+                        AlertDialog(onDismissRequest = {
+                            if(firmwareInstallState.value != FirmwareInstallState.Install) {
+                                showFirwmareDialog.value = false
+                                settingsViewModel.clearFirmwareSelection(firmwareInstallState)
+                            }
+                        }) {
+                            Card(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                shape = MaterialTheme.shapes.medium
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                        .align(Alignment.CenterHorizontally),
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    if (firmwareInstallState.value == FirmwareInstallState.None) {
+                                        Text(text = "Select a zip or XCI file to install from.")
+                                        Row(
+                                            horizontalArrangement = Arrangement.End,
+                                            modifier = Modifier.fillMaxWidth()
+                                                .padding(top = 4.dp)
+                                        ) {
+                                            Button(onClick = {
+                                                settingsViewModel.selectFirmware(
+                                                    firmwareInstallState
+                                                )
+                                            }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                Text(text = "Select File")
+                                            }
+                                            Button(onClick = {
+                                                showFirwmareDialog.value = false
+                                                settingsViewModel.clearFirmwareSelection(
+                                                    firmwareInstallState
+                                                )
+                                            }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                Text(text = "Cancel")
+                                            }
+                                        }
+                                    } else if (firmwareInstallState.value == FirmwareInstallState.Query) {
+                                        Text(text = "Firmware ${settingsViewModel.selectedFirmwareVersion} will be installed. Do you want to continue?")
+                                        Row(
+                                            horizontalArrangement = Arrangement.End,
+                                            modifier = Modifier.fillMaxWidth()
+                                                .padding(top = 4.dp)
+                                        ) {
+                                            Button(onClick = {
+                                                settingsViewModel.installFirmware(
+                                                    firmwareInstallState
+                                                )
+
+                                                if(firmwareInstallState.value == FirmwareInstallState.None){
+                                                    showFirwmareDialog.value = false
+                                                    settingsViewModel.clearFirmwareSelection(firmwareInstallState)
+                                                }
+                                            }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                Text(text = "Yes")
+                                            }
+                                            Button(onClick = {
+                                                showFirwmareDialog.value = false
+                                                settingsViewModel.clearFirmwareSelection(
+                                                    firmwareInstallState
+                                                )
+                                            }, modifier = Modifier.padding(horizontal = 8.dp)) {
+                                                Text(text = "No")
+                                            }
+                                        }
+                                    } else if (firmwareInstallState.value == FirmwareInstallState.Install) {
+                                        Text(text = "Installing Firmware ${settingsViewModel.selectedFirmwareVersion}...")
+                                        LinearProgressIndicator(modifier = Modifier
+                                            .padding(top = 4.dp))
+                                    } else if (firmwareInstallState.value == FirmwareInstallState.Verifying) {
+                                        Text(text = "Verifying selected file...")
+                                        LinearProgressIndicator(modifier = Modifier
+                                            .fillMaxWidth()
+                                            )
+                                    }
+                                    else if (firmwareInstallState.value == FirmwareInstallState.Done) {
+                                        Text(text = "Installed Firmware ${settingsViewModel.selectedFirmwareVersion}")
+                                        firmwareVersion.value = mainViewModel.firmwareVersion
+                                    }
+                                    else if(firmwareInstallState.value == FirmwareInstallState.Cancelled){
+                                        val file = settingsViewModel.selectedFirmwareFile
+                                        if(file != null){
+                                            if(file.extension == "xci" || file.extension == "zip"){
+                                                if(settingsViewModel.selectedFirmwareVersion.isEmpty()) {
+                                                    Text(text = "Unable to find version in selected file")
+                                                }
+                                                else {
+                                                    Text(text = "Unknown Error has occurred. Please check logs")
+                                                }
+                                            }
+                                            else {
+                                                Text(text = "File type is not supported")
+                                            }
+                                        }
+                                        else {
+                                            Text(text = "File type is not supported")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                     ExpandableView(onCardArrowClick = { }, title = "System") {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
@@ -330,15 +597,17 @@ class SettingViews {
                                     showImportCompletion.value = false
                                     importFile.value = null
                                     mainViewModel.userViewModel.refreshUsers()
-                                    mainViewModel.homeViewModel.clearLoadedCache()
+                                    mainViewModel.homeViewModel.requestReload()
                                 }) {
                                     Card(
                                         modifier = Modifier,
                                         shape = MaterialTheme.shapes.medium
                                     ) {
-                                        Text(modifier = Modifier
-                                            .padding(24.dp),
-                                            text = "App Data import completed.")
+                                        Text(
+                                            modifier = Modifier
+                                                .padding(24.dp),
+                                            text = "App Data import completed."
+                                        )
                                     }
                                 }
                             }
@@ -591,6 +860,173 @@ class SettingViews {
                                     useVirtualController.value = !useVirtualController.value
                                 })
                             }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Motion",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableMotion.value, onCheckedChange = {
+                                    enableMotion.value = !enableMotion.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Use Switch Controller Layout",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = useSwitchLayout.value, onCheckedChange = {
+                                    useSwitchLayout.value = !useSwitchLayout.value
+                                })
+                            }
+                        }
+                    }
+                    ExpandableView(onCardArrowClick = { }, title = "Log") {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Debug Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableDebugLogs.value, onCheckedChange = {
+                                    enableDebugLogs.value = !enableDebugLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Stub Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableStubLogs.value, onCheckedChange = {
+                                    enableStubLogs.value = !enableStubLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Info Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableInfoLogs.value, onCheckedChange = {
+                                    enableInfoLogs.value = !enableInfoLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Warning Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableWarningLogs.value, onCheckedChange = {
+                                    enableWarningLogs.value = !enableWarningLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Error Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableErrorLogs.value, onCheckedChange = {
+                                    enableErrorLogs.value = !enableErrorLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Guest Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableGuestLogs.value, onCheckedChange = {
+                                    enableGuestLogs.value = !enableGuestLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Access Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableAccessLogs.value, onCheckedChange = {
+                                    enableAccessLogs.value = !enableAccessLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Enable Trace Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableTraceLogs.value, onCheckedChange = {
+                                    enableTraceLogs.value = !enableTraceLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Button(onClick = {
+                                    mainViewModel.logging.requestExport()
+                                }) {
+                                    Text(text = "Send Logs")
+                                }
+                            }
                         }
                     }
                 }
@@ -602,7 +1038,18 @@ class SettingViews {
                         enableShaderCache,
                         enableTextureRecompression,
                         resScale,
-                        useVirtualController
+                        useVirtualController,
+                        isGrid,
+                        useSwitchLayout,
+                        enableMotion,
+                        enableDebugLogs,
+                        enableStubLogs,
+                        enableInfoLogs,
+                        enableWarningLogs,
+                        enableErrorLogs,
+                        enableGuestLogs,
+                        enableAccessLogs,
+                        enableTraceLogs
                     )
                     settingsViewModel.navController.popBackStack()
                 }
