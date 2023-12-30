@@ -12,7 +12,9 @@ import kotlinx.coroutines.sync.Semaphore
 import org.ryujinx.android.GameController
 import org.ryujinx.android.GameHost
 import org.ryujinx.android.GraphicsConfiguration
+import org.ryujinx.android.Logging
 import org.ryujinx.android.MainActivity
+import org.ryujinx.android.MotionSensorManager
 import org.ryujinx.android.NativeGraphicsInterop
 import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.PerformanceManager
@@ -25,12 +27,15 @@ import java.io.File
 @SuppressLint("WrongConstant")
 class MainViewModel(val activity: MainActivity) {
     var physicalControllerManager: PhysicalControllerManager? = null
+    var motionSensorManager: MotionSensorManager? = null
     var gameModel: GameModel? = null
     var controller: GameController? = null
     var performanceManager: PerformanceManager? = null
     var selected: GameModel? = null
     var isMiiEditorLaunched = false
     val userViewModel = UserViewModel()
+    val logging = Logging(this)
+    var firmwareVersion = ""
     private var gameTimeState: MutableState<Double>? = null
     private var gameFpsState: MutableState<Double>? = null
     private var fifoState: MutableState<Double>? = null
@@ -38,6 +43,7 @@ class MainViewModel(val activity: MainActivity) {
     private var progressValue: MutableState<Float>? = null
     private var showLoading: MutableState<Boolean>? = null
     private var refreshUser: MutableState<Boolean>? = null
+
     var gameHost: GameHost? = null
         set(value) {
             field = value
@@ -59,6 +65,16 @@ class MainViewModel(val activity: MainActivity) {
         RyujinxNative.instance.deviceSignalEmulationClose()
         gameHost?.close()
         RyujinxNative.instance.deviceCloseEmulation()
+        motionSensorManager?.unregister()
+        physicalControllerManager?.disconnect()
+        motionSensorManager?.setControllerId(-1)
+    }
+
+    fun refreshFirmwareVersion(){
+        var handle = RyujinxNative.instance.deviceGetInstalledFirmwareVersion()
+        if(handle != -1L) {
+            firmwareVersion = NativeHelpers.instance.getStringJava(handle)
+        }
     }
 
     fun loadGame(game:GameModel) : Boolean {
@@ -68,6 +84,8 @@ class MainViewModel(val activity: MainActivity) {
 
         if (descriptor == 0)
             return false
+
+        val update = game.openUpdate()
 
         gameModel = game
         isMiiEditorLaunched = false
@@ -162,15 +180,13 @@ class MainViewModel(val activity: MainActivity) {
         if (!success)
             return false
 
-        success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.isXci())
+        success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.type.ordinal, update)
 
         if (!success)
             return false
 
         return true
     }
-
-
 
     fun loadMiiEditor() : Boolean {
         val nativeRyujinx = RyujinxNative.instance
@@ -351,6 +367,8 @@ class MainViewModel(val activity: MainActivity) {
         activity.setFullScreen(true)
         navController?.navigate("game")
         activity.isGameRunning = true
+        if (QuickSettings(activity).enableMotion)
+            motionSensorManager?.register()
     }
 
     fun setProgressStates(

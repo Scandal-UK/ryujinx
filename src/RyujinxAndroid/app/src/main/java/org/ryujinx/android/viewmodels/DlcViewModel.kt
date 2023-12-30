@@ -40,7 +40,7 @@ class DlcViewModel(val titleId: String) {
                         val path = file.getAbsolutePath(storageHelper.storage.context)
                         if (path.isNotEmpty()) {
                             data?.apply {
-                                var contents = RyujinxNative.instance.deviceGetDlcContentList(
+                                val contents = RyujinxNative.instance.deviceGetDlcContentList(
                                     NativeHelpers.instance.storeStringJava(path),
                                     titleId.toLong(16)
                                 )

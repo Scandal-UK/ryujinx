@@ -38,6 +38,36 @@
 
 void* _ryujinxNative = NULL;
 
+class UiHandler {
+public:
+    void setTitle(long storedTitle);
+    void setMessage(long storedMessage);
+    void setWatermark(long wm);
+    void setType(int t);
+    void setMode(int t);
+    void setMinLength(int t);
+    void setMaxLength(int t);
+    void setInitialText(long text);
+    void setSubtitle(long text);
+
+    long getTitle();
+    long getMessage();
+    long getWatermark();
+    long getInitialText();
+    long getSubtitle();
+    int type = 0;
+    int keyboardMode = 0;
+    int min_length = -1;
+    int max_length = -1;
+
+private:
+    long title = -1;
+    long message = -1;
+    long watermark = -1;
+    long initialText = -1;
+    long subtitle = -1;
+};
+
 // Ryujinx imported functions
 bool (*initialize)(char*) = NULL;
 
@@ -46,7 +76,7 @@ long _currentRenderingThreadId = 0;
 JavaVM* _vm = nullptr;
 jobject _mainActivity = nullptr;
 jclass _mainActivityClass = nullptr;
-std::string _currentString = "";
 string_helper str_helper = string_helper();
+UiHandler ui_handler = UiHandler();
 
 #endif //RYUJINXNATIVE_RYUIJNX_H

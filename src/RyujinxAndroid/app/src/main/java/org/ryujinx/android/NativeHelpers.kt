@@ -31,4 +31,14 @@ class NativeHelpers {
     external fun getProgressValue() : Float
     external fun storeStringJava(string: String) : Long
     external fun getStringJava(id: Long) : String
+    external fun setIsInitialOrientationFlipped(isFlipped: Boolean)
+    external fun getUiHandlerRequestType() : Int
+    external fun getUiHandlerRequestTitle() : Long
+    external fun getUiHandlerRequestMessage() : Long
+    external fun getUiHandlerMinLength() : Int
+    external fun getUiHandlerMaxLength() : Int
+    external fun getUiHandlerKeyboardMode() : Int
+    external fun getUiHandlerRequestWatermark() : Long
+    external fun getUiHandlerRequestInitialText() : Long
+    external fun getUiHandlerRequestSubtitle() : Long
 }

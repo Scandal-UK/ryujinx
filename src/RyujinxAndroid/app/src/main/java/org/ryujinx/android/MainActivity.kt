@@ -18,8 +18,10 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.anggrayudi.storage.SimpleStorageHelper
+import com.halilibo.richtext.ui.RichTextThemeIntegration
 import org.ryujinx.android.ui.theme.RyujinxAndroidTheme
 import org.ryujinx.android.viewmodels.MainViewModel
+import org.ryujinx.android.viewmodels.QuickSettings
 import org.ryujinx.android.views.MainView
 import kotlin.math.abs
 
@@ -27,9 +29,11 @@ import kotlin.math.abs
 class MainActivity : BaseActivity() {
     private var physicalControllerManager: PhysicalControllerManager =
         PhysicalControllerManager(this)
+    private lateinit var motionSensorManager: MotionSensorManager
     private var _isInit: Boolean = false
     var isGameRunning = false
     var storageHelper: SimpleStorageHelper? = null
+    lateinit var uiHandler: UiHandler
     companion object {
         var mainViewModel: MainViewModel? = null
         var AppPath : String = ""
@@ -64,11 +68,26 @@ class MainActivity : BaseActivity() {
             return
 
         val appPath: String = AppPath
-        val success = RyujinxNative.instance.initialize(NativeHelpers.instance.storeStringJava(appPath), false)
+
+        var quickSettings = QuickSettings(this)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Debug.ordinal, quickSettings.enableDebugLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Info.ordinal, quickSettings.enableInfoLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Stub.ordinal, quickSettings.enableStubLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Warning.ordinal, quickSettings.enableWarningLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Error.ordinal, quickSettings.enableErrorLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.AccessLog.ordinal, quickSettings.enableAccessLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Guest.ordinal, quickSettings.enableGuestLogs)
+        RyujinxNative.instance.loggingSetEnabled(LogLevel.Trace.ordinal, quickSettings.enableTraceLogs)
+        val success = RyujinxNative.instance.initialize(NativeHelpers.instance.storeStringJava(appPath))
+
+        uiHandler = UiHandler()
         _isInit = success
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        motionSensorManager = MotionSensorManager(this)
+        Thread.setDefaultUncaughtExceptionHandler(crashHandler)
 
         if(
             !Environment.isExternalStorageManager()
@@ -78,7 +97,6 @@ class MainActivity : BaseActivity() {
 
         AppPath = this.getExternalFilesDir(null)!!.absolutePath
 
-
         initialize()
 
         window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
@@ -86,16 +104,21 @@ class MainActivity : BaseActivity() {
 
         mainViewModel = MainViewModel(this)
         mainViewModel!!.physicalControllerManager = physicalControllerManager
+        mainViewModel!!.motionSensorManager = motionSensorManager
+
+        mainViewModel!!.refreshFirmwareVersion()
 
         mainViewModel?.apply {
             setContent {
                 RyujinxAndroidTheme {
-                    // A surface container using the 'background' color from the theme
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
-                    ) {
-                        MainView.Main(mainViewModel = this)
+                    RichTextThemeIntegration(contentColor = { MaterialTheme.colorScheme.onSurface }) {
+                        // A surface container using the 'background' color from the theme
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background
+                        ) {
+                            MainView.Main(mainViewModel = this)
+                        }
                     }
                 }
             }
@@ -133,7 +156,7 @@ class MainActivity : BaseActivity() {
 
     fun setFullScreen(fullscreen: Boolean) {
         requestedOrientation =
-            if (fullscreen) ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            if (fullscreen) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE else ActivityInfo.SCREEN_ORIENTATION_FULL_USER
 
         val insets = WindowCompat.getInsetsController(window, window.decorView)
 
@@ -183,6 +206,8 @@ class MainActivity : BaseActivity() {
             setFullScreen(true)
             NativeHelpers.instance.setTurboMode(true)
             force60HzRefreshRate(true)
+            if (QuickSettings(this).enableMotion)
+                motionSensorManager.register()
         }
     }
 
@@ -193,5 +218,7 @@ class MainActivity : BaseActivity() {
             NativeHelpers.instance.setTurboMode(false)
             force60HzRefreshRate(false)
         }
+
+        motionSensorManager.unregister()
     }
 }

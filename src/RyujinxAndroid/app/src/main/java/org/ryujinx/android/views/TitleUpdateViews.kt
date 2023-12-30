@@ -1,5 +1,6 @@
 package org.ryujinx.android.views
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -28,13 +28,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
+import org.ryujinx.android.MainActivity
 import org.ryujinx.android.viewmodels.TitleUpdateViewModel
-import java.io.File
 
 class TitleUpdateViews {
     companion object {
         @Composable
-        fun Main(titleId: String, name: String, openDialog: MutableState<Boolean>, canClose: MutableState<Boolean>) {
+        fun Main(
+            titleId: String,
+            name: String,
+            openDialog: MutableState<Boolean>,
+            canClose: MutableState<Boolean>
+        ) {
             val viewModel = TitleUpdateViewModel(titleId)
 
             val selected = remember { mutableStateOf(0) }
@@ -43,15 +49,6 @@ class TitleUpdateViews {
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
-                val isCopying = remember {
-                    mutableStateOf(false)
-                }
-                val copyProgress = remember {
-                    mutableStateOf(0.0f)
-                }
-                var currentProgressName = remember {
-                    mutableStateOf("Starting Copy")
-                }
                 Column {
                     Text(text = "Updates for ${name}", textAlign = TextAlign.Center)
                     Surface(
@@ -88,18 +85,24 @@ class TitleUpdateViews {
                             var index = 1
                             for (path in paths) {
                                 val i = index
-                                Row(modifier = Modifier.padding(8.dp)) {
-                                    RadioButton(
-                                        selected = (selected.value == i),
-                                        onClick = { selected.value = i })
-                                    Text(
-                                        text = File(path).name,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.CenterVertically)
-                                    )
+                                val uri = Uri.parse(path)
+                                val file = DocumentFile.fromSingleUri(
+                                    MainActivity.mainViewModel!!.activity,
+                                    uri
+                                )
+                                file?.apply {
+                                    Row(modifier = Modifier.padding(8.dp)) {
+                                        RadioButton(
+                                            selected = (selected.value == i),
+                                            onClick = { selected.value = i })
+                                        Text(
+                                            text = file.name ?: "",
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.CenterVertically)
+                                        )
+                                    }
                                 }
-
                                 index++
                             }
                         }
@@ -107,7 +110,7 @@ class TitleUpdateViews {
                     Row(modifier = Modifier.align(Alignment.End)) {
                         IconButton(
                             onClick = {
-                                viewModel.Remove(selected.value)
+                                viewModel.remove(selected.value)
                             }
                         ) {
                             Icon(
@@ -118,7 +121,7 @@ class TitleUpdateViews {
 
                         IconButton(
                             onClick = {
-                                viewModel.Add(isCopying, copyProgress, currentProgressName)
+                                viewModel.add()
                             }
                         ) {
                             Icon(
@@ -129,33 +132,12 @@ class TitleUpdateViews {
                     }
 
                 }
-                if (isCopying.value) {
-                    Text(text = "Copying updates to local storage")
-                    Text(text = currentProgressName.value)
-                    Row {
-                        LinearProgressIndicator(
-                            modifier = Modifier.fillMaxWidth(),
-                            progress = copyProgress.value
-                        )
-                        TextButton(
-                            onClick = {
-                                isCopying.value = false
-                                canClose.value = true
-                                viewModel.refreshPaths()
-                            },
-                        ) {
-                            Text("Cancel")
-                        }
-                    }
-                }
                 Spacer(modifier = Modifier.height(18.dp))
                 TextButton(
                     modifier = Modifier.align(Alignment.End),
                     onClick = {
-                        if (!isCopying.value) {
-                            canClose.value = true
-                            viewModel.save(selected.value, openDialog)
-                        }
+                        canClose.value = true
+                        viewModel.save(selected.value, openDialog)
                     },
                 ) {
                     Text("Save")

@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -51,25 +50,13 @@ class DlcViews {
 
             Column(modifier = Modifier.padding(16.dp)) {
                 Column {
-                    Row(modifier = Modifier.padding(8.dp)
+                    Row(modifier = Modifier
+                        .padding(8.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(text = "DLC for ${name}", textAlign = TextAlign.Center, modifier = Modifier.align(
                             Alignment.CenterVertically
                         ))
-                        IconButton(
-                            onClick = {
-                                viewModel.add(refresh)
-                            },
-                            modifier = Modifier.align(
-                                Alignment.CenterVertically
-                            )
-                        ) {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add"
-                            )
-                        }
                     }
                     Surface(
                         modifier = Modifier
@@ -119,14 +106,25 @@ class DlcViews {
 
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                TextButton(
-                    modifier = Modifier.align(Alignment.End),
-                    onClick = {
-                        openDialog.value = false
-                        viewModel.save(dlcList)
-                    },
-                ) {
-                    Text("Save")
+                Row(modifier = Modifier.align(Alignment.End)) {
+                    TextButton(
+                        modifier = Modifier.padding(4.dp),
+                        onClick = {
+                            viewModel.add(refresh)
+                        }
+                    ) {
+
+                        Text("Add")
+                    }
+                    TextButton(
+                        modifier = Modifier.padding(4.dp),
+                        onClick = {
+                            openDialog.value = false
+                            viewModel.save(dlcList)
+                        },
+                    ) {
+                        Text("Save")
+                    }
                 }
             }
         }
