@@ -32,7 +32,7 @@ namespace LibRyujinx
 
         public static IRenderer? Renderer { get; set; }
         public static GraphicsConfiguration GraphicsConfiguration { get; private set; }
-        
+
         public static bool InitializeGraphics(GraphicsConfiguration graphicsConfiguration)
         {
             GraphicsConfig.ResScale = graphicsConfiguration.ResScale;
@@ -200,7 +200,7 @@ namespace LibRyujinx
                     throw new ArgumentException($"Unknown Progress Handler type {typeof(T)}");
             }
         }
-        
+
         public static void SetSwapBuffersCallback(SwapBuffersCallback swapBuffersCallback)
         {
             _swapBuffersCallback = swapBuffersCallback;
