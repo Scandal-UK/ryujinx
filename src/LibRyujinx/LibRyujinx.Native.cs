@@ -103,6 +103,11 @@ namespace LibRyujinx
         [UnmanagedCallersOnly(EntryPoint = "graphics_initialize")]
         public static bool InitializeGraphicsNative(GraphicsConfiguration graphicsConfiguration)
         {
+            if (OperatingSystem.IsIOS())
+            {
+                // Yes, macOS not iOS
+                Silk.NET.Core.Loader.SearchPathContainer.Platform = Silk.NET.Core.Loader.UnderlyingPlatform.MacOS;
+            }
             return InitializeGraphics(graphicsConfiguration);
         }
 
