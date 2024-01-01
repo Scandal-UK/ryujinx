@@ -88,7 +88,7 @@ namespace Ryujinx.Cpu.Signal
 
                 ref SignalHandlerConfig config = ref GetConfigRef();
 
-                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || PlatformInfo.IsBionic)
+                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || PlatformInfo.IsBionic || OperatingSystem.IsIOS())
                 {
                     _signalHandlerPtr = MapCode(NativeSignalHandlerGenerator.GenerateUnixSignalHandler(_handlerConfig, rangeStructSize));
 

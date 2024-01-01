@@ -350,12 +350,12 @@ namespace Ryujinx.Headless.SDL2
 
             GraphicsConfig.EnableShaderCache = true;
 
-            if (OperatingSystem.IsMacOS())
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
                 if (option.GraphicsBackend == GraphicsBackend.OpenGl)
                 {
                     option.GraphicsBackend = GraphicsBackend.Vulkan;
-                    Logger.Warning?.Print(LogClass.Application, "OpenGL is not supported on macOS, switching to Vulkan!");
+                    Logger.Warning?.Print(LogClass.Application, "OpenGL is not supported on Darwin, switching to Vulkan!");
                 }
             }
 

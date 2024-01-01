@@ -135,7 +135,7 @@ namespace Ryujinx.Cpu.Signal
                     throw new SystemException($"Could not register SIGSEGV sigaction. Error: {Marshal.GetLastPInvokeErrorMessage()}");
                 }
 
-                if (OperatingSystem.IsMacOS())
+                if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
                 {
                     result = sigaction(SIGBUS, ref sig, out _);
 
@@ -249,7 +249,7 @@ namespace Ryujinx.Cpu.Signal
             {
                 bool success = sigaction(SIGSEGV, ref oldAction, out SigAction _) == 0;
 
-                if (success && OperatingSystem.IsMacOS())
+                if (success && (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS()))
                 {
                     success = sigaction(SIGBUS, ref oldAction, out SigAction _) == 0;
                 }

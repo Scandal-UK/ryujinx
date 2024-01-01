@@ -91,7 +91,7 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
             { 0, 0 },
         };
 
-        private static readonly Dictionary<int, LinuxError> _errorMapMacOs = new()
+        private static readonly Dictionary<int, LinuxError> _errorMapDarwin = new()
         {
             { 35, LinuxError.EAGAIN },
             { 11, LinuxError.EDEADLOCK },
@@ -283,9 +283,9 @@ namespace Ryujinx.HLE.HOS.Services.Sockets.Bsd.Impl
 
         public static LinuxError ConvertError(WsaError errorCode)
         {
-            if (OperatingSystem.IsMacOS())
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
-                if (_errorMapMacOs.TryGetValue((int)errorCode, out LinuxError errno))
+                if (_errorMapDarwin.TryGetValue((int)errorCode, out LinuxError errno))
                 {
                     return errno;
                 }
