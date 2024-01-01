@@ -9,6 +9,7 @@ namespace Ryujinx.Memory
 {
     [SupportedOSPlatform("linux")]
     [SupportedOSPlatform("macos")]
+    [SupportedOSPlatform("ios")]
     [SupportedOSPlatform("android")]
     static class MemoryManagementUnix
     {
