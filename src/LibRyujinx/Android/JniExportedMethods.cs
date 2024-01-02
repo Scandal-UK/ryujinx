@@ -4,7 +4,6 @@ using LibRyujinx.Jni.Primitives;
 using LibRyujinx.Jni.References;
 using LibRyujinx.Jni.Values;
 using LibRyujinx.Shared.Audio.Oboe;
-using Microsoft.Win32.SafeHandles;
 using Rxmxnx.PInvoke;
 using Ryujinx.Audio.Backends.OpenAL;
 using Ryujinx.Common;
@@ -18,7 +17,6 @@ using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -774,13 +772,6 @@ namespace LibRyujinx
             var userId = GetString(jEnv, userIdPtr) ?? "";
 
             CloseUser(userId);
-        }
-
-        private static FileStream OpenFile(int descriptor)
-        {
-            var safeHandle = new SafeFileHandle(descriptor, false);
-
-            return new FileStream(safeHandle, FileAccess.ReadWrite);
         }
     }
 
