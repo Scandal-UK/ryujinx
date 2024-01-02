@@ -147,7 +147,7 @@ namespace LibRyujinx
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SwitchDevice?.ReloadFileSystem();
         }
-        
+
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceInitialize")]
         public static JBoolean JniInitializeDeviceNative(JEnvRef jEnv,
                                                          JObjectLocalRef jObj,
@@ -317,13 +317,12 @@ namespace LibRyujinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
-            var version = SwitchDevice?.ContentManager.GetCurrentFirmwareVersion();
-
+            var version = GetInstalledFirmwareVersion();
             long stringHandle = -1;
 
-            if (version != null)
+            if (version != String.Empty)
             {
-                stringHandle = storeString(version.VersionString);
+                stringHandle = storeString(version);
             }
 
             return stringHandle;
