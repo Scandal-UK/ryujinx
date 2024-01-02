@@ -19,7 +19,7 @@ namespace Ryujinx.Common.SystemInterop
 
         public StdErrAdapter()
         {
-            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
                 RegisterPosix();
             }
