@@ -28,6 +28,6 @@ namespace Ryujinx.Common
 
         public static bool IsFlatHubBuild => IsValid && ReleaseChannelOwner.Equals(FlatHubChannelOwner);
 
-        public static string Version => SystemInfo.SystemInfo.IsBionic ? "Android_1.0" : OperatingSystem.IsIOS() ? "iOS" : IsValid ? BuildVersion : !RuntimeFeature.IsDynamicCodeCompiled ? "libryujinx" : Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        public static string Version => PlatformInfo.IsBionic ? "Android_1.0" : OperatingSystem.IsIOS() ? "iOS" : IsValid ? BuildVersion : !RuntimeFeature.IsDynamicCodeCompiled ? "libryujinx" : Assembly.GetEntryAssembly()!.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
     }
 }

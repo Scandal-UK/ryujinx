@@ -59,7 +59,6 @@ namespace LibRyujinx
                 {
                     var xPtr = Marshal.StringToHGlobalAnsi(x);
                     byte* xp = (byte*)xPtr;
-                    LibRyujinx.debug_break(0);
                     try
                     {
                         nint ptr = default;
