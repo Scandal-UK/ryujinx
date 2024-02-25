@@ -663,13 +663,13 @@ namespace LibRyujinx
         {
             if (SwitchDevice is { } switchDevice)
             {
-                switchDevice.HostUiHandler = new AndroidUiHandler();
+                switchDevice.HostUiHandler = new AndroidUIHandler();
             }
         }
 
         public static void WaitUiHandler()
         {
-            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            if (SwitchDevice?.HostUiHandler is AndroidUIHandler uiHandler)
             {
                 uiHandler.Wait();
             }
@@ -677,7 +677,7 @@ namespace LibRyujinx
 
         public static void StopUiHandlerWait()
         {
-            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            if (SwitchDevice?.HostUiHandler is AndroidUIHandler uiHandler)
             {
                 uiHandler.Set();
             }
@@ -685,7 +685,7 @@ namespace LibRyujinx
 
         public static void SetUiHandlerResponse(bool isOkPressed, long input)
         {
-            if (SwitchDevice?.HostUiHandler is AndroidUiHandler uiHandler)
+            if (SwitchDevice?.HostUiHandler is AndroidUIHandler uiHandler)
             {
                 uiHandler.SetResponse(isOkPressed, input);
             }
