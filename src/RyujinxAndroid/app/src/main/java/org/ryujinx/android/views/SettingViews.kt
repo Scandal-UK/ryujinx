@@ -252,7 +252,6 @@ class SettingViews {
                                     .fillMaxWidth()
                                     .padding(8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Button(onClick = {
                                     fun createIntent(action: String): Intent {

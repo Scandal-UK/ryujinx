@@ -29,7 +29,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.halilibo.richtext.markdown.Markdown
-import com.halilibo.richtext.ui.RichText
+import com.halilibo.richtext.ui.material3.RichText
 
 internal enum class KeyboardMode {
     Default, Numeric, ASCII, FullLatin, Alphabet, SimplifiedChinese, TraditionalChinese, Korean, LanguageSet2, LanguageSet2Latin
