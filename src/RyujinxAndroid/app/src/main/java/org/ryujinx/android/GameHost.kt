@@ -2,7 +2,6 @@ package org.ryujinx.android
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.os.Build
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import androidx.compose.runtime.MutableState
@@ -130,7 +129,8 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
                 if (c >= 1000) {
                     if (helper.getProgressValue() == -1f)
                         progress?.apply {
-                            this.value = "Loading ${if(mainViewModel.isMiiEditorLaunched) "Mii Editor" else game!!.titleName}"
+                            this.value =
+                                "Loading ${if (mainViewModel.isMiiEditorLaunched) "Mii Editor" else game!!.titleName}"
                         }
                     c = 0
                     mainViewModel.updateStats(
@@ -144,26 +144,6 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     }
 
     private fun runGame() {
-        // RenderingThreadWatcher
-        _renderingThreadWatcher = thread(start = true) {
-            var threadId = 0L
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                mainViewModel.performanceManager?.enable()
-                while (_isStarted) {
-                    Thread.sleep(1000)
-                    val newthreadId = mainViewModel.activity.getRenderingThreadId()
-
-                    if (threadId != newthreadId) {
-                        mainViewModel.performanceManager?.closeCurrentRenderingSession()
-                    }
-                    threadId = newthreadId
-                    if (threadId != 0L) {
-                        mainViewModel.performanceManager?.initializeRenderingSession(threadId)
-                    }
-                }
-                mainViewModel.performanceManager?.closeCurrentRenderingSession()
-            }
-        }
 
         thread {
             mainViewModel.activity.uiHandler.listen()

@@ -1,9 +1,7 @@
 package org.ryujinx.android
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.pm.ActivityInfo
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.view.KeyEvent
@@ -22,7 +20,6 @@ import org.ryujinx.android.ui.theme.RyujinxAndroidTheme
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
 import org.ryujinx.android.views.MainView
-import kotlin.math.abs
 
 
 class MainActivity : BaseActivity() {
@@ -31,24 +28,23 @@ class MainActivity : BaseActivity() {
     private lateinit var motionSensorManager: MotionSensorManager
     private var _isInit: Boolean = false
     var isGameRunning = false
+    var isActive = false
     var storageHelper: SimpleStorageHelper? = null
     lateinit var uiHandler: UiHandler
+
     companion object {
         var mainViewModel: MainViewModel? = null
-        var AppPath : String = ""
+        var AppPath: String = ""
         var StorageHelper: SimpleStorageHelper? = null
         val performanceMonitor = PerformanceMonitor()
 
         @JvmStatic
-        fun updateRenderSessionPerformance(gameTime : Long)
-        {
-            if(gameTime <= 0)
-                return
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                mainViewModel?.performanceManager?.updateRenderingSessionTime(gameTime)
+        fun frameEnded(gameTime: Long) {
+            mainViewModel?.activity?.apply {
+                if (isActive && QuickSettings(this).enablePerformanceMode) {
+                    mainViewModel?.performanceManager?.setTurboMode(true);
+                }
             }
-
             mainViewModel?.gameHost?.hideProgressIndicator()
         }
     }
@@ -60,7 +56,6 @@ class MainActivity : BaseActivity() {
         initVm()
     }
 
-    external fun getRenderingThreadId() : Long
     private external fun initVm()
 
     private fun initialize() {
@@ -70,26 +65,52 @@ class MainActivity : BaseActivity() {
         val appPath: String = AppPath
 
         var quickSettings = QuickSettings(this)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Debug.ordinal, quickSettings.enableDebugLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Info.ordinal, quickSettings.enableInfoLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Stub.ordinal, quickSettings.enableStubLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Warning.ordinal, quickSettings.enableWarningLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Error.ordinal, quickSettings.enableErrorLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.AccessLog.ordinal, quickSettings.enableAccessLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Guest.ordinal, quickSettings.enableGuestLogs)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Trace.ordinal, quickSettings.enableTraceLogs)
-        val success = RyujinxNative.instance.initialize(NativeHelpers.instance.storeStringJava(appPath))
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Debug.ordinal,
+            quickSettings.enableDebugLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Info.ordinal,
+            quickSettings.enableInfoLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Stub.ordinal,
+            quickSettings.enableStubLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Warning.ordinal,
+            quickSettings.enableWarningLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Error.ordinal,
+            quickSettings.enableErrorLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.AccessLog.ordinal,
+            quickSettings.enableAccessLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Guest.ordinal,
+            quickSettings.enableGuestLogs
+        )
+        RyujinxNative.instance.loggingSetEnabled(
+            LogLevel.Trace.ordinal,
+            quickSettings.enableTraceLogs
+        )
+        val success =
+            RyujinxNative.instance.initialize(NativeHelpers.instance.storeStringJava(appPath))
 
         uiHandler = UiHandler()
         _isInit = success
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         motionSensorManager = MotionSensorManager(this)
         Thread.setDefaultUncaughtExceptionHandler(crashHandler)
 
-        if(
+        if (
             !Environment.isExternalStorageManager()
         ) {
             storageHelper?.storage?.requestFullStorageAccess()
@@ -99,8 +120,9 @@ class MainActivity : BaseActivity() {
 
         initialize()
 
-        window.attributes.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
-        WindowCompat.setDecorFitsSystemWindows(window,false)
+        window.attributes.layoutInDisplayCutoutMode =
+            WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         mainViewModel = MainViewModel(this)
         mainViewModel!!.physicalControllerManager = physicalControllerManager
@@ -131,25 +153,6 @@ class MainActivity : BaseActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         storageHelper?.onRestoreInstanceState(savedInstanceState)
-    }
-
-    // Game Stuff
-    private fun force60HzRefreshRate(enable: Boolean) {
-        // Hack for MIUI devices since they don't support the standard Android APIs
-        try {
-            val setFpsIntent = Intent("com.miui.powerkeeper.SET_ACTIVITY_FPS")
-            setFpsIntent.putExtra("package_name", "org.ryujinx.android")
-            setFpsIntent.putExtra("isEnter", enable)
-            sendBroadcast(setFpsIntent)
-        } catch (_: Exception) {
-        }
-
-        if (enable)
-            display?.supportedModes?.minByOrNull { abs(it.refreshRate - 60f) }
-                ?.let { window.attributes.preferredDisplayModeId = it.modeId }
-        else
-            display?.supportedModes?.maxByOrNull { it.refreshRate }
-                ?.let { window.attributes.preferredDisplayModeId = it.modeId }
     }
 
     fun setFullScreen(fullscreen: Boolean) {
@@ -190,20 +193,19 @@ class MainActivity : BaseActivity() {
 
     override fun onStop() {
         super.onStop()
+        isActive = false
 
-        if(isGameRunning) {
-            NativeHelpers.instance.setTurboMode(false)
-            force60HzRefreshRate(false)
+        if (isGameRunning) {
+            mainViewModel?.performanceManager?.setTurboMode(false)
         }
     }
 
     override fun onResume() {
         super.onResume()
+        isActive = true
 
-        if(isGameRunning) {
+        if (isGameRunning) {
             setFullScreen(true)
-            NativeHelpers.instance.setTurboMode(true)
-            force60HzRefreshRate(true)
             if (QuickSettings(this).enableMotion)
                 motionSensorManager.register()
         }
@@ -211,10 +213,10 @@ class MainActivity : BaseActivity() {
 
     override fun onPause() {
         super.onPause()
+        isActive = true
 
-        if(isGameRunning) {
-            NativeHelpers.instance.setTurboMode(false)
-            force60HzRefreshRate(false)
+        if (isGameRunning) {
+            mainViewModel?.performanceManager?.setTurboMode(false)
         }
 
         motionSensorManager.unregister()

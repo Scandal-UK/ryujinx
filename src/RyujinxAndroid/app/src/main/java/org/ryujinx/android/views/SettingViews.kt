@@ -57,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
 import org.ryujinx.android.Helpers
@@ -122,6 +123,7 @@ class SettingViews {
             val isGrid = remember { mutableStateOf(true) }
             val useSwitchLayout = remember { mutableStateOf(true) }
             val enableMotion = remember { mutableStateOf(true) }
+            val enablePerformanceMode = remember { mutableStateOf(true) }
 
             val enableDebugLogs = remember { mutableStateOf(true) }
             val enableStubLogs = remember { mutableStateOf(true) }
@@ -144,6 +146,7 @@ class SettingViews {
                     isGrid,
                     useSwitchLayout,
                     enableMotion,
+                    enablePerformanceMode,
                     enableDebugLogs,
                     enableStubLogs,
                     enableInfoLogs,
@@ -177,6 +180,7 @@ class SettingViews {
                                     isGrid,
                                     useSwitchLayout,
                                     enableMotion,
+                                    enablePerformanceMode,
                                     enableDebugLogs,
                                     enableStubLogs,
                                     enableInfoLogs,
@@ -192,9 +196,11 @@ class SettingViews {
                             }
                         })
                 }) { contentPadding ->
-                Column(modifier = Modifier
-                    .padding(contentPadding)
-                    .verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier
+                        .padding(contentPadding)
+                        .verticalScroll(rememberScrollState())
+                ) {
                     ExpandableView(onCardArrowClick = { }, title = "App") {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
@@ -303,9 +309,9 @@ class SettingViews {
                         }
                     }
 
-                    if(showFirwmareDialog.value) {
+                    if (showFirwmareDialog.value) {
                         AlertDialog(onDismissRequest = {
-                            if(firmwareInstallState.value != FirmwareInstallState.Install) {
+                            if (firmwareInstallState.value != FirmwareInstallState.Install) {
                                 showFirwmareDialog.value = false
                                 settingsViewModel.clearFirmwareSelection(firmwareInstallState)
                             }
@@ -327,7 +333,8 @@ class SettingViews {
                                         Text(text = "Select a zip or XCI file to install from.")
                                         Row(
                                             horizontalArrangement = Arrangement.End,
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .padding(top = 4.dp)
                                         ) {
                                             Button(onClick = {
@@ -350,7 +357,8 @@ class SettingViews {
                                         Text(text = "Firmware ${settingsViewModel.selectedFirmwareVersion} will be installed. Do you want to continue?")
                                         Row(
                                             horizontalArrangement = Arrangement.End,
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier
+                                                .fillMaxWidth()
                                                 .padding(top = 4.dp)
                                         ) {
                                             Button(onClick = {
@@ -358,9 +366,11 @@ class SettingViews {
                                                     firmwareInstallState
                                                 )
 
-                                                if(firmwareInstallState.value == FirmwareInstallState.None){
+                                                if (firmwareInstallState.value == FirmwareInstallState.None) {
                                                     showFirwmareDialog.value = false
-                                                    settingsViewModel.clearFirmwareSelection(firmwareInstallState)
+                                                    settingsViewModel.clearFirmwareSelection(
+                                                        firmwareInstallState
+                                                    )
                                                 }
                                             }, modifier = Modifier.padding(horizontal = 8.dp)) {
                                                 Text(text = "Yes")
@@ -376,34 +386,32 @@ class SettingViews {
                                         }
                                     } else if (firmwareInstallState.value == FirmwareInstallState.Install) {
                                         Text(text = "Installing Firmware ${settingsViewModel.selectedFirmwareVersion}...")
-                                        LinearProgressIndicator(modifier = Modifier
-                                            .padding(top = 4.dp))
+                                        LinearProgressIndicator(
+                                            modifier = Modifier
+                                                .padding(top = 4.dp)
+                                        )
                                     } else if (firmwareInstallState.value == FirmwareInstallState.Verifying) {
                                         Text(text = "Verifying selected file...")
-                                        LinearProgressIndicator(modifier = Modifier
-                                            .fillMaxWidth()
-                                            )
-                                    }
-                                    else if (firmwareInstallState.value == FirmwareInstallState.Done) {
+                                        LinearProgressIndicator(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                        )
+                                    } else if (firmwareInstallState.value == FirmwareInstallState.Done) {
                                         Text(text = "Installed Firmware ${settingsViewModel.selectedFirmwareVersion}")
                                         firmwareVersion.value = mainViewModel.firmwareVersion
-                                    }
-                                    else if(firmwareInstallState.value == FirmwareInstallState.Cancelled){
+                                    } else if (firmwareInstallState.value == FirmwareInstallState.Cancelled) {
                                         val file = settingsViewModel.selectedFirmwareFile
-                                        if(file != null){
-                                            if(file.extension == "xci" || file.extension == "zip"){
-                                                if(settingsViewModel.selectedFirmwareVersion.isEmpty()) {
+                                        if (file != null) {
+                                            if (file.extension == "xci" || file.extension == "zip") {
+                                                if (settingsViewModel.selectedFirmwareVersion.isEmpty()) {
                                                     Text(text = "Unable to find version in selected file")
-                                                }
-                                                else {
+                                                } else {
                                                     Text(text = "Unknown Error has occurred. Please check logs")
                                                 }
-                                            }
-                                            else {
+                                            } else {
                                                 Text(text = "File type is not supported")
                                             }
-                                        }
-                                        else {
+                                        } else {
                                             Text(text = "File type is not supported")
                                         }
                                     }
@@ -501,6 +509,32 @@ class SettingViews {
                                 )
                                 Switch(checked = ignoreMissingServices.value, onCheckedChange = {
                                     ignoreMissingServices.value = !ignoreMissingServices.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                ) {
+                                    Text(
+                                        text = "Enable Performance Mode",
+                                    )
+                                    Text(
+                                        text = "Forces CPU and GPU to run at max clocks if available.",
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = "OS power settings may override this.",
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                Switch(checked = enablePerformanceMode.value, onCheckedChange = {
+                                    enablePerformanceMode.value = !enablePerformanceMode.value
                                 })
                             }
                             val isImporting = remember {
@@ -1041,6 +1075,7 @@ class SettingViews {
                         isGrid,
                         useSwitchLayout,
                         enableMotion,
+                        enablePerformanceMode,
                         enableDebugLogs,
                         enableStubLogs,
                         enableInfoLogs,

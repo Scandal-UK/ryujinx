@@ -14,10 +14,11 @@ class QuickSettings(val activity: Activity) {
     var isHostMapped: Boolean
     var enableShaderCache: Boolean
     var enableTextureRecompression: Boolean
-    var resScale : Float
-    var isGrid : Boolean
-    var useSwitchLayout : Boolean
-    var enableMotion : Boolean
+    var resScale: Float
+    var isGrid: Boolean
+    var useSwitchLayout: Boolean
+    var enableMotion: Boolean
+    var enablePerformanceMode: Boolean
 
     // Logs
     var enableDebugLogs: Boolean
@@ -29,7 +30,8 @@ class QuickSettings(val activity: Activity) {
     var enableAccessLogs: Boolean
     var enableTraceLogs: Boolean
 
-    private var sharedPref: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity)
+    private var sharedPref: SharedPreferences =
+        PreferenceManager.getDefaultSharedPreferences(activity)
 
     init {
         isHostMapped = sharedPref.getBoolean("isHostMapped", true)
@@ -45,6 +47,7 @@ class QuickSettings(val activity: Activity) {
         isGrid = sharedPref.getBoolean("isGrid", true)
         useSwitchLayout = sharedPref.getBoolean("useSwitchLayout", true)
         enableMotion = sharedPref.getBoolean("enableMotion", true)
+        enablePerformanceMode = sharedPref.getBoolean("enablePerformanceMode", true)
 
         enableDebugLogs = sharedPref.getBoolean("enableDebugLogs", false)
         enableStubLogs = sharedPref.getBoolean("enableStubLogs", false)
@@ -56,7 +59,7 @@ class QuickSettings(val activity: Activity) {
         enableTraceLogs = sharedPref.getBoolean("enableStubLogs", false)
     }
 
-    fun save(){
+    fun save() {
         val editor = sharedPref.edit()
 
         editor.putBoolean("isHostMapped", isHostMapped)
@@ -72,6 +75,7 @@ class QuickSettings(val activity: Activity) {
         editor.putBoolean("isGrid", isGrid)
         editor.putBoolean("useSwitchLayout", useSwitchLayout)
         editor.putBoolean("enableMotion", enableMotion)
+        editor.putBoolean("enablePerformanceMode", enablePerformanceMode)
 
         editor.putBoolean("enableDebugLogs", enableDebugLogs)
         editor.putBoolean("enableStubLogs", enableStubLogs)

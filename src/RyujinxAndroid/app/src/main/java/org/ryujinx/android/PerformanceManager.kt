@@ -1,49 +1,31 @@
 package org.ryujinx.android
 
-import android.os.Build
-import android.os.PerformanceHintManager
-import androidx.annotation.RequiresApi
+import android.content.Intent
+import kotlin.math.abs
 
-class PerformanceManager(private val performanceHintManager: PerformanceHintManager) {
-    private var _isEnabled: Boolean = false
-    private var renderingSession: PerformanceHintManager.Session? = null
-    private val DEFAULT_TARGET_NS = 16666666L
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun initializeRenderingSession(threadId : Long){
-        if(!_isEnabled || renderingSession != null)
-            return
-
-        val threads = IntArray(1)
-        threads[0] = threadId.toInt()
-        renderingSession = performanceHintManager.createHintSession(threads, DEFAULT_TARGET_NS)
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun closeCurrentRenderingSession() {
-        if (_isEnabled)
-            renderingSession?.apply {
-                renderingSession = null
-                this.close()
+class PerformanceManager(private val activity: MainActivity) {
+    companion object {
+        fun force60HzRefreshRate(enable: Boolean, activity: MainActivity) {
+            // Hack for MIUI devices since they don't support the standard Android APIs
+            try {
+                val setFpsIntent = Intent("com.miui.powerkeeper.SET_ACTIVITY_FPS")
+                setFpsIntent.putExtra("package_name", "org.ryujinx.android")
+                setFpsIntent.putExtra("isEnter", enable)
+                activity.sendBroadcast(setFpsIntent)
+            } catch (_: Exception) {
             }
-    }
 
-    fun enable(){
-        _isEnabled = true
-    }
-
-    @RequiresApi(Build.VERSION_CODES.S)
-    fun updateRenderingSessionTime(newTime : Long){
-        if(!_isEnabled)
-            return
-
-        var effectiveTime = newTime
-
-        if(newTime < DEFAULT_TARGET_NS)
-            effectiveTime = DEFAULT_TARGET_NS
-
-        renderingSession?.apply {
-            this.reportActualWorkDuration(effectiveTime)
+            if (enable)
+                activity.display?.supportedModes?.minByOrNull { abs(it.refreshRate - 60f) }
+                    ?.let { activity.window.attributes.preferredDisplayModeId = it.modeId }
+            else
+                activity.display?.supportedModes?.maxByOrNull { it.refreshRate }
+                    ?.let { activity.window.attributes.preferredDisplayModeId = it.modeId }
         }
+    }
+
+    fun setTurboMode(enable: Boolean) {
+        NativeHelpers.instance.setTurboMode(enable)
+        force60HzRefreshRate(enable, activity)
     }
 }
