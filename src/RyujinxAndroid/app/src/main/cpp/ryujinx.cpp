@@ -21,21 +21,20 @@
 #include <chrono>
 #include <csignal>
 
-jmethodID _updateFrameTime;
-JNIEnv* _rendererEnv = nullptr;
+JNIEnv *_rendererEnv = nullptr;
 
 std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> _currentTimePoint;
 
 std::string progressInfo = "";
 float progress = -1;
 
-JNIEnv* getEnv(bool isRenderer){
-    JNIEnv* env;
-    if(isRenderer){
+JNIEnv *getEnv(bool isRenderer) {
+    JNIEnv *env;
+    if (isRenderer) {
         env = _rendererEnv;
     }
 
-    if(env != nullptr)
+    if (env != nullptr)
         return env;
 
     auto result = _vm->AttachCurrentThread(&env, NULL);
@@ -43,82 +42,82 @@ JNIEnv* getEnv(bool isRenderer){
     return env;
 }
 
-void detachEnv(){
+void detachEnv() {
     auto result = _vm->DetachCurrentThread();
 }
 
 extern "C"
 {
-    JNIEXPORT jlong JNICALL
-    Java_org_ryujinx_android_NativeHelpers_getNativeWindow(
-            JNIEnv *env,
-            jobject instance,
-            jobject surface) {
-        auto nativeWindow = ANativeWindow_fromSurface(env, surface);
-        return nativeWindow == NULL ? -1 : (jlong) nativeWindow;
-    }
+JNIEXPORT jlong JNICALL
+Java_org_ryujinx_android_NativeHelpers_getNativeWindow(
+        JNIEnv *env,
+        jobject instance,
+        jobject surface) {
+    auto nativeWindow = ANativeWindow_fromSurface(env, surface);
+    return nativeWindow == NULL ? -1 : (jlong) nativeWindow;
+}
 
-    JNIEXPORT void JNICALL
-    Java_org_ryujinx_android_NativeHelpers_releaseNativeWindow(
-            JNIEnv *env,
-            jobject instance,
-            jlong window) {
-        auto nativeWindow = (ANativeWindow *) window;
+JNIEXPORT void JNICALL
+Java_org_ryujinx_android_NativeHelpers_releaseNativeWindow(
+        JNIEnv *env,
+        jobject instance,
+        jlong window) {
+    auto nativeWindow = (ANativeWindow *) window;
 
-        if (nativeWindow != NULL)
-            ANativeWindow_release(nativeWindow);
-    }
+    if (nativeWindow != NULL)
+        ANativeWindow_release(nativeWindow);
+}
 
 JNIEXPORT void JNICALL
 Java_org_ryujinx_android_NativeHelpers_attachCurrentThread(
         JNIEnv *env,
         jobject instance) {
-        JavaVM* jvm = NULL;
-        env->GetJavaVM(&jvm);
+    JavaVM *jvm = NULL;
+    env->GetJavaVM(&jvm);
 
-        if(jvm != NULL)
-            jvm->AttachCurrentThread(&env, NULL);
+    if (jvm != NULL)
+        jvm->AttachCurrentThread(&env, NULL);
 }
 
 JNIEXPORT void JNICALL
 Java_org_ryujinx_android_NativeHelpers_detachCurrentThread(
         JNIEnv *env,
         jobject instance) {
-    JavaVM* jvm = NULL;
+    JavaVM *jvm = NULL;
     env->GetJavaVM(&jvm);
 
-    if(jvm != NULL)
+    if (jvm != NULL)
         jvm->DetachCurrentThread();
 }
 
-long createSurface(long native_surface, long instance)
-{
+long createSurface(long native_surface, long instance) {
     auto nativeWindow = (ANativeWindow *) native_surface;
     VkSurfaceKHR surface;
-    auto vkInstance = (VkInstance)instance;
+    auto vkInstance = (VkInstance) instance;
     auto fpCreateAndroidSurfaceKHR =
-            reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(vkGetInstanceProcAddr(vkInstance, "vkCreateAndroidSurfaceKHR"));
+            reinterpret_cast<PFN_vkCreateAndroidSurfaceKHR>(vkGetInstanceProcAddr(vkInstance,
+                                                                                  "vkCreateAndroidSurfaceKHR"));
     if (!fpCreateAndroidSurfaceKHR)
         return -1;
-    VkAndroidSurfaceCreateInfoKHR info = { VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
+    VkAndroidSurfaceCreateInfoKHR info = {VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR};
     info.window = nativeWindow;
     VK_CHECK(fpCreateAndroidSurfaceKHR(vkInstance, &info, nullptr, &surface));
-    return (long)surface;
+    return (long) surface;
 }
 
 JNIEXPORT jlong JNICALL
 Java_org_ryujinx_android_NativeHelpers_getCreateSurfacePtr(
         JNIEnv *env,
         jobject instance) {
-    return (jlong)createSurface;
+    return (jlong) createSurface;
 }
 
-char* getStringPointer(
+char *getStringPointer(
         JNIEnv *env,
         jstring jS) {
     const char *cparam = env->GetStringUTFChars(jS, 0);
     auto len = env->GetStringUTFLength(jS);
-    char* s= new char[len];
+    char *s = new char[len];
     strcpy(s, cparam);
     env->ReleaseStringUTFChars(jS, cparam);
 
@@ -127,7 +126,7 @@ char* getStringPointer(
 
 jstring createString(
         JNIEnv *env,
-        char* ch) {
+        char *ch) {
     auto str = env->NewStringUTF(ch);
 
     return str;
@@ -144,15 +143,9 @@ jstring createStringFromStdString(
 
 }
 extern "C"
-JNIEXPORT jlong JNICALL
-Java_org_ryujinx_android_MainActivity_getRenderingThreadId(JNIEnv *env, jobject thiz) {
-    return _currentRenderingThreadId;
-}
-extern "C"
-void setRenderingThread(){
+void setRenderingThread() {
     auto currentId = pthread_self();
 
-    _currentRenderingThreadId = currentId;
     _renderingThreadId = currentId;
 
     _currentTimePoint = std::chrono::high_resolution_clock::now();
@@ -160,7 +153,7 @@ void setRenderingThread(){
 extern "C"
 JNIEXPORT void JNICALL
 Java_org_ryujinx_android_MainActivity_initVm(JNIEnv *env, jobject thiz) {
-    JavaVM* vm = nullptr;
+    JavaVM *vm = nullptr;
     auto success = env->GetJavaVM(&vm);
     _vm = vm;
     _mainActivity = thiz;
@@ -171,25 +164,26 @@ extern "C"
 void onFrameEnd(double time) {
     auto env = getEnv(true);
     auto cl = env->FindClass("org/ryujinx/android/MainActivity");
-    _updateFrameTime = env->GetStaticMethodID(cl, "updateRenderSessionPerformance", "(J)V");
+    jmethodID frameEnd = env->GetStaticMethodID(cl, "frameEnded", "(J)V");
 
     auto now = std::chrono::high_resolution_clock::now();
     auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(
             now - _currentTimePoint).count();
-    env->CallStaticVoidMethod(cl, _updateFrameTime,
+    env->CallStaticVoidMethod(cl, frameEnd,
                               nano);
 }
+
 extern "C"
-void setProgressInfo(char* info, float progressValue) {
-    progressInfo = std::string (info);
+void setProgressInfo(char *info, float progressValue) {
+    progressInfo = std::string(info);
     progress = progressValue;
 }
 
 bool isInitialOrientationFlipped = true;
 
 extern "C"
-void setCurrentTransform(long native_window, int transform){
-    if(native_window == 0 || native_window == -1)
+void setCurrentTransform(long native_window, int transform) {
+    if (native_window == 0 || native_window == -1)
         return;
     auto nativeWindow = (ANativeWindow *) native_window;
 
@@ -203,10 +197,12 @@ void setCurrentTransform(long native_window, int transform){
             nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY;
             break;
         case 0x2:
-            nativeTransform =  ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_90;
+            nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_90;
             break;
         case 0x4:
-            nativeTransform = isInitialOrientationFlipped ? ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY : ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_180;
+            nativeTransform = isInitialOrientationFlipped
+                              ? ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_IDENTITY
+                              : ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_180;
             break;
         case 0x8:
             nativeTransform = ANativeWindowTransform::ANATIVEWINDOW_TRANSFORM_ROTATE_270;
@@ -232,7 +228,8 @@ void setCurrentTransform(long native_window, int transform){
             break;
     }
 
-    nativeWindow->perform(nativeWindow, NATIVE_WINDOW_SET_BUFFERS_TRANSFORM, static_cast<int32_t>(nativeTransform));
+    nativeWindow->perform(nativeWindow, NATIVE_WINDOW_SET_BUFFERS_TRANSFORM,
+                          static_cast<int32_t>(nativeTransform));
 }
 
 extern "C"
@@ -254,19 +251,19 @@ Java_org_ryujinx_android_NativeHelpers_loadDriver(JNIEnv *env, jobject thiz,
             driverName,
             nullptr,
             nullptr
-            );
+    );
 
     delete libPath;
     delete privateAppsPath;
     delete driverName;
 
-    return (jlong)handle;
+    return (jlong) handle;
 }
 
 extern "C"
-void debug_break(int code){
-    if(code >= 3)
-    int r = 0;
+void debug_break(int code) {
+    if (code >= 3)
+        int r = 0;
 }
 
 extern "C"
@@ -278,7 +275,7 @@ Java_org_ryujinx_android_NativeHelpers_setTurboMode(JNIEnv *env, jobject thiz, j
 extern "C"
 JNIEXPORT jint JNICALL
 Java_org_ryujinx_android_NativeHelpers_getMaxSwapInterval(JNIEnv *env, jobject thiz,
-                                                       jlong native_window) {
+                                                          jlong native_window) {
     auto nativeWindow = (ANativeWindow *) native_window;
 
     return nativeWindow->maxSwapInterval;
@@ -315,14 +312,14 @@ Java_org_ryujinx_android_NativeHelpers_getProgressInfo(JNIEnv *env, jobject thiz
 }
 
 extern "C"
-long storeString(char* str){
+long storeString(char *str) {
     return str_helper.store_cstring(str);
 }
 
 extern "C"
-const char* getString(long id){
+const char *getString(long id) {
     auto str = str_helper.get_stored(id);
-    auto cstr = (char*)::malloc(str.length() + 1);
+    auto cstr = (char *) ::malloc(str.length() + 1);
     ::strcpy(cstr, str.c_str());
     return cstr;
 }
@@ -381,7 +378,7 @@ Java_org_ryujinx_android_NativeHelpers_setIsInitialOrientationFlipped(JNIEnv *en
 extern "C"
 JNIEXPORT jint JNICALL
 Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestType(JNIEnv *env, jobject thiz) {
-    return  ui_handler.type;
+    return ui_handler.type;
 }
 extern "C"
 JNIEXPORT jlong JNICALL
@@ -396,7 +393,7 @@ Java_org_ryujinx_android_NativeHelpers_getUiHandlerRequestMessage(JNIEnv *env, j
 
 
 void UiHandler::setTitle(long storedTitle) {
-    if(title != -1){
+    if (title != -1) {
         str_helper.get_stored(title);
         title = -1;
     }
@@ -405,7 +402,7 @@ void UiHandler::setTitle(long storedTitle) {
 }
 
 void UiHandler::setMessage(long storedMessage) {
-    if(message != -1){
+    if (message != -1) {
         str_helper.get_stored(message);
         message = -1;
     }
@@ -430,7 +427,7 @@ long UiHandler::getMessage() {
 }
 
 void UiHandler::setWatermark(long wm) {
-    if(watermark != -1){
+    if (watermark != -1) {
         str_helper.get_stored(watermark);
         watermark = -1;
     }
@@ -453,7 +450,7 @@ long UiHandler::getWatermark() {
 }
 
 void UiHandler::setInitialText(long text) {
-    if(initialText != -1){
+    if (initialText != -1) {
         str_helper.get_stored(watermark);
         initialText = -1;
     }
@@ -462,7 +459,7 @@ void UiHandler::setInitialText(long text) {
 }
 
 void UiHandler::setSubtitle(long text) {
-    if(subtitle != -1){
+    if (subtitle != -1) {
         str_helper.get_stored(subtitle);
         subtitle = -1;
     }
@@ -489,12 +486,12 @@ void UiHandler::setMode(int t) {
 extern "C"
 JNIEXPORT jint JNICALL
 Java_org_ryujinx_android_NativeHelpers_getUiHandlerMinLength(JNIEnv *env, jobject thiz) {
-    return  ui_handler.min_length;
+    return ui_handler.min_length;
 }
 extern "C"
 JNIEXPORT jint JNICALL
 Java_org_ryujinx_android_NativeHelpers_getUiHandlerMaxLength(JNIEnv *env, jobject thiz) {
-    return  ui_handler.max_length;
+    return ui_handler.max_length;
 }
 
 extern "C"

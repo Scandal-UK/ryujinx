@@ -3,7 +3,7 @@ using Ryujinx.Common.Logging;
 using Ryujinx.HLE;
 using Ryujinx.HLE.HOS.Applets;
 using Ryujinx.HLE.HOS.Services.Am.AppletOE.ApplicationProxyService.ApplicationProxy.Types;
-using Ryujinx.HLE.Ui;
+using Ryujinx.HLE.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,17 +13,17 @@ using System.Threading.Tasks;
 
 namespace LibRyujinx.Android
 {
-    internal class AndroidUiHandler : IHostUiHandler, IDisposable
+    internal class AndroidUIHandler : IHostUIHandler, IDisposable
     {
-        public IHostUiTheme HostUiTheme => throw new NotImplementedException();
-
         public ManualResetEvent _waitEvent;
         public ManualResetEvent _responseEvent;
         private bool _isDisposed;
         private bool _isOkPressed;
         private long _input;
 
-        public AndroidUiHandler()
+        public IHostUITheme HostUITheme => throw new NotImplementedException();
+
+        public AndroidUIHandler()
         {
             _waitEvent = new ManualResetEvent(false);
             _responseEvent = new ManualResetEvent(false);
@@ -47,7 +47,7 @@ namespace LibRyujinx.Android
             return _isOkPressed;
         }
 
-        public bool DisplayInputDialog(SoftwareKeyboardUiArgs args, out string userText)
+        public bool DisplayInputDialog(SoftwareKeyboardUIArgs args, out string userText)
         {
             LibRyujinx.setUiHandlerTitle(LibRyujinx.storeString("Software Keyboard"));
             LibRyujinx.setUiHandlerMessage(LibRyujinx.storeString(args.HeaderText ?? ""));
@@ -81,7 +81,7 @@ namespace LibRyujinx.Android
             return _isOkPressed;
         }
 
-        public bool DisplayMessageDialog(ControllerAppletUiArgs args)
+        public bool DisplayMessageDialog(ControllerAppletUIArgs args)
         {
             string playerCount = args.PlayerCountMin == args.PlayerCountMax ? $"exactly {args.PlayerCountMin}" : $"{args.PlayerCountMin}-{args.PlayerCountMax}";
 

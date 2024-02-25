@@ -1,9 +1,6 @@
 package org.ryujinx.android.viewmodels
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.os.Build
-import android.os.PerformanceHintManager
 import androidx.compose.runtime.MutableState
 import androidx.navigation.NavHostController
 import com.anggrayudi.storage.extension.launchOnUiThread
@@ -49,16 +46,12 @@ class MainViewModel(val activity: MainActivity) {
             field = value
             field?.setProgressStates(showLoading, progressValue, progress)
         }
-    var navController : NavHostController? = null
+    var navController: NavHostController? = null
 
     var homeViewModel: HomeViewModel = HomeViewModel(activity, this)
 
     init {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val hintService =
-                activity.getSystemService(Context.PERFORMANCE_HINT_SERVICE) as PerformanceHintManager
-            performanceManager = PerformanceManager(hintService)
-        }
+        performanceManager = PerformanceManager(activity)
     }
 
     fun closeGame() {
@@ -70,14 +63,14 @@ class MainViewModel(val activity: MainActivity) {
         motionSensorManager?.setControllerId(-1)
     }
 
-    fun refreshFirmwareVersion(){
+    fun refreshFirmwareVersion() {
         var handle = RyujinxNative.instance.deviceGetInstalledFirmwareVersion()
-        if(handle != -1L) {
+        if (handle != -1L) {
             firmwareVersion = NativeHelpers.instance.getStringJava(handle)
         }
     }
 
-    fun loadGame(game:GameModel) : Boolean {
+    fun loadGame(game: GameModel): Boolean {
         val nativeRyujinx = RyujinxNative.instance
 
         val descriptor = game.open()
@@ -188,7 +181,7 @@ class MainViewModel(val activity: MainActivity) {
         return true
     }
 
-    fun loadMiiEditor() : Boolean {
+    fun loadMiiEditor(): Boolean {
         val nativeRyujinx = RyujinxNative.instance
 
         gameModel = null
@@ -292,42 +285,42 @@ class MainViewModel(val activity: MainActivity) {
         return true
     }
 
-    fun clearPptcCache(titleId :String){
-        if(titleId.isNotEmpty()){
+    fun clearPptcCache(titleId: String) {
+        if (titleId.isNotEmpty()) {
             val basePath = MainActivity.AppPath + "/games/$titleId/cache/cpu"
-            if(File(basePath).exists()){
+            if (File(basePath).exists()) {
                 var caches = mutableListOf<String>()
 
                 val mainCache = basePath + "${File.separator}0"
                 File(mainCache).listFiles()?.forEach {
-                    if(it.isFile && it.name.endsWith(".cache"))
+                    if (it.isFile && it.name.endsWith(".cache"))
                         caches.add(it.absolutePath)
                 }
                 val backupCache = basePath + "${File.separator}1"
                 File(backupCache).listFiles()?.forEach {
-                    if(it.isFile && it.name.endsWith(".cache"))
+                    if (it.isFile && it.name.endsWith(".cache"))
                         caches.add(it.absolutePath)
                 }
-                for(path in caches)
+                for (path in caches)
                     File(path).delete()
             }
         }
     }
 
-    fun purgeShaderCache(titleId :String) {
-        if(titleId.isNotEmpty()){
+    fun purgeShaderCache(titleId: String) {
+        if (titleId.isNotEmpty()) {
             val basePath = MainActivity.AppPath + "/games/$titleId/cache/shader"
-            if(File(basePath).exists()){
+            if (File(basePath).exists()) {
                 var caches = mutableListOf<String>()
                 File(basePath).listFiles()?.forEach {
-                    if(!it.isFile)
+                    if (!it.isFile)
                         it.delete()
-                    else{
-                        if(it.name.endsWith(".toc") || it.name.endsWith(".data"))
+                    else {
+                        if (it.name.endsWith(".toc") || it.name.endsWith(".data"))
                             caches.add(it.absolutePath)
                     }
                 }
-                for(path in caches)
+                for (path in caches)
                     File(path).delete()
             }
         }
@@ -347,7 +340,7 @@ class MainViewModel(val activity: MainActivity) {
         fifo: Double,
         gameFps: Double,
         gameTime: Double
-    ){
+    ) {
         fifoState?.apply {
             this.value = fifo
         }

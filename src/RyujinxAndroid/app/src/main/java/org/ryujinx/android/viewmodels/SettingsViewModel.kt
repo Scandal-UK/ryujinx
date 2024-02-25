@@ -56,6 +56,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         isGrid: MutableState<Boolean>,
         useSwitchLayout: MutableState<Boolean>,
         enableMotion: MutableState<Boolean>,
+        enablePerformanceMode: MutableState<Boolean>,
         enableDebugLogs: MutableState<Boolean>,
         enableStubLogs: MutableState<Boolean>,
         enableInfoLogs: MutableState<Boolean>,
@@ -80,6 +81,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         isGrid.value = sharedPref.getBoolean("isGrid", true)
         useSwitchLayout.value = sharedPref.getBoolean("useSwitchLayout", true)
         enableMotion.value = sharedPref.getBoolean("enableMotion", true)
+        enablePerformanceMode.value = sharedPref.getBoolean("enablePerformanceMode", false)
 
         enableDebugLogs.value = sharedPref.getBoolean("enableDebugLogs", false)
         enableStubLogs.value = sharedPref.getBoolean("enableStubLogs", false)
@@ -105,6 +107,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         isGrid: MutableState<Boolean>,
         useSwitchLayout: MutableState<Boolean>,
         enableMotion: MutableState<Boolean>,
+        enablePerformanceMode: MutableState<Boolean>,
         enableDebugLogs: MutableState<Boolean>,
         enableStubLogs: MutableState<Boolean>,
         enableInfoLogs: MutableState<Boolean>,
@@ -129,6 +132,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         editor.putBoolean("isGrid", isGrid.value)
         editor.putBoolean("useSwitchLayout", useSwitchLayout.value)
         editor.putBoolean("enableMotion", enableMotion.value)
+        editor.putBoolean("enablePerformanceMode", enablePerformanceMode.value)
 
         editor.putBoolean("enableDebugLogs", enableDebugLogs.value)
         editor.putBoolean("enableStubLogs", enableStubLogs.value)
@@ -255,7 +259,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         }
     }
 
-    fun clearFirmwareSelection(installState: MutableState<FirmwareInstallState>){
+    fun clearFirmwareSelection(installState: MutableState<FirmwareInstallState>) {
         selectedFirmwareFile = null
         selectedFirmwareVersion = ""
         installState.value = FirmwareInstallState.None
@@ -263,7 +267,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
 }
 
 
-enum class FirmwareInstallState{
+enum class FirmwareInstallState {
     None,
     Cancelled,
     Verifying,

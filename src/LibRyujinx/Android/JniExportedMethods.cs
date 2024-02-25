@@ -3,7 +3,6 @@ using LibRyujinx.Jni.Pointers;
 using LibRyujinx.Jni.Primitives;
 using LibRyujinx.Jni.References;
 using LibRyujinx.Jni.Values;
-using LibRyujinx.Shared.Audio.Oboe;
 using Rxmxnx.PInvoke;
 using Ryujinx.Audio.Backends.OpenAL;
 using Ryujinx.Common;
@@ -232,8 +231,6 @@ namespace LibRyujinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var list = GetDlcContentList(GetStoredString(pathPtr), (ulong)(long)titleId);
-
-            debug_break(4);
 
             return CreateStringArray(jEnv, list);
         }
