@@ -85,6 +85,8 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         if (_isStarted)
             return
 
+        _isStarted = true
+
         game = if (mainViewModel.isMiiEditorLaunched) null else mainViewModel.gameModel;
 
         _nativeRyujinx.inputInitialize(width, height)
@@ -102,7 +104,6 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         _guestThread = thread(start = true) {
             runGame()
         }
-        _isStarted = true
 
         _updateThread = thread(start = true) {
             var c = 0

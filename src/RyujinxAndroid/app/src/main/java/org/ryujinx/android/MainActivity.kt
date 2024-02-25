@@ -18,7 +18,6 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.anggrayudi.storage.SimpleStorageHelper
-import com.halilibo.richtext.ui.RichTextThemeIntegration
 import org.ryujinx.android.ui.theme.RyujinxAndroidTheme
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
@@ -38,6 +37,7 @@ class MainActivity : BaseActivity() {
         var mainViewModel: MainViewModel? = null
         var AppPath : String = ""
         var StorageHelper: SimpleStorageHelper? = null
+        val performanceMonitor = PerformanceMonitor()
 
         @JvmStatic
         fun updateRenderSessionPerformance(gameTime : Long)
@@ -111,14 +111,12 @@ class MainActivity : BaseActivity() {
         mainViewModel?.apply {
             setContent {
                 RyujinxAndroidTheme {
-                    RichTextThemeIntegration(contentColor = { MaterialTheme.colorScheme.onSurface }) {
-                        // A surface container using the 'background' color from the theme
-                        Surface(
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background
-                        ) {
-                            MainView.Main(mainViewModel = this)
-                        }
+                    // A surface container using the 'background' color from the theme
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        MainView.Main(mainViewModel = this)
                     }
                 }
             }
