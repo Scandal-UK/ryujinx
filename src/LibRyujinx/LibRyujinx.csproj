@@ -9,7 +9,7 @@
   <PropertyGroup>
     <PublishAot>true</PublishAot>
     <PublishAotUsingRuntimePack>true</PublishAotUsingRuntimePack>
-    <!-- Not sure why, but on iOS this results in an error. Result is still a .dylib. -->  
+    <!-- Not sure why, but on iOS this results in an error. Result is still a .dylib. -->
     <NativeLib Condition="'$(RuntimeIdentifier)'=='linux-bionic-arm64'">Shared</NativeLib>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
@@ -34,10 +34,8 @@
     <Message Importance="normal" Text="Found Xcode at $(XcodeSelect)" />
     <ItemGroup>
       <LinkerArg Include="-Wl,-ld_classic" />
-      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk%22"
-                 Condition=" $(RuntimeIdentifier.Contains('simulator')) "/>
-      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk%22"
-                 Condition=" !$(RuntimeIdentifier.Contains('simulator')) "/>
+      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk%22" Condition=" $(RuntimeIdentifier.Contains('simulator')) "/>
+      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk%22" Condition=" !$(RuntimeIdentifier.Contains('simulator')) "/>
     </ItemGroup>
   </Target>
   <Target Condition="'$(RuntimeIdentifier)'=='ios-arm64'" Name="FixDylib" AfterTargets="Publish">
