@@ -14,6 +14,9 @@ project("ryujinxjni")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
+# libssl.so and libcrypto.so
+include(../../../../libryujinx/libs/OpenSSL.cmake)
+
 FetchContent_Declare(
     adrenotools
     GIT_REPOSITORY https://github.com/bylaws/libadrenotools.git
@@ -37,6 +40,8 @@ add_library( # Sets the name of the library.
             vulkan_wrapper.cpp
             string_helper.cpp
             ryujinx.cpp)
+
+add_dependencies(ryujinxjni openssl)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
