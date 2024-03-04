@@ -14,9 +14,6 @@ project("ryujinxjni")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-# libssl.so and libcrypto.so
-include(../../../../libryujinx/libs/OpenSSL.cmake)
-
 FetchContent_Declare(
     adrenotools
     GIT_REPOSITORY https://github.com/bylaws/libadrenotools.git
@@ -40,8 +37,6 @@ add_library( # Sets the name of the library.
             vulkan_wrapper.cpp
             string_helper.cpp
             ryujinx.cpp)
-
-add_dependencies(ryujinxjni openssl)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -69,3 +64,15 @@ target_link_libraries( # Specifies the target library.
                        -landroid
                         adrenotools
         )
+
+# Build external libraries if prebuilt files don't exist
+set(JNI_PATH ../jniLibs/${CMAKE_ANDROID_ARCH_ABI})
+cmake_path(ABSOLUTE_PATH JNI_PATH NORMALIZE)
+
+cmake_path(APPEND JNI_PATH libcrypto.so OUTPUT_VARIABLE LIBCRYPTO_JNI_PATH)
+cmake_path(APPEND JNI_PATH libssl.so OUTPUT_VARIABLE LIBSSL_JNI_PATH)
+
+if (NOT (EXISTS ${LIBCRYPTO_JNI_PATH} AND EXISTS ${LIBSSL_JNI_PATH}))
+    include(../../../../libryujinx/libs/OpenSSL.cmake)
+    add_dependencies(ryujinxjni openssl)
+endif ()
