@@ -130,11 +130,6 @@ namespace Ryujinx.HLE.HOS
                         }
                         else
                         {
-                            if (addressSpaceSize != addressSpace.AddressSpaceSize)
-                            {
-                                Logger.Warning?.Print(LogClass.Emulation, $"Allocated address space (0x{addressSpace.AddressSpaceSize:X}) is smaller than guest application requirements (0x{addressSpaceSize:X})");
-                            }
-
                             bool unsafeMode = mode == MemoryManagerMode.HostMappedUnsafe;
 
                             if (addressSpace != null)
