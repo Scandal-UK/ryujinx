@@ -72,7 +72,7 @@ namespace Ryujinx.Cpu.Nce
             _addressSpace = addressSpace;
 
             Tracking = new MemoryTracking(this, PageSize, invalidAccessHandler);
-            _memoryEh = new MemoryEhMeilleure(asSize, Tracking);
+            _memoryEh = new MemoryEhMeilleure(addressSpaceSize, Tracking);
         }
 
         /// <inheritdoc/>

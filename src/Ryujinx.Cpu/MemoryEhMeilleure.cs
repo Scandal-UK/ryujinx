@@ -1,4 +1,5 @@
 using Ryujinx.Common;
+using Ryujinx.Common.Logging;
 using Ryujinx.Cpu.Signal;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Tracking;
@@ -62,6 +63,9 @@ namespace Ryujinx.Cpu
             ulong endAddress = asSize;
 
             _trackingEvent = VirtualMemoryEvent;
+
+            _pageSize = MemoryBlock.GetPageSize();
+
             bool added = NativeSignalHandler.AddTrackedRegion((nuint)_baseAddress, (nuint)endAddress, Marshal.GetFunctionPointerForDelegate(_trackingEvent));
 
             if (!added)
