@@ -1,12 +1,12 @@
 include(ExternalProject)
 
-find_program(MAKE_COMMAND NAMES nmake make)
+find_program(MAKE_COMMAND NAMES nmake make REQUIRED)
+find_package(Perl 5 REQUIRED)
 
 set(PROJECT_ENV "ANDROID_NDK_ROOT=${CMAKE_ANDROID_NDK}")
 
 if (CMAKE_HOST_WIN32)
-    find_program(PERL_COMMAND NAMES perl)
-    set(PROJECT_CFG_PREFIX ${PERL_COMMAND})
+    set(PROJECT_CFG_PREFIX ${PERL_EXECUTABLE})
     # Deal with semicolon-separated lists
     set(PROJECT_PATH_LIST $ENV{Path})
     list(PREPEND PROJECT_PATH_LIST "${ANDROID_TOOLCHAIN_ROOT}\\bin")
