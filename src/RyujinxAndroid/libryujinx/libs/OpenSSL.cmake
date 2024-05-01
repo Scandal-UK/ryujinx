@@ -9,7 +9,8 @@ if (CMAKE_HOST_WIN32)
     set(PROJECT_CFG_PREFIX ${PERL_EXECUTABLE})
     # Deal with semicolon-separated lists
     set(PROJECT_PATH_LIST $ENV{Path})
-    list(PREPEND PROJECT_PATH_LIST "${ANDROID_TOOLCHAIN_ROOT}\\bin")
+    cmake_path(CONVERT "${ANDROID_TOOLCHAIN_ROOT}\\bin" TO_NATIVE_PATH_LIST ANDROID_TOOLCHAIN_BIN NORMALIZE)
+    list(PREPEND PROJECT_PATH_LIST "${ANDROID_TOOLCHAIN_BIN}")
     # Replace semicolons with "|"
     list(JOIN PROJECT_PATH_LIST "|" PROJECT_PATH_STRING)
     # Add the modified PATH string to PROJECT_ENV
