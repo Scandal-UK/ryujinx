@@ -1,11 +1,24 @@
 include(ExternalProject)
 
-find_program(MAKE_COMMAND NAMES nmake make REQUIRED)
 find_package(Perl 5 REQUIRED)
 
 set(PROJECT_ENV "ANDROID_NDK_ROOT=${CMAKE_ANDROID_NDK}")
 
 if (CMAKE_HOST_WIN32)
+    set(ProgramFiles_x86 "$ENV{ProgramFiles\(x86\)}")
+    # https://github.com/microsoft/vswhere/wiki/Find-MSBuild
+    cmake_path(APPEND VSWHERE_BIN "${ProgramFiles_x86}" "Microsoft Visual Studio" "Installer" "vswhere.exe")
+    # FIXME: Hardcoded architecture, no way to specify the MSVC version
+    execute_process(
+            COMMAND ${VSWHERE_BIN} "-latest" "-find" "VC\\Tools\\MSVC\\*\\bin\\Hostx64\\x64\\nmake.exe"
+            OUTPUT_VARIABLE NMAKE_PATHS_OUTPUT
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            COMMAND_ERROR_IS_FATAL ANY
+    )
+    string(REPLACE "\n" ";" NMAKE_PATH_LIST "${NMAKE_PATHS_OUTPUT}")
+    list(GET NMAKE_PATH_LIST 0 NMAKE_PATH)
+    cmake_path(NATIVE_PATH NMAKE_PATH NORMALIZE MAKE_COMMAND)
+
     set(PROJECT_CFG_PREFIX ${PERL_EXECUTABLE})
     # Deal with semicolon-separated lists
     set(PROJECT_PATH_LIST $ENV{Path})
@@ -16,9 +29,11 @@ if (CMAKE_HOST_WIN32)
     # Add the modified PATH string to PROJECT_ENV
     list(APPEND PROJECT_ENV "Path=${PROJECT_PATH_STRING}")
 elseif (CMAKE_HOST_UNIX)
+    find_program(MAKE_COMMAND NAMES make REQUIRED)
     list(APPEND PROJECT_ENV "PATH=${ANDROID_TOOLCHAIN_ROOT}/bin:$ENV{PATH}")
 else ()
     message(WARNING "Host system (${CMAKE_HOST_SYSTEM_NAME}) not supported. Treating as unix.")
+    find_program(MAKE_COMMAND NAMES make REQUIRED)
     list(APPEND PROJECT_ENV "PATH=${ANDROID_TOOLCHAIN_ROOT}/bin:$ENV{PATH}")
 endif ()
 
