@@ -23,6 +23,200 @@ class Icons {
     companion object{
         /// Icons exported from https://www.composables.com/icons
         @Composable
+        fun listView(color: Color): ImageVector {
+            return remember {
+                ImageVector.Builder(
+                    name = "list",
+                    defaultWidth = 40.0.dp,
+                    defaultHeight = 40.0.dp,
+                    viewportWidth = 40.0f,
+                    viewportHeight = 40.0f
+                ).apply {
+                    path(
+                        fill = SolidColor(color),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1.0f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Miter,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.NonZero
+                    ) {
+                        moveTo(13.375f, 14.458f)
+                        quadToRelative(-0.583f, 0f, -0.958f, -0.395f)
+                        quadToRelative(-0.375f, -0.396f, -0.375f, -0.938f)
+                        quadToRelative(0f, -0.542f, 0.375f, -0.937f)
+                        quadToRelative(0.375f, -0.396f, 0.958f, -0.396f)
+                        horizontalLineToRelative(20.083f)
+                        quadToRelative(0.584f, 0f, 0.959f, 0.396f)
+                        quadToRelative(0.375f, 0.395f, 0.375f, 0.937f)
+                        reflectiveQuadToRelative(-0.375f, 0.938f)
+                        quadToRelative(-0.375f, 0.395f, -0.959f, 0.395f)
+                        close()
+                        moveToRelative(0f, 6.834f)
+                        quadToRelative(-0.583f, 0f, -0.958f, -0.375f)
+                        reflectiveQuadTo(12.042f, 20f)
+                        quadToRelative(0f, -0.583f, 0.375f, -0.958f)
+                        reflectiveQuadToRelative(0.958f, -0.375f)
+                        horizontalLineToRelative(20.083f)
+                        quadToRelative(0.584f, 0f, 0.959f, 0.395f)
+                        quadToRelative(0.375f, 0.396f, 0.375f, 0.938f)
+                        quadToRelative(0f, 0.542f, -0.375f, 0.917f)
+                        reflectiveQuadToRelative(-0.959f, 0.375f)
+                        close()
+                        moveToRelative(0f, 6.916f)
+                        quadToRelative(-0.583f, 0f, -0.958f, -0.396f)
+                        quadToRelative(-0.375f, -0.395f, -0.375f, -0.937f)
+                        reflectiveQuadToRelative(0.375f, -0.937f)
+                        quadToRelative(0.375f, -0.396f, 0.958f, -0.396f)
+                        horizontalLineToRelative(20.083f)
+                        quadToRelative(0.584f, 0f, 0.959f, 0.396f)
+                        quadToRelative(0.375f, 0.395f, 0.375f, 0.937f)
+                        reflectiveQuadToRelative(-0.375f, 0.937f)
+                        quadToRelative(-0.375f, 0.396f, -0.959f, 0.396f)
+                        close()
+                        moveToRelative(-6.833f, -13.75f)
+                        quadToRelative(-0.584f, 0f, -0.959f, -0.395f)
+                        quadToRelative(-0.375f, -0.396f, -0.375f, -0.938f)
+                        quadToRelative(0f, -0.583f, 0.375f, -0.958f)
+                        reflectiveQuadToRelative(0.959f, -0.375f)
+                        quadToRelative(0.583f, 0f, 0.958f, 0.375f)
+                        reflectiveQuadToRelative(0.375f, 0.958f)
+                        quadToRelative(0f, 0.542f, -0.375f, 0.938f)
+                        quadToRelative(-0.375f, 0.395f, -0.958f, 0.395f)
+                        close()
+                        moveToRelative(0f, 6.875f)
+                        quadToRelative(-0.584f, 0f, -0.959f, -0.375f)
+                        reflectiveQuadTo(5.208f, 20f)
+                        quadToRelative(0f, -0.583f, 0.375f, -0.958f)
+                        reflectiveQuadToRelative(0.959f, -0.375f)
+                        quadToRelative(0.583f, 0f, 0.958f, 0.375f)
+                        reflectiveQuadToRelative(0.375f, 0.958f)
+                        quadToRelative(0f, 0.583f, -0.375f, 0.958f)
+                        reflectiveQuadToRelative(-0.958f, 0.375f)
+                        close()
+                        moveToRelative(0f, 6.875f)
+                        quadToRelative(-0.584f, 0f, -0.959f, -0.375f)
+                        reflectiveQuadToRelative(-0.375f, -0.958f)
+                        quadToRelative(0f, -0.542f, 0.375f, -0.937f)
+                        quadToRelative(0.375f, -0.396f, 0.959f, -0.396f)
+                        quadToRelative(0.583f, 0f, 0.958f, 0.396f)
+                        quadToRelative(0.375f, 0.395f, 0.375f, 0.937f)
+                        quadToRelative(0f, 0.583f, -0.375f, 0.958f)
+                        reflectiveQuadToRelative(-0.958f, 0.375f)
+                        close()
+                    }
+                }.build()
+            }
+        }
+
+        @Composable
+        fun gridView(color: Color): ImageVector {
+            return remember {
+                ImageVector.Builder(
+                    name = "grid_view",
+                    defaultWidth = 40.0.dp,
+                    defaultHeight = 40.0.dp,
+                    viewportWidth = 40.0f,
+                    viewportHeight = 40.0f
+                ).apply {
+                    path(
+                        fill = SolidColor(color),
+                        fillAlpha = 1f,
+                        stroke = null,
+                        strokeAlpha = 1f,
+                        strokeLineWidth = 1.0f,
+                        strokeLineCap = StrokeCap.Butt,
+                        strokeLineJoin = StrokeJoin.Miter,
+                        strokeLineMiter = 1f,
+                        pathFillType = PathFillType.NonZero
+                    ) {
+                        moveTo(7.875f, 18.667f)
+                        quadToRelative(-1.083f, 0f, -1.854f, -0.771f)
+                        quadToRelative(-0.771f, -0.771f, -0.771f, -1.854f)
+                        verticalLineTo(7.875f)
+                        quadToRelative(0f, -1.083f, 0.771f, -1.854f)
+                        quadToRelative(0.771f, -0.771f, 1.854f, -0.771f)
+                        horizontalLineToRelative(8.167f)
+                        quadToRelative(1.083f, 0f, 1.875f, 0.771f)
+                        quadToRelative(0.791f, 0.771f, 0.791f, 1.854f)
+                        verticalLineToRelative(8.167f)
+                        quadToRelative(0f, 1.083f, -0.791f, 1.854f)
+                        quadToRelative(-0.792f, 0.771f, -1.875f, 0.771f)
+                        close()
+                        moveToRelative(0f, 16.083f)
+                        quadToRelative(-1.083f, 0f, -1.854f, -0.771f)
+                        quadToRelative(-0.771f, -0.771f, -0.771f, -1.854f)
+                        verticalLineToRelative(-8.167f)
+                        quadToRelative(0f, -1.083f, 0.771f, -1.875f)
+                        quadToRelative(0.771f, -0.791f, 1.854f, -0.791f)
+                        horizontalLineToRelative(8.167f)
+                        quadToRelative(1.083f, 0f, 1.875f, 0.791f)
+                        quadToRelative(0.791f, 0.792f, 0.791f, 1.875f)
+                        verticalLineToRelative(8.167f)
+                        quadToRelative(0f, 1.083f, -0.791f, 1.854f)
+                        quadToRelative(-0.792f, 0.771f, -1.875f, 0.771f)
+                        close()
+                        moveToRelative(16.083f, -16.083f)
+                        quadToRelative(-1.083f, 0f, -1.854f, -0.771f)
+                        quadToRelative(-0.771f, -0.771f, -0.771f, -1.854f)
+                        verticalLineTo(7.875f)
+                        quadToRelative(0f, -1.083f, 0.771f, -1.854f)
+                        quadToRelative(0.771f, -0.771f, 1.854f, -0.771f)
+                        horizontalLineToRelative(8.167f)
+                        quadToRelative(1.083f, 0f, 1.854f, 0.771f)
+                        quadToRelative(0.771f, 0.771f, 0.771f, 1.854f)
+                        verticalLineToRelative(8.167f)
+                        quadToRelative(0f, 1.083f, -0.771f, 1.854f)
+                        quadToRelative(-0.771f, 0.771f, -1.854f, 0.771f)
+                        close()
+                        moveToRelative(0f, 16.083f)
+                        quadToRelative(-1.083f, 0f, -1.854f, -0.771f)
+                        quadToRelative(-0.771f, -0.771f, -0.771f, -1.854f)
+                        verticalLineToRelative(-8.167f)
+                        quadToRelative(0f, -1.083f, 0.771f, -1.875f)
+                        quadToRelative(0.771f, -0.791f, 1.854f, -0.791f)
+                        horizontalLineToRelative(8.167f)
+                        quadToRelative(1.083f, 0f, 1.854f, 0.791f)
+                        quadToRelative(0.771f, 0.792f, 0.771f, 1.875f)
+                        verticalLineToRelative(8.167f)
+                        quadToRelative(0f, 1.083f, -0.771f, 1.854f)
+                        quadToRelative(-0.771f, 0.771f, -1.854f, 0.771f)
+                        close()
+                        moveTo(7.875f, 16.042f)
+                        horizontalLineToRelative(8.167f)
+                        verticalLineTo(7.875f)
+                        horizontalLineTo(7.875f)
+                        close()
+                        moveToRelative(16.083f, 0f)
+                        horizontalLineToRelative(8.167f)
+                        verticalLineTo(7.875f)
+                        horizontalLineToRelative(-8.167f)
+                        close()
+                        moveToRelative(0f, 16.083f)
+                        horizontalLineToRelative(8.167f)
+                        verticalLineToRelative(-8.167f)
+                        horizontalLineToRelative(-8.167f)
+                        close()
+                        moveToRelative(-16.083f, 0f)
+                        horizontalLineToRelative(8.167f)
+                        verticalLineToRelative(-8.167f)
+                        horizontalLineTo(7.875f)
+                        close()
+                        moveToRelative(16.083f, -16.083f)
+                        close()
+                        moveToRelative(0f, 7.916f)
+                        close()
+                        moveToRelative(-7.916f, 0f)
+                        close()
+                        moveToRelative(0f, -7.916f)
+                        close()
+                    }
+                }.build()
+            }
+        }
+        @Composable
         fun applets(color: Color): ImageVector {
             return remember {
                 ImageVector.Builder(

@@ -178,9 +178,9 @@ class GameViews {
                                 modifier = Modifier.padding(16.dp),
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Column {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Row(
-                                        modifier = Modifier,
+                                        modifier = Modifier.padding(horizontal = 16.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {

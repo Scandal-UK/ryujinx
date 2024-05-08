@@ -174,10 +174,9 @@ class MainActivity : BaseActivity() {
         }
     }
 
-
     @SuppressLint("RestrictedApi")
-    override fun dispatchKeyEvent(event: KeyEvent?): Boolean {
-        event?.apply {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        event.apply {
             if (physicalControllerManager.onKeyEvent(this))
                 return true
         }
