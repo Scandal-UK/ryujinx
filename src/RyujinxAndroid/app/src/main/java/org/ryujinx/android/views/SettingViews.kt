@@ -29,10 +29,11 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -192,7 +193,7 @@ class SettingViews {
                                 )
                                 settingsViewModel.navController.popBackStack()
                             }) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         })
                 }) { contentPadding ->
@@ -310,7 +311,7 @@ class SettingViews {
                     }
 
                     if (showFirwmareDialog.value) {
-                        AlertDialog(onDismissRequest = {
+                        BasicAlertDialog(onDismissRequest = {
                             if (firmwareInstallState.value != FirmwareInstallState.Install) {
                                 showFirwmareDialog.value = false
                                 settingsViewModel.clearFirmwareSelection(firmwareInstallState)
@@ -552,7 +553,6 @@ class SettingViews {
                             Button(onClick = {
                                 val storage = MainActivity.StorageHelper
                                 storage?.apply {
-                                    val s = this.storage
                                     val callBack = this.onFileSelected
                                     onFileSelected = { requestCode, files ->
                                         run {
@@ -578,7 +578,7 @@ class SettingViews {
                             }
 
                             if (showImportWarning.value) {
-                                AlertDialog(onDismissRequest = {
+                                BasicAlertDialog(onDismissRequest = {
                                     showImportWarning.value = false
                                     importFile.value = null
                                 }) {
@@ -626,7 +626,7 @@ class SettingViews {
                             }
 
                             if (showImportCompletion.value) {
-                                AlertDialog(onDismissRequest = {
+                                BasicAlertDialog(onDismissRequest = {
                                     showImportCompletion.value = false
                                     importFile.value = null
                                     mainViewModel.userViewModel.refreshUsers()
@@ -739,7 +739,7 @@ class SettingViews {
                                 }
 
                                 if (isDriverSelectorOpen.value) {
-                                    AlertDialog(onDismissRequest = {
+                                    BasicAlertDialog(onDismissRequest = {
                                         isDriverSelectorOpen.value = false
 
                                         if (isChanged.value) {
@@ -1064,7 +1064,7 @@ class SettingViews {
                     }
                 }
 
-                BackHandler() {
+                BackHandler {
                     settingsViewModel.save(
                         isHostMapped,
                         useNce, enableVsync, enableDocked, enablePtc, ignoreMissingServices,

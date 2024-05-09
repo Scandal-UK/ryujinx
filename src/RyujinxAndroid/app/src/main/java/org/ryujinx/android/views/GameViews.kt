@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -80,8 +81,6 @@ class GameViews {
             Box(modifier = Modifier.fillMaxSize()) {
                 GameStats(mainViewModel)
 
-                val ryujinxNative = RyujinxNative.instance
-
                 val showController = remember {
                     mutableStateOf(QuickSettings(mainViewModel.activity).useVirtualController)
                 }
@@ -128,19 +127,19 @@ class GameViews {
 
                                     when (event.type) {
                                         PointerEventType.Press -> {
-                                            ryujinxNative.inputSetTouchPoint(
+                                            RyujinxNative.jnaInstance.inputSetTouchPoint(
                                                 position.x.roundToInt(),
                                                 position.y.roundToInt()
                                             )
                                         }
 
                                         PointerEventType.Release -> {
-                                            ryujinxNative.inputReleaseTouchPoint()
+                                            RyujinxNative.jnaInstance.inputReleaseTouchPoint()
 
                                         }
 
                                         PointerEventType.Move -> {
-                                            ryujinxNative.inputSetTouchPoint(
+                                            RyujinxNative.jnaInstance.inputSetTouchPoint(
                                                 position.x.roundToInt(),
                                                 position.y.roundToInt()
                                             )
@@ -209,7 +208,7 @@ class GameViews {
                                         IconButton(modifier = Modifier.padding(4.dp), onClick = {
                                             showMore.value = false
                                             showController.value = !showController.value
-                                            ryujinxNative.inputReleaseTouchPoint()
+                                            RyujinxNative.jnaInstance.inputReleaseTouchPoint()
                                             mainViewModel.controller?.setVisible(showController.value)
                                         }) {
                                             Icon(
@@ -220,7 +219,7 @@ class GameViews {
                                         IconButton(modifier = Modifier.padding(4.dp), onClick = {
                                             showMore.value = false
                                             enableVsync.value = !enableVsync.value
-                                            RyujinxNative.instance.graphicsRendererSetVsync(
+                                            RyujinxNative.jnaInstance.graphicsRendererSetVsync(
                                                 enableVsync.value
                                             )
                                         }) {
@@ -262,10 +261,12 @@ class GameViews {
 
                             if (progressValue.value > -1)
                                 LinearProgressIndicator(
+                                    progress = {
+                                        progressValue.value
+                                    },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 16.dp),
-                                    progress = progressValue.value
                                 )
                             else
                                 LinearProgressIndicator(
@@ -279,7 +280,7 @@ class GameViews {
                 }
 
                 if (showBackNotice.value) {
-                    AlertDialog(onDismissRequest = { showBackNotice.value = false }) {
+                    BasicAlertDialog(onDismissRequest = { showBackNotice.value = false }) {
                         Column {
                             Surface(
                                 modifier = Modifier

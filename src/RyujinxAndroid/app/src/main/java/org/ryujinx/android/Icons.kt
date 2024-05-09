@@ -20,7 +20,7 @@ import compose.icons.CssGgIcons
 import compose.icons.cssggicons.Games
 
 class Icons {
-    companion object{
+    companion object {
         /// Icons exported from https://www.composables.com/icons
         @Composable
         fun listView(color: Color): ImageVector {
@@ -216,6 +216,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun applets(color: Color): ImageVector {
             return remember {
@@ -331,6 +332,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun playArrow(color: Color): ImageVector {
             return remember {
@@ -372,6 +374,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun folderOpen(color: Color): ImageVector {
             return remember {
@@ -437,6 +440,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun gameUpdate(): ImageVector {
             val primaryColor = MaterialTheme.colorScheme.primary
@@ -514,6 +518,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun download(): ImageVector {
             val primaryColor = MaterialTheme.colorScheme.primary
@@ -583,6 +588,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun vSync(): ImageVector {
             val primaryColor = MaterialTheme.colorScheme.primary
@@ -653,6 +659,7 @@ class Icons {
                 }.build()
             }
         }
+
         @Composable
         fun videoGame(): ImageVector {
             val primaryColor = MaterialTheme.colorScheme.primary
@@ -753,7 +760,7 @@ class Icons {
 
 @Preview
 @Composable
-fun Preview(){
+fun Preview() {
     IconButton(modifier = Modifier.padding(4.dp), onClick = {
     }) {
         Icon(

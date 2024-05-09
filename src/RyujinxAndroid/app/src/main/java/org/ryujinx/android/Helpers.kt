@@ -80,9 +80,9 @@ class Helpers {
             currentProgressName: MutableState<String>,
             finish: () -> Unit
         ) {
-            var fPath = path + "/${file.name}";
+            var fPath = path + "/${file.name}"
             var callback: FileCallback? = object : FileCallback() {
-                override fun onFailed(errorCode: FileCallback.ErrorCode) {
+                override fun onFailed(errorCode: ErrorCode) {
                     super.onFailed(errorCode)
                     File(fPath).delete()
                     finish()
@@ -189,7 +189,6 @@ class Helpers {
                             dir.mkdirs()
                         }
                         ZipInputStream(stream).use { zip ->
-                            var count = 0
                             while (true) {
                                 val header = zip.nextEntry ?: break
                                 if (!folders.any { header.fileName.startsWith(it) }) {
@@ -217,7 +216,7 @@ class Helpers {
                 }
             } finally {
                 isImporting.value = false
-                RyujinxNative.instance.deviceReloadFilesystem()
+                RyujinxNative.jnaInstance.deviceReloadFilesystem()
             }
         }
     }

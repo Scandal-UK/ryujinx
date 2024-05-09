@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -50,13 +51,13 @@ class UiHandler {
     var shouldListen = true
 
     init {
-        RyujinxNative.instance.uiHandlerSetup()
+        RyujinxNative.jnaInstance.uiHandlerSetup()
     }
 
     fun listen() {
         showMessage.value = false
         while (shouldListen) {
-            RyujinxNative.instance.uiHandlerWait()
+            RyujinxNative.jnaInstance.uiHandlerWait()
 
             title =
                 NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestTitle())
@@ -79,7 +80,7 @@ class UiHandler {
 
     fun stop() {
         shouldListen = false
-        RyujinxNative.instance.uiHandlerStopWait()
+        RyujinxNative.jnaInstance.uiHandlerStopWait()
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -96,23 +97,24 @@ class UiHandler {
             mutableStateOf("")
         }
 
-        fun validate() : Boolean{
-            if(inputText.value.isEmpty()){
+        fun validate(): Boolean {
+            if (inputText.value.isEmpty()) {
                 validation.value = "Must be between ${minLength} and ${maxLength} characters"
-            }
-            else{
+            } else {
                 return inputText.value.length < minLength || inputText.value.length > maxLength
             }
 
-            return false;
+            return false
         }
 
         fun getInputType(): KeyboardType {
-            return when(mode){
+            return when (mode) {
                 KeyboardMode.Default -> KeyboardType.Text
-                KeyboardMode.Numeric ->  KeyboardType.Decimal
-                KeyboardMode.ASCII ->  KeyboardType.Ascii
-                else -> { KeyboardType.Text}
+                KeyboardMode.Numeric -> KeyboardType.Decimal
+                KeyboardMode.ASCII -> KeyboardType.Ascii
+                else -> {
+                    KeyboardType.Text
+                }
             }
         }
 
@@ -125,15 +127,15 @@ class UiHandler {
                     NativeHelpers.instance.storeStringJava(inputListener.value)
             }
             showMessageListener.value = false
-            RyujinxNative.instance.uiHandlerSetResponse(true, input)
+            RyujinxNative.jnaInstance.uiHandlerSetResponse(true, input)
         }
 
         if (showMessageListener.value) {
-            AlertDialog(
+            BasicAlertDialog(
+                onDismissRequest = { },
                 modifier = Modifier
                     .wrapContentWidth()
                     .wrapContentHeight(),
-                onDismissRequest = { },
                 properties = DialogProperties(dismissOnBackPress = false, false)
             ) {
                 Column {

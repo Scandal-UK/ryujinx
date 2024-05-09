@@ -8,7 +8,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import org.ryujinx.android.GameController
 import org.ryujinx.android.GameHost
-import org.ryujinx.android.GraphicsConfiguration
 import org.ryujinx.android.Logging
 import org.ryujinx.android.MainActivity
 import org.ryujinx.android.MotionSensorManager
@@ -55,24 +54,19 @@ class MainViewModel(val activity: MainActivity) {
     }
 
     fun closeGame() {
-        RyujinxNative.instance.deviceSignalEmulationClose()
+        RyujinxNative.jnaInstance.deviceSignalEmulationClose()
         gameHost?.close()
-        RyujinxNative.instance.deviceCloseEmulation()
+        RyujinxNative.jnaInstance.deviceCloseEmulation()
         motionSensorManager?.unregister()
         physicalControllerManager?.disconnect()
         motionSensorManager?.setControllerId(-1)
     }
 
     fun refreshFirmwareVersion() {
-        var handle = RyujinxNative.instance.deviceGetInstalledFirmwareVersion()
-        if (handle != -1L) {
-            firmwareVersion = NativeHelpers.instance.getStringJava(handle)
-        }
+        firmwareVersion = RyujinxNative.jnaInstance.deviceGetInstalledFirmwareVersion()
     }
 
     fun loadGame(game: GameModel): Boolean {
-        val nativeRyujinx = RyujinxNative.instance
-
         val descriptor = game.open()
 
         if (descriptor == 0)
@@ -85,12 +79,12 @@ class MainViewModel(val activity: MainActivity) {
 
         val settings = QuickSettings(activity)
 
-        var success = nativeRyujinx.graphicsInitialize(GraphicsConfiguration().apply {
-            EnableShaderCache = settings.enableShaderCache
-            EnableTextureRecompression = settings.enableTextureRecompression
-            ResScale = settings.resScale
-            BackendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
-        })
+        var success = RyujinxNative.jnaInstance.graphicsInitialize(
+            enableShaderCache = settings.enableShaderCache,
+            enableTextureRecompression = settings.enableTextureRecompression,
+            rescale = settings.resScale,
+            backendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
+        )
 
         if (!success)
             return false
@@ -139,8 +133,11 @@ class MainViewModel(val activity: MainActivity) {
 
         }
 
-        success = nativeRyujinx.graphicsInitializeRenderer(
-            nativeInterop.VkRequiredExtensions!!,
+        val extensions = nativeInterop.VkRequiredExtensions
+
+        success = RyujinxNative.jnaInstance.graphicsInitializeRenderer(
+            extensions!!,
+            extensions.size,
             driverHandle
         )
         if (!success)
@@ -151,7 +148,7 @@ class MainViewModel(val activity: MainActivity) {
             semaphore.acquire()
             launchOnUiThread {
                 // We are only able to initialize the emulation context on the main thread
-                success = nativeRyujinx.deviceInitialize(
+                success = RyujinxNative.jnaInstance.deviceInitialize(
                     settings.isHostMapped,
                     settings.useNce,
                     SystemLanguage.AmericanEnglish.ordinal,
@@ -160,7 +157,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.enableDocked,
                     settings.enablePtc,
                     false,
-                    NativeHelpers.instance.storeStringJava("UTC"),
+                    "UTC",
                     settings.ignoreMissingServices
                 )
 
@@ -173,28 +170,24 @@ class MainViewModel(val activity: MainActivity) {
         if (!success)
             return false
 
-        success = nativeRyujinx.deviceLoadDescriptor(descriptor, game.type.ordinal, update)
+        success =
+            RyujinxNative.jnaInstance.deviceLoadDescriptor(descriptor, game.type.ordinal, update)
 
-        if (!success)
-            return false
-
-        return true
+        return success
     }
 
     fun loadMiiEditor(): Boolean {
-        val nativeRyujinx = RyujinxNative.instance
-
         gameModel = null
         isMiiEditorLaunched = true
 
         val settings = QuickSettings(activity)
 
-        var success = nativeRyujinx.graphicsInitialize(GraphicsConfiguration().apply {
-            EnableShaderCache = settings.enableShaderCache
-            EnableTextureRecompression = settings.enableTextureRecompression
-            ResScale = settings.resScale
-            BackendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
-        })
+        var success = RyujinxNative.jnaInstance.graphicsInitialize(
+            enableShaderCache = settings.enableShaderCache,
+            enableTextureRecompression = settings.enableTextureRecompression,
+            rescale = settings.resScale,
+            backendThreading = org.ryujinx.android.BackendThreading.Auto.ordinal
+        )
 
         if (!success)
             return false
@@ -243,8 +236,11 @@ class MainViewModel(val activity: MainActivity) {
 
         }
 
-        success = nativeRyujinx.graphicsInitializeRenderer(
-            nativeInterop.VkRequiredExtensions!!,
+        val extensions = nativeInterop.VkRequiredExtensions
+
+        success = RyujinxNative.jnaInstance.graphicsInitializeRenderer(
+            extensions!!,
+            extensions.size,
             driverHandle
         )
         if (!success)
@@ -255,7 +251,7 @@ class MainViewModel(val activity: MainActivity) {
             semaphore.acquire()
             launchOnUiThread {
                 // We are only able to initialize the emulation context on the main thread
-                success = nativeRyujinx.deviceInitialize(
+                success = RyujinxNative.jnaInstance.deviceInitialize(
                     settings.isHostMapped,
                     settings.useNce,
                     SystemLanguage.AmericanEnglish.ordinal,
@@ -264,7 +260,7 @@ class MainViewModel(val activity: MainActivity) {
                     settings.enableDocked,
                     settings.enablePtc,
                     false,
-                    NativeHelpers.instance.storeStringJava("UTC"),
+                    "UTC",
                     settings.ignoreMissingServices
                 )
 
@@ -277,12 +273,9 @@ class MainViewModel(val activity: MainActivity) {
         if (!success)
             return false
 
-        success = nativeRyujinx.deviceLaunchMiiEditor()
+        success = RyujinxNative.jnaInstance.deviceLaunchMiiEditor()
 
-        if (!success)
-            return false
-
-        return true
+        return success
     }
 
     fun clearPptcCache(titleId: String) {

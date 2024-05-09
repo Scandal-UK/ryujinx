@@ -1,6 +1,5 @@
 package org.ryujinx.android.viewmodels
 
-import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 import java.util.Base64
 
@@ -14,52 +13,45 @@ class UserViewModel {
 
     fun refreshUsers() {
         userList.clear()
-        val native = RyujinxNative.instance
-        val helper = NativeHelpers.instance
         val decoder = Base64.getDecoder()
         openedUser = UserModel()
-        openedUser.id = helper.getStringJava(native.userGetOpenedUser())
+        openedUser.id = RyujinxNative.jnaInstance.userGetOpenedUser()
         if (openedUser.id.isNotEmpty()) {
-            openedUser.username =
-                helper.getStringJava(native.userGetUserName(helper.storeStringJava(openedUser.id)))
+            openedUser.username = RyujinxNative.jnaInstance.userGetUserName(openedUser.id)
             openedUser.userPicture = decoder.decode(
-                helper.getStringJava(
-                    native.userGetUserPicture(
-                        helper.storeStringJava(openedUser.id)
-                    )
+                RyujinxNative.jnaInstance.userGetUserPicture(
+                    openedUser.id
                 )
             )
         }
 
-        val users = native.userGetAllUsers()
+        val users = RyujinxNative.jnaInstance.userGetAllUsers()
         for (user in users) {
             userList.add(
                 UserModel(
                     user,
-                    helper.getStringJava(native.userGetUserName(helper.storeStringJava(user))),
+                    RyujinxNative.jnaInstance.userGetUserName(user),
                     decoder.decode(
-                        helper.getStringJava(
-                            native.userGetUserPicture(
-                                helper.storeStringJava(user)
-                            )
-                        )
+                        RyujinxNative.jnaInstance.userGetUserPicture(user)
                     )
                 )
             )
         }
     }
 
-    fun openUser(userModel: UserModel){
-        val native = RyujinxNative.instance
-        val helper = NativeHelpers.instance
-        native.userOpenUser(helper.storeStringJava(userModel.id))
+    fun openUser(userModel: UserModel) {
+        RyujinxNative.jnaInstance.userOpenUser(userModel.id)
 
         refreshUsers()
     }
 }
 
 
-data class UserModel(var id : String = "", var username: String = "", var userPicture: ByteArray? = null) {
+data class UserModel(
+    var id: String = "",
+    var username: String = "",
+    var userPicture: ByteArray? = null
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

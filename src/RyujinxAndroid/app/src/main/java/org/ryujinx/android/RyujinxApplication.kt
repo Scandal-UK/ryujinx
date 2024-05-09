@@ -9,11 +9,12 @@ class RyujinxApplication : Application() {
         instance = this
     }
 
-    fun getPublicFilesDir() : File = getExternalFilesDir(null) ?: filesDir
+    fun getPublicFilesDir(): File = getExternalFilesDir(null) ?: filesDir
+
     companion object {
-        lateinit var instance : RyujinxApplication
+        lateinit var instance: RyujinxApplication
             private set
 
-        val context : Context get() = instance.applicationContext
+        val context: Context get() = instance.applicationContext
     }
 }

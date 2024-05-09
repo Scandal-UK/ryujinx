@@ -11,7 +11,6 @@ import com.anggrayudi.storage.file.getAbsolutePath
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.ryujinx.android.MainActivity
-import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 import java.io.File
 
@@ -40,14 +39,14 @@ class DlcViewModel(val titleId: String) {
                         val path = file.getAbsolutePath(storageHelper.storage.context)
                         if (path.isNotEmpty()) {
                             data?.apply {
-                                val contents = RyujinxNative.instance.deviceGetDlcContentList(
-                                    NativeHelpers.instance.storeStringJava(path),
+                                val contents = RyujinxNative.jnaInstance.deviceGetDlcContentList(
+                                    path,
                                     titleId.toLong(16)
                                 )
 
                                 if (contents.isNotEmpty()) {
                                     val contentPath = path
-                                    val container = DlcContainerList(contentPath);
+                                    val container = DlcContainerList(contentPath)
 
                                     for (content in contents)
                                         container.dlc_nca_list.add(
@@ -90,7 +89,7 @@ class DlcViewModel(val titleId: String) {
                 val containerPath = container.path
 
                 if (!File(containerPath).exists())
-                    continue;
+                    continue
 
                 for (dlc in container.dlc_nca_list) {
                     val enabled = remember {
@@ -102,7 +101,10 @@ class DlcViewModel(val titleId: String) {
                             enabled,
                             containerPath,
                             dlc.fullPath,
-                            NativeHelpers.instance.getStringJava(RyujinxNative.instance.deviceGetDlcTitleId(NativeHelpers.instance.storeStringJava(containerPath), NativeHelpers.instance.storeStringJava(dlc.fullPath)))
+                            RyujinxNative.jnaInstance.deviceGetDlcTitleId(
+                                containerPath,
+                                dlc.fullPath
+                            )
                         )
                     )
                 }
@@ -143,11 +145,13 @@ data class DlcContainerList(
 data class DlcContainer(
     var enabled: Boolean = false,
     var titleId: String = "",
-    var fullPath: String = "")
+    var fullPath: String = ""
+)
 
 data class DlcItem(
-    var name:String = "",
+    var name: String = "",
     var isEnabled: MutableState<Boolean> = mutableStateOf(false),
     var containerPath: String = "",
     var fullPath: String = "",
-    var titleId: String = "")
+    var titleId: String = ""
+)

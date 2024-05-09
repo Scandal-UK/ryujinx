@@ -12,7 +12,6 @@ import com.anggrayudi.storage.file.extension
 import com.anggrayudi.storage.file.getAbsolutePath
 import org.ryujinx.android.LogLevel
 import org.ryujinx.android.MainActivity
-import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 import java.io.File
 import kotlin.concurrent.thread
@@ -28,7 +27,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         sharedPref = getPreferences()
         previousFolderCallback = activity.storageHelper!!.onFolderSelected
         previousFileCallback = activity.storageHelper!!.onFileSelected
-        activity.storageHelper!!.onFolderSelected = { requestCode, folder ->
+        activity.storageHelper!!.onFolderSelected = { _, folder ->
             run {
                 val p = folder.getAbsolutePath(activity)
                 val editor = sharedPref.edit()
@@ -146,18 +145,24 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         editor.apply()
         activity.storageHelper!!.onFolderSelected = previousFolderCallback
 
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Debug.ordinal, enableDebugLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Info.ordinal, enableInfoLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Stub.ordinal, enableStubLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Warning.ordinal, enableWarningLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Error.ordinal, enableErrorLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.AccessLog.ordinal, enableAccessLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Guest.ordinal, enableGuestLogs.value)
-        RyujinxNative.instance.loggingSetEnabled(LogLevel.Trace.ordinal, enableTraceLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Debug.ordinal, enableDebugLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Info.ordinal, enableInfoLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Stub.ordinal, enableStubLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(
+            LogLevel.Warning.ordinal,
+            enableWarningLogs.value
+        )
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Error.ordinal, enableErrorLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(
+            LogLevel.AccessLog.ordinal,
+            enableAccessLogs.value
+        )
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Guest.ordinal, enableGuestLogs.value)
+        RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Trace.ordinal, enableTraceLogs.value)
     }
 
     fun openGameFolder() {
-        val path = sharedPref?.getString("gameFolder", "") ?: ""
+        val path = sharedPref.getString("gameFolder", "") ?: ""
 
         if (path.isEmpty())
             activity.storageHelper?.storage?.openFolderPicker()
@@ -169,13 +174,13 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
     }
 
     fun importProdKeys() {
-        activity.storageHelper!!.onFileSelected = { requestCode, files ->
+        activity.storageHelper!!.onFileSelected = { _, files ->
             run {
                 activity.storageHelper!!.onFileSelected = previousFileCallback
                 val file = files.firstOrNull()
                 file?.apply {
                     if (name == "prod.keys") {
-                        val outputFile = File(MainActivity.AppPath + "/system");
+                        val outputFile = File(MainActivity.AppPath + "/system")
                         outputFile.delete()
 
                         thread {
@@ -183,9 +188,6 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
                                 activity,
                                 outputFile,
                                 callback = object : FileCallback() {
-                                    override fun onCompleted(result: Any) {
-                                        super.onCompleted(result)
-                                    }
                                 })
                         }
                     }
@@ -209,14 +211,13 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
                             val descriptor =
                                 activity.contentResolver.openFileDescriptor(file.uri, "rw")
                             descriptor?.use { d ->
-                                val version = RyujinxNative.instance.deviceVerifyFirmware(
-                                    d.fd,
-                                    extension == "xci"
-                                )
+                                selectedFirmwareVersion =
+                                    RyujinxNative.jnaInstance.deviceVerifyFirmware(
+                                        d.fd,
+                                        extension == "xci"
+                                    )
                                 selectedFirmwareFile = file
-                                if (version != -1L) {
-                                    selectedFirmwareVersion =
-                                        NativeHelpers.instance.getStringJava(version)
+                                if (selectedFirmwareVersion.isEmpty()) {
                                     installState.value = FirmwareInstallState.Query
                                 } else {
                                     installState.value = FirmwareInstallState.Cancelled
@@ -246,7 +247,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
                 installState.value = FirmwareInstallState.Install
                 thread {
                     try {
-                        RyujinxNative.instance.deviceInstallFirmware(
+                        RyujinxNative.jnaInstance.deviceInstallFirmware(
                             d.fd,
                             extension == "xci"
                         )

@@ -27,8 +27,6 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     private var _isStarted: Boolean = false
     private val nativeWindow: NativeWindow
 
-    private var _nativeRyujinx: RyujinxNative = RyujinxNative.instance
-
     init {
         holder.addCallback(this)
 
@@ -47,21 +45,21 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         if (_width != width || _height != height) {
             val window = nativeWindow.requeryWindowHandle()
-            _nativeRyujinx.graphicsSetSurface(window, nativeWindow.nativePointer)
+            RyujinxNative.jnaInstance.graphicsSetSurface(window, nativeWindow.nativePointer)
 
-            nativeWindow.swapInterval = 0;
+            nativeWindow.swapInterval = 0
         }
 
         _width = width
         _height = height
 
-        _nativeRyujinx.graphicsRendererSetSize(
+        RyujinxNative.jnaInstance.graphicsRendererSetSize(
             width,
             height
         )
 
         if (_isStarted) {
-            _nativeRyujinx.inputSetClientSize(width, height)
+            RyujinxNative.jnaInstance.inputSetClientSize(width, height)
         }
     }
 
@@ -86,14 +84,14 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
 
         _isStarted = true
 
-        game = if (mainViewModel.isMiiEditorLaunched) null else mainViewModel.gameModel;
+        game = if (mainViewModel.isMiiEditorLaunched) null else mainViewModel.gameModel
 
-        _nativeRyujinx.inputInitialize(width, height)
+        RyujinxNative.jnaInstance.inputInitialize(width, height)
 
         val id = mainViewModel.physicalControllerManager?.connect()
         mainViewModel.motionSensorManager?.setControllerId(id ?: -1)
 
-        _nativeRyujinx.graphicsRendererSetSize(
+        RyujinxNative.jnaInstance.graphicsRendererSetSize(
             surfaceHolder.surfaceFrame.width(),
             surfaceHolder.surfaceFrame.height()
         )
@@ -108,12 +106,12 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
             var c = 0
             val helper = NativeHelpers.instance
             while (_isStarted) {
-                _nativeRyujinx.inputUpdate()
+                RyujinxNative.jnaInstance.inputUpdate()
                 Thread.sleep(1)
 
                 showLoading?.apply {
                     if (value) {
-                        var value = helper.getProgressValue()
+                        val value = helper.getProgressValue()
 
                         if (value != -1f)
                             progress?.apply {
@@ -134,9 +132,9 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
                         }
                     c = 0
                     mainViewModel.updateStats(
-                        _nativeRyujinx.deviceGetGameFifo(),
-                        _nativeRyujinx.deviceGetGameFrameRate(),
-                        _nativeRyujinx.deviceGetGameFrameTime()
+                        RyujinxNative.jnaInstance.deviceGetGameFifo(),
+                        RyujinxNative.jnaInstance.deviceGetGameFrameRate(),
+                        RyujinxNative.jnaInstance.deviceGetGameFrameTime()
                     )
                 }
             }
@@ -148,7 +146,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         thread {
             mainViewModel.activity.uiHandler.listen()
         }
-        _nativeRyujinx.graphicsRendererRunLoop()
+        RyujinxNative.jnaInstance.graphicsRendererRunLoop()
 
         game?.close()
     }

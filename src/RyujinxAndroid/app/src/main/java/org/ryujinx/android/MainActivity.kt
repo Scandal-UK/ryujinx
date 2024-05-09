@@ -42,7 +42,7 @@ class MainActivity : BaseActivity() {
         fun frameEnded(gameTime: Long) {
             mainViewModel?.activity?.apply {
                 if (isActive && QuickSettings(this).enablePerformanceMode) {
-                    mainViewModel?.performanceManager?.setTurboMode(true);
+                    mainViewModel?.performanceManager?.setTurboMode(true)
                 }
             }
             mainViewModel?.gameHost?.hideProgressIndicator()
@@ -65,40 +65,40 @@ class MainActivity : BaseActivity() {
         val appPath: String = AppPath
 
         var quickSettings = QuickSettings(this)
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Debug.ordinal,
             quickSettings.enableDebugLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Info.ordinal,
             quickSettings.enableInfoLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Stub.ordinal,
             quickSettings.enableStubLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Warning.ordinal,
             quickSettings.enableWarningLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Error.ordinal,
             quickSettings.enableErrorLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.AccessLog.ordinal,
             quickSettings.enableAccessLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Guest.ordinal,
             quickSettings.enableGuestLogs
         )
-        RyujinxNative.instance.loggingSetEnabled(
+        RyujinxNative.jnaInstance.loggingSetEnabled(
             LogLevel.Trace.ordinal,
             quickSettings.enableTraceLogs
         )
         val success =
-            RyujinxNative.instance.initialize(NativeHelpers.instance.storeStringJava(appPath))
+            RyujinxNative.jnaInstance.javaInitialize(appPath)
 
         uiHandler = UiHandler()
         _isInit = success

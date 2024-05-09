@@ -3,8 +3,6 @@ package org.ryujinx.android.views
 import android.content.res.Resources
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
@@ -38,25 +36,22 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -69,14 +64,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.HorizontalAlignmentLine
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
 import androidx.navigation.NavHostController
 import com.anggrayudi.storage.extension.launchOnUiThread
 import org.ryujinx.android.R
@@ -377,7 +368,7 @@ class HomeViews {
                 }
 
                 if (showLoading.value) {
-                    AlertDialog(onDismissRequest = { }) {
+                    BasicAlertDialog(onDismissRequest = { }) {
                         Card(
                             modifier = Modifier
                                 .padding(16.dp)
@@ -401,7 +392,7 @@ class HomeViews {
                     }
                 }
                 if (openTitleUpdateDialog.value) {
-                    AlertDialog(onDismissRequest = {
+                    BasicAlertDialog(onDismissRequest = {
                         openTitleUpdateDialog.value = false
                     }) {
                         Surface(
@@ -419,7 +410,7 @@ class HomeViews {
                     }
                 }
                 if (openDlcDialog.value) {
-                    AlertDialog(onDismissRequest = {
+                    BasicAlertDialog(onDismissRequest = {
                         openDlcDialog.value = false
                     }) {
                         Surface(
@@ -451,14 +442,13 @@ class HomeViews {
                                         thread {
                                             showLoading.value = true
                                             val success =
-                                                viewModel.mainViewModel?.loadGame(viewModel.mainViewModel.selected!!)
-                                                    ?: false
+                                                viewModel.mainViewModel.loadGame(viewModel.mainViewModel.selected!!)
                                             if (success) {
                                                 launchOnUiThread {
-                                                    viewModel.mainViewModel?.navigateToGame()
+                                                    viewModel.mainViewModel.navigateToGame()
                                                 }
                                             } else {
-                                                viewModel.mainViewModel?.selected!!.close()
+                                                viewModel.mainViewModel.selected!!.close()
                                             }
                                             showLoading.value = false
                                         }
@@ -487,7 +477,7 @@ class HomeViews {
                                         }, onClick = {
                                             showAppMenu.value = false
                                             viewModel.mainViewModel?.clearPptcCache(
-                                                viewModel.mainViewModel?.selected?.titleId ?: ""
+                                                viewModel.mainViewModel.selected?.titleId ?: ""
                                             )
                                         })
                                         DropdownMenuItem(text = {
@@ -495,7 +485,7 @@ class HomeViews {
                                         }, onClick = {
                                             showAppMenu.value = false
                                             viewModel.mainViewModel?.purgeShaderCache(
-                                                viewModel.mainViewModel?.selected?.titleId ?: ""
+                                                viewModel.mainViewModel.selected?.titleId ?: ""
                                             )
                                         })
                                         DropdownMenuItem(text = {
@@ -548,7 +538,7 @@ class HomeViews {
                         onClick = {
                             if (viewModel.mainViewModel?.selected != null) {
                                 showAppActions.value = false
-                                viewModel.mainViewModel?.apply {
+                                viewModel.mainViewModel.apply {
                                     selected = null
                                 }
                                 selectedModel.value = null
@@ -639,7 +629,7 @@ class HomeViews {
                         onClick = {
                             if (viewModel.mainViewModel?.selected != null) {
                                 showAppActions.value = false
-                                viewModel.mainViewModel?.apply {
+                                viewModel.mainViewModel.apply {
                                     selected = null
                                 }
                                 selectedModel.value = null

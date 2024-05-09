@@ -2,6 +2,7 @@ package org.ryujinx.android
 
 enum class GamePadButtonInputId {
     None,
+
     // Buttons
     A,
     B,
