@@ -5,7 +5,6 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.file.extension
-import org.ryujinx.android.NativeHelpers
 import org.ryujinx.android.RyujinxNative
 
 
@@ -24,8 +23,8 @@ class GameModel(var file: DocumentFile, val context: Context) {
     init {
         fileName = file.name
         val pid = open()
-        val ext = NativeHelpers.instance.storeStringJava(file.extension)
-        val gameInfo = RyujinxNative.instance.deviceGetGameInfo(pid, ext)
+        val gameInfo = GameInfo()
+        RyujinxNative.jnaInstance.deviceGetGameInfo(pid, file.extension, gameInfo)
         close()
 
         fileSize = gameInfo.FileSize
@@ -46,28 +45,28 @@ class GameModel(var file: DocumentFile, val context: Context) {
         }
     }
 
-    fun open() : Int {
+    fun open(): Int {
         descriptor = context.contentResolver.openFileDescriptor(file.uri, "rw")
 
         return descriptor?.fd ?: 0
     }
 
-    fun openUpdate() : Int {
-        if(titleId?.isNotEmpty() == true) {
+    fun openUpdate(): Int {
+        if (titleId?.isNotEmpty() == true) {
             val vm = TitleUpdateViewModel(titleId ?: "")
 
-            if(vm.data?.selected?.isNotEmpty() == true){
+            if (vm.data?.selected?.isNotEmpty() == true) {
                 val uri = Uri.parse(vm.data?.selected)
                 val file = DocumentFile.fromSingleUri(context, uri)
-                if(file?.exists() == true){
+                if (file?.exists() == true) {
                     updateDescriptor = context.contentResolver.openFileDescriptor(file.uri, "rw")
 
-                    return updateDescriptor ?.fd ?: -1;
+                    return updateDescriptor?.fd ?: -1
                 }
             }
         }
 
-        return -1;
+        return -1
     }
 
     fun close() {
@@ -78,16 +77,7 @@ class GameModel(var file: DocumentFile, val context: Context) {
     }
 }
 
-class GameInfo {
-    var FileSize = 0.0
-    var TitleName: String? = null
-    var TitleId: String? = null
-    var Developer: String? = null
-    var Version: String? = null
-    var Icon: String? = null
-}
-
-enum class FileType{
+enum class FileType {
     None,
     Nsp,
     Xci,

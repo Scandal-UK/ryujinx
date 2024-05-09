@@ -50,13 +50,19 @@ class DlcViews {
 
             Column(modifier = Modifier.padding(16.dp)) {
                 Column {
-                    Row(modifier = Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(text = "DLC for ${name}", textAlign = TextAlign.Center, modifier = Modifier.align(
-                            Alignment.CenterVertically
-                        ))
+                    Row(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "DLC for ${name}",
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.align(
+                                Alignment.CenterVertically
+                            )
+                        )
                     }
                     Surface(
                         modifier = Modifier
@@ -65,19 +71,22 @@ class DlcViews {
                         shape = MaterialTheme.shapes.medium
                     ) {
 
-                        if(refresh.value) {
+                        if (refresh.value) {
                             dlcList.clear()
                             dlcList.addAll(viewModel.getDlc())
                             refresh.value = false
                         }
-                        LazyColumn(modifier = Modifier
-                            .fillMaxWidth()
-                            .height(400.dp)){
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(400.dp)
+                        ) {
                             items(dlcList) { dlcItem ->
                                 dlcItem.apply {
-                                    Row(modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxWidth()
+                                    Row(
+                                        modifier = Modifier
+                                            .padding(8.dp)
+                                            .fillMaxWidth()
                                     ) {
                                         Checkbox(
                                             checked = (dlcItem.isEnabled.value),
@@ -94,7 +103,8 @@ class DlcViews {
                                                 viewModel.remove(dlcItem)
                                                 refresh.value = true
                                             }) {
-                                            Icon(Icons.Filled.Delete,
+                                            Icon(
+                                                Icons.Filled.Delete,
                                                 contentDescription = "remove"
                                             )
                                         }

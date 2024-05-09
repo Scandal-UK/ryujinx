@@ -11,8 +11,8 @@ android {
         applicationId "org.ryujinx.android"
         minSdk 30
         targetSdk 34
-        versionCode 10030
-        versionName '1.0.30t'
+        versionCode 10031
+        versionName '1.0.31'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -76,6 +76,7 @@ tasks.named("preBuild") {
 }
 
 dependencies {
+    implementation group: 'net.java.dev.jna', name: 'jna', version: '5.14.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.12.0'
     implementation platform('androidx.compose:compose-bom:2024.05.00')

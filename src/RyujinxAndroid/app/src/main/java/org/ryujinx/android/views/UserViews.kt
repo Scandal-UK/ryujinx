@@ -17,7 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -43,10 +43,11 @@ class UserViews {
     companion object {
         @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
         @Composable
-        fun Main(viewModel: MainViewModel? = null, navController: NavHostController? = null) {
+        fun Main(viewModel: MainViewModel? = null) {
             val reload = remember {
                 mutableStateOf(true)
             }
+
             fun refresh() {
                 viewModel?.userViewModel?.refreshUsers()
                 reload.value = true
@@ -64,7 +65,7 @@ class UserViews {
                             IconButton(onClick = {
                                 viewModel?.navController?.popBackStack()
                             }) {
-                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         })
                 }) { contentPadding ->
@@ -133,10 +134,14 @@ class UserViews {
                                 .fillMaxSize()
                                 .padding(4.dp)
                         ) {
-                            if(viewModel?.userViewModel?.userList?.isNotEmpty() == true) {
+                            if (viewModel?.userViewModel?.userList?.isNotEmpty() == true) {
                                 items(viewModel.userViewModel.userList) { user ->
                                     Image(
-                                        bitmap = BitmapFactory.decodeByteArray(user.userPicture, 0, user.userPicture?.size ?: 0)
+                                        bitmap = BitmapFactory.decodeByteArray(
+                                            user.userPicture,
+                                            0,
+                                            user.userPicture?.size ?: 0
+                                        )
                                             .asImageBitmap(),
                                         contentDescription = "selected image",
                                         contentScale = ContentScale.Crop,
@@ -165,6 +170,6 @@ class UserViews {
     @Preview
     @Composable
     fun Preview() {
-        UserViews.Main()
+        Main()
     }
 }

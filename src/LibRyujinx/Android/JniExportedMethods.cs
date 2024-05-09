@@ -1,9 +1,5 @@
-using LibRyujinx.Jni;
 using LibRyujinx.Jni.Pointers;
-using LibRyujinx.Jni.Primitives;
 using LibRyujinx.Jni.References;
-using LibRyujinx.Jni.Values;
-using Rxmxnx.PInvoke;
 using Ryujinx.Audio.Backends.OpenAL;
 using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
@@ -18,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -99,14 +96,8 @@ namespace LibRyujinx
 
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
 
-        [UnmanagedCallersOnly(EntryPoint = "JNI_OnLoad")]
-        internal static int LoadLibrary(JavaVMRef vm, IntPtr unknown)
-        {
-            return 0x00010006; //JNI_VERSION_1_6
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_initialize")]
-        public static JBoolean JniInitialize(JEnvRef jEnv, JObjectLocalRef jObj, JLong jpathId)
+        [UnmanagedCallersOnly(EntryPoint = "javaInitialize")]
+        public static bool JniInitialize(IntPtr jpathId)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             PlatformInfo.IsBionic = true;
@@ -118,7 +109,7 @@ namespace LibRyujinx
                     AsyncLogTargetOverflowAction.Block
                 ));
 
-            var path = GetStoredString(jpathId);
+            var path = Marshal.PtrToStringAnsi(jpathId);
 
             var init = Initialize(path);
 
@@ -138,70 +129,71 @@ namespace LibRyujinx
             return s;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceReloadFilesystem")]
-        public static void JniReloadFileSystem()
+        [UnmanagedCallersOnly(EntryPoint = "deviceReloadFilesystem")]
+        public static void JnaReloadFileSystem()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SwitchDevice?.ReloadFileSystem();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceInitialize")]
-        public static JBoolean JniInitializeDeviceNative(JEnvRef jEnv,
-                                                         JObjectLocalRef jObj,
-                                                         JBoolean isHostMapped,
-                                                         JBoolean useNce,
-                                                         JInt systemLanguage,
-                                                         JInt regionCode,
-                                                         JBoolean enableVsync,
-                                                         JBoolean enableDockedMode,
-                                                         JBoolean enablePtc,
-                                                         JBoolean enableInternetAccess,
-                                                         JLong timeZoneId,
-                                                         JBoolean ignoreMissingServices)
+        [UnmanagedCallersOnly(EntryPoint = "deviceInitialize")]
+        public static bool JnaDeviceInitialize(bool isHostMapped,
+                                                    bool useNce,
+                                                    int systemLanguage,
+                                                    int regionCode,
+                                                    bool enableVsync,
+                                                    bool enableDockedMode,
+                                                    bool enablePtc,
+                                                    bool enableInternetAccess,
+                                                    IntPtr timeZonePtr,
+                                                    bool ignoreMissingServices)
         {
+            debug_break(4);
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            AudioDriver = new OpenALHardwareDeviceDriver();//new OboeHardwareDeviceDriver();
+            AudioDriver = new OpenALHardwareDeviceDriver();
+
+            var timezone = Marshal.PtrToStringAnsi(timeZonePtr);
             return InitializeDevice(isHostMapped,
                                     useNce,
-                                    (SystemLanguage)(int)systemLanguage,
-                                    (RegionCode)(int)regionCode,
+                                    (SystemLanguage)systemLanguage,
+                                    (RegionCode)regionCode,
                                     enableVsync,
                                     enableDockedMode,
                                     enablePtc,
                                     enableInternetAccess,
-                                    GetStoredString(timeZoneId),
+                                    timezone,
                                     ignoreMissingServices);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameFifo")]
-        public static JDouble JniGetGameFifo(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetGameFifo")]
+        public static double JnaGetGameFifo()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
+            var stats = SwitchDevice?.EmulationContext?.Statistics.GetFifoPercent() ?? 0;
 
             return stats;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameFrameTime")]
-        public static JDouble JniGetGameFrameTime(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetGameFrameTime")]
+        public static double JnaGetGameFrameTime()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
+            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameTime() ?? 0;
 
             return stats;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameFrameRate")]
-        public static JDouble JniGetGameFrameRate(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetGameFrameRate")]
+        public static double JnaGetGameFrameRate()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var stats = SwitchDevice.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
+            var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
 
             return stats;
         }
 
         [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceLoad")]
-        public static JBoolean JniLoadApplicationNative(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef pathPtr)
+        public static bool JniLoadApplicationNative(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef pathPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             if (SwitchDevice?.EmulationContext == null)
@@ -214,8 +206,8 @@ namespace LibRyujinx
             return LoadApplication(path);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceLaunchMiiEditor")]
-        public static JBoolean JniLaunchMiiEditApplet(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceLaunchMiiEditor")]
+        public static bool JNALaunchMiiEditApplet()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             if (SwitchDevice?.EmulationContext == null)
@@ -226,38 +218,38 @@ namespace LibRyujinx
             return LaunchMiiEditApplet();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetDlcContentList")]
-        public static JArrayLocalRef JniGetDlcContentListNative(JEnvRef jEnv, JObjectLocalRef jObj, JLong pathPtr, JLong titleId)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetDlcContentList")]
+        public static IntPtr JniGetDlcContentListNative(IntPtr pathPtr, long titleId)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var list = GetDlcContentList(GetStoredString(pathPtr), (ulong)(long)titleId);
+            var list = GetDlcContentList(Marshal.PtrToStringAnsi(pathPtr) ?? "", (ulong)titleId);
 
-            return CreateStringArray(jEnv, list);
+            return CreateStringArray(list);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetDlcTitleId")]
-        public static JLong JniGetDlcTitleIdNative(JEnvRef jEnv, JObjectLocalRef jObj, JLong pathPtr, JLong ncaPath)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetDlcTitleId")]
+        public static long JniGetDlcTitleIdNative(IntPtr pathPtr, IntPtr ncaPath)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            return storeString(GetDlcTitleId(GetStoredString(pathPtr), GetStoredString(ncaPath)));
+            return Marshal.StringToHGlobalAnsi(GetDlcTitleId(Marshal.PtrToStringAnsi(pathPtr) ?? "", Marshal.PtrToStringAnsi(ncaPath) ?? ""));
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceSignalEmulationClose")]
-        public static void JniSignalEmulationCloseNative(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceSignalEmulationClose")]
+        public static void JniSignalEmulationCloseNative()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SignalEmulationClose();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceCloseEmulation")]
-        public static void JniCloseEmulationNative(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceCloseEmulation")]
+        public static void JniCloseEmulationNative()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             CloseEmulation();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceLoadDescriptor")]
-        public static JBoolean JniLoadApplicationNative(JEnvRef jEnv, JObjectLocalRef jObj, JInt descriptor, JInt type, JInt updateDescriptor)
+        [UnmanagedCallersOnly(EntryPoint = "deviceLoadDescriptor")]
+        public static bool JnaLoadApplicationNative(int descriptor, int type, int updateDescriptor)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             if (SwitchDevice?.EmulationContext == null)
@@ -268,17 +260,17 @@ namespace LibRyujinx
             var stream = OpenFile(descriptor);
             var update = updateDescriptor == -1 ? null : OpenFile(updateDescriptor);
 
-            return LoadApplication(stream, (FileType)(int)type, update);
+            return LoadApplication(stream, (FileType)type, update);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceVerifyFirmware")]
-        public static JLong JniVerifyFirmware(JEnvRef jEnv, JObjectLocalRef jObj, JInt descriptor, JBoolean isXci)
+        [UnmanagedCallersOnly(EntryPoint = "deviceVerifyFirmware")]
+        public static IntPtr JniVerifyFirmware(int descriptor, bool isXci)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
             var stream = OpenFile(descriptor);
 
-            long stringHandle = -1;
+            IntPtr stringHandle = 0;
 
             try
             {
@@ -286,19 +278,19 @@ namespace LibRyujinx
 
                 if (version != null)
                 {
-                    stringHandle = storeString(version.VersionString);
+                    stringHandle = Marshal.StringToHGlobalAnsi(version.VersionString);
                 }
             }
             catch(Exception _)
             {
-
+                Logger.Error?.Print(LogClass.Service, $"Unable to verify firmware. Exception: {_}");
             }
 
             return stringHandle;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceInstallFirmware")]
-        public static void JniInstallFirmware(JEnvRef jEnv, JObjectLocalRef jObj, JInt descriptor, JBoolean isXci)
+        [UnmanagedCallersOnly(EntryPoint = "deviceInstallFirmware")]
+        public static void JniInstallFirmware(int descriptor, bool isXci)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
@@ -307,58 +299,47 @@ namespace LibRyujinx
             InstallFirmware(stream, isXci);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetInstalledFirmwareVersion")]
-        public static JLong JniGetInstalledFirmwareVersion(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetInstalledFirmwareVersion")]
+        public static IntPtr JniGetInstalledFirmwareVersion()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
             var version = GetInstalledFirmwareVersion();
-            long stringHandle = -1;
+            IntPtr stringHandle = 0;
 
             if (version != String.Empty)
             {
-                stringHandle = storeString(version);
+                stringHandle = Marshal.StringToHGlobalAnsi(version);
             }
 
             return stringHandle;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsInitialize")]
-        public static JBoolean JniInitializeGraphicsNative(JEnvRef jEnv, JObjectLocalRef jObj, JObjectLocalRef graphicObject)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsInitialize")]
+        public static bool JnaGraphicsInitialize(float resScale,
+                float maxAnisotropy,
+                bool fastGpuTime,
+                bool fast2DCopy,
+                bool enableMacroJit,
+                bool enableMacroHLE,
+                bool enableShaderCache,
+                bool enableTextureRecompression,
+                int backendThreading)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            JEnvValue value = jEnv.Environment;
-            ref JNativeInterface jInterface = ref value.Functions;
-            IntPtr getObjectClassPtr = jInterface.GetObjectClassPointer;
-            IntPtr getFieldIdPtr = jInterface.GetFieldIdPointer;
-            IntPtr getIntFieldPtr = jInterface.GetIntFieldPointer;
-            IntPtr getLongFieldPtr = jInterface.GetLongFieldPointer;
-            IntPtr getFloatFieldPtr = jInterface.GetFloatFieldPointer;
-            IntPtr getBooleanFieldPtr = jInterface.GetBooleanFieldPointer;
-
-            var getObjectClass = getObjectClassPtr.GetUnsafeDelegate<GetObjectClassDelegate>();
-            var getFieldId = getFieldIdPtr.GetUnsafeDelegate<GetFieldIdDelegate>();
-            var getLongField = getLongFieldPtr.GetUnsafeDelegate<GetLongFieldDelegate>();
-            var getIntField = getIntFieldPtr.GetUnsafeDelegate<GetIntFieldDelegate>();
-            var getBooleanField = getBooleanFieldPtr.GetUnsafeDelegate<GetBooleanFieldDelegate>();
-            var getFloatField = getFloatFieldPtr.GetUnsafeDelegate<GetFloatFieldDelegate>();
-
-            var jobject = getObjectClass(jEnv, graphicObject);
-
-            GraphicsConfiguration graphicsConfiguration = new()
-            {
-                EnableShaderCache = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableShaderCache"), GetCCharSequence("Z"))),
-                EnableMacroHLE = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableMacroHLE"), GetCCharSequence("Z"))),
-                EnableMacroJit = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableMacroJit"), GetCCharSequence("Z"))),
-                EnableTextureRecompression = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("EnableTextureRecompression"), GetCCharSequence("Z"))),
-                Fast2DCopy = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("Fast2DCopy"), GetCCharSequence("Z"))),
-                FastGpuTime = getBooleanField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("FastGpuTime"), GetCCharSequence("Z"))),
-                ResScale = getFloatField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("ResScale"), GetCCharSequence("F"))),
-                MaxAnisotropy = getFloatField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("MaxAnisotropy"), GetCCharSequence("F"))),
-                BackendThreading = (BackendThreading)(int)getIntField(jEnv, graphicObject, getFieldId(jEnv, jobject, GetCCharSequence("BackendThreading"), GetCCharSequence("I")))
-            };
             SearchPathContainer.Platform = UnderlyingPlatform.Android;
-            return InitializeGraphics(graphicsConfiguration);
+            return InitializeGraphics(new GraphicsConfiguration()
+            {
+                ResScale = resScale,
+                MaxAnisotropy = maxAnisotropy,
+                FastGpuTime = fastGpuTime,
+                Fast2DCopy = fast2DCopy,
+                EnableMacroJit = enableMacroJit,
+                EnableMacroHLE = enableMacroHLE,
+                EnableShaderCache = enableShaderCache,
+                EnableTextureRecompression = enableTextureRecompression,
+                BackendThreading = (BackendThreading)backendThreading
+            });
         }
 
         private static CCharSequence GetCCharSequence(string s)
@@ -366,8 +347,8 @@ namespace LibRyujinx
             return Encoding.UTF8.GetBytes(s).AsSpan();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsSetSurface")]
-        public static void JniSetSurface(JEnvRef jEnv, JObjectLocalRef jObj, JLong surfacePtr, JLong window)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsSetSurface")]
+        public static void JniSetSurface(long surfacePtr, long window)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             _surfacePtr = surfacePtr;
@@ -376,11 +357,10 @@ namespace LibRyujinx
             _surfaceEvent.Set();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsInitializeRenderer")]
-        public unsafe static JBoolean JniInitializeGraphicsRendererNative(JEnvRef jEnv,
-                                                                          JObjectLocalRef jObj,
-                                                                          JArrayLocalRef extensionsArray,
-                                                                          JLong driverHandle)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsInitializeRenderer")]
+        public unsafe static bool JnaGraphicsInitializeRenderer(char** extensionsArray,
+                                                                          int extensionsLength,
+                                                                          long driverHandle)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             if (Renderer != null)
@@ -388,37 +368,16 @@ namespace LibRyujinx
                 return false;
             }
 
-            JEnvValue value = jEnv.Environment;
-            ref JNativeInterface jInterface = ref value.Functions;
-            IntPtr getObjectClassPtr = jInterface.GetObjectClassPointer;
-            IntPtr getFieldIdPtr = jInterface.GetFieldIdPointer;
-            IntPtr getLongFieldPtr = jInterface.GetLongFieldPointer;
-            IntPtr getArrayLengthPtr = jInterface.GetArrayLengthPointer;
-            IntPtr getObjectArrayElementPtr = jInterface.GetObjectArrayElementPointer;
-            IntPtr getObjectFieldPtr = jInterface.GetObjectFieldPointer;
-
-            var getObjectClass = getObjectClassPtr.GetUnsafeDelegate<GetObjectClassDelegate>();
-            var getFieldId = getFieldIdPtr.GetUnsafeDelegate<GetFieldIdDelegate>();
-            var getArrayLength = getArrayLengthPtr.GetUnsafeDelegate<GetArrayLengthDelegate>();
-            var getObjectArrayElement = getObjectArrayElementPtr.GetUnsafeDelegate<GetObjectArrayElementDelegate>();
-            var getLongField = getLongFieldPtr.GetUnsafeDelegate<GetLongFieldDelegate>();
-            var getObjectField = getObjectFieldPtr.GetUnsafeDelegate<GetObjectFieldDelegate>();
-
             List<string?> extensions = new();
 
-            var count = getArrayLength(jEnv, extensionsArray);
-
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < extensionsLength; i++)
             {
-                var obj = getObjectArrayElement(jEnv, extensionsArray, i);
-                var ext = obj.Transform<JObjectLocalRef, JStringLocalRef>();
-
-                extensions.Add(GetString(jEnv, ext));
+                extensions.Add(Marshal.PtrToStringAnsi((IntPtr)extensionsArray[i]));
             }
 
-            if ((long)driverHandle != 0)
+            if (driverHandle != 0)
             {
-                VulkanLoader = new VulkanLoader((IntPtr)(long)driverHandle);
+                VulkanLoader = new VulkanLoader((IntPtr)driverHandle);
             }
 
             CreateSurface createSurfaceFunc = instance =>
@@ -446,36 +405,29 @@ namespace LibRyujinx
             return InitializeGraphicsRenderer(GraphicsBackend.Vulkan, createSurfaceFunc, extensions.ToArray());
         }
 
-        private static JArrayLocalRef CreateStringArray(JEnvRef jEnv, List<string> strings)
+        private unsafe static IntPtr CreateStringArray(List<string> strings)
         {
-            JEnvValue value = jEnv.Environment;
-            ref JNativeInterface jInterface = ref value.Functions;
-            IntPtr newObjectArrayPtr = jInterface.NewObjectArrayPointer;
-            IntPtr findClassPtr = jInterface.FindClassPointer;
-            IntPtr setObjectArrayElementPtr = jInterface.SetObjectArrayElementPointer;
-
-            var newObjectArray = newObjectArrayPtr.GetUnsafeDelegate<NewObjectArrayDelegate>();
-            var findClass = findClassPtr.GetUnsafeDelegate<FindClassDelegate>();
-            var setObjectArrayElement = setObjectArrayElementPtr.GetUnsafeDelegate<SetObjectArrayElementDelegate>();
-            var array = newObjectArray(jEnv, strings.Count, findClass(jEnv, GetCCharSequence("java/lang/String")), CreateString(jEnv, "")._value);
+            uint size = (uint)(Marshal.SizeOf<IntPtr>() * (strings.Count + 1));
+            var array = (char**)Marshal.AllocHGlobal((int)size);
+            Unsafe.InitBlockUnaligned(array, 0, size);
 
             for (int i = 0; i < strings.Count; i++)
             {
-                setObjectArrayElement(jEnv, array, i, CreateString(jEnv, strings[i])._value);
+                array[i] = (char*)Marshal.StringToHGlobalAnsi(strings[i]);
             }
 
-            return array;
+            return (nint)array;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsRendererSetSize")]
-        public static void JniSetRendererSizeNative(JEnvRef jEnv, JObjectLocalRef jObj, JInt width, JInt height)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsRendererSetSize")]
+        public static void JnaSetRendererSizeNative(int width, int height)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             Renderer?.Window?.SetSize(width, height);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsRendererRunLoop")]
-        public static void JniRunLoopNative(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsRendererRunLoop")]
+        public static void JniRunLoopNative()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SetSwapBuffersCallback(() =>
@@ -487,84 +439,32 @@ namespace LibRyujinx
         }
 
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_loggingSetEnabled")]
-        public static void JniSetLoggingEnabledNative(JEnvRef jEnv, JObjectLocalRef jObj, JInt logLevel, JBoolean enabled)
+        [UnmanagedCallersOnly(EntryPoint = "loggingSetEnabled")]
+        public static void JniSetLoggingEnabledNative(int logLevel, bool enabled)
         {
-            Logger.SetEnable((LogLevel)(int)logLevel, enabled);
+            Logger.SetEnable((LogLevel)logLevel, enabled);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameInfoFromPath")]
-        public static JObjectLocalRef JniGetGameInfo(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef path)
-        {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var info = GetGameInfo(GetString(jEnv, path));
-            return GetInfo(jEnv, info);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceGetGameInfo")]
-        public static JObjectLocalRef JniGetGameInfo(JEnvRef jEnv, JObjectLocalRef jObj, JInt fileDescriptor, JLong extension)
+        [UnmanagedCallersOnly(EntryPoint = "deviceGetGameInfo")]
+        public unsafe static void JniGetGameInfo(int fileDescriptor, IntPtr extension, IntPtr infoPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             using var stream = OpenFile(fileDescriptor);
-            var ext = GetStoredString(extension);
-            var info = GetGameInfo(stream, ext.ToLower());
-            return GetInfo(jEnv, info);
+            var ext = Marshal.PtrToStringAnsi(extension);
+            var info = GetGameInfo(stream, ext.ToLower()) ?? GetDefaultInfo(stream);
+            var i = (GameInfoNative*)infoPtr;
+            var n = new GameInfoNative(info);
+            i->TitleId = n.TitleId;
+            i->TitleName = n.TitleName;
+            i->Version = n.Version;
+            i->FileSize = n.FileSize;
+            i->Icon = n.Icon;
+            i->Version = n.Version;
+            i->Developer = n.Developer;
         }
 
-        private static JObjectLocalRef GetInfo(JEnvRef jEnv, GameInfo? info)
-        {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var javaClassName = GetCCharSequence("org/ryujinx/android/viewmodels/GameInfo");
-
-            JEnvValue value = jEnv.Environment;
-            ref JNativeInterface jInterface = ref value.Functions;
-            IntPtr findClassPtr = jInterface.FindClassPointer;
-            IntPtr newGlobalRefPtr = jInterface.NewGlobalRefPointer;
-            IntPtr getFieldIdPtr = jInterface.GetFieldIdPointer;
-            IntPtr getMethodPtr = jInterface.GetMethodIdPointer;
-            IntPtr newObjectPtr = jInterface.NewObjectPointer;
-            IntPtr setObjectFieldPtr = jInterface.SetObjectFieldPointer;
-            IntPtr setDoubleFieldPtr = jInterface.SetDoubleFieldPointer;
-
-
-            var findClass = findClassPtr.GetUnsafeDelegate<FindClassDelegate>();
-            var newGlobalRef = newGlobalRefPtr.GetUnsafeDelegate<NewGlobalRefDelegate>();
-            var getFieldId = getFieldIdPtr.GetUnsafeDelegate<GetFieldIdDelegate>();
-            var getMethod = getMethodPtr.GetUnsafeDelegate<GetMethodIdDelegate>();
-            var newObject = newObjectPtr.GetUnsafeDelegate<NewObjectDelegate>();
-            var setObjectField = setObjectFieldPtr.GetUnsafeDelegate<SetObjectFieldDelegate>();
-            var setDoubleField = setDoubleFieldPtr.GetUnsafeDelegate<SetDoubleFieldDelegate>();
-
-            var javaClass = findClass(jEnv, javaClassName);
-            var newGlobal = newGlobalRef(jEnv, javaClass._value);
-            var constructor = getMethod(jEnv, javaClass, GetCCharSequence("<init>"), GetCCharSequence("()V"));
-            var newObj = newObject(jEnv, javaClass, constructor, 0);
-
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleName"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.TitleName)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("TitleId"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.TitleId)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Developer"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.Developer)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Version"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, info?.Version)._value);
-            setObjectField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("Icon"), GetCCharSequence("Ljava/lang/String;")), CreateString(jEnv, Convert.ToBase64String(info?.Icon ?? Array.Empty<byte>()))._value);
-            setDoubleField(jEnv, newObj, getFieldId(jEnv, javaClass, GetCCharSequence("FileSize"), GetCCharSequence("D")), info?.FileSize ?? 0d);
-
-            return newObj;
-        }
-
-        private static JStringLocalRef CreateString(JEnvRef jEnv, string? s)
-        {
-            s ??= string.Empty;
-
-            var ptr = Marshal.StringToHGlobalAnsi(s);
-
-            var str = createString(jEnv, ptr);
-
-            Marshal.FreeHGlobal(ptr);
-
-            return str;
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsRendererSetVsync")]
-        public static void JniSetVsyncStateNative(JEnvRef jEnv, JObjectLocalRef jObj, JBoolean enabled)
+        [UnmanagedCallersOnly(EntryPoint = "graphicsRendererSetVsync")]
+        public static void JnaSetVsyncStateNative(bool enabled)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SetVsyncState(enabled);
@@ -577,196 +477,197 @@ namespace LibRyujinx
             _swapBuffersCallback = Marshal.GetDelegateForFunctionPointer<SwapBuffersCallback>(swapBuffersCallback);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputInitialize")]
-        public static void JniInitializeInput(JEnvRef jEnv, JObjectLocalRef jObj, JInt width, JInt height)
+        [UnmanagedCallersOnly(EntryPoint = "inputInitialize")]
+        public static void JnaInitializeInput(int width, int height)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             InitializeInput(width, height);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetClientSize")]
-        public static void JniSetClientSize(JEnvRef jEnv, JObjectLocalRef jObj, JInt width, JInt height)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetClientSize")]
+        public static void JnaSetClientSize(int width, int height)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SetClientSize(width, height);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetTouchPoint")]
-        public static void JniSetTouchPoint(JEnvRef jEnv, JObjectLocalRef jObj, JInt x, JInt y)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetTouchPoint")]
+        public static void JnaSetTouchPoint(int x, int y)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SetTouchPoint(x, y);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputReleaseTouchPoint")]
-        public static void JniReleaseTouchPoint(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "inputReleaseTouchPoint")]
+        public static void JnaReleaseTouchPoint()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             ReleaseTouchPoint();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputUpdate")]
-        public static void JniUpdateInput(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "inputUpdate")]
+        public static void JniUpdateInput()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             UpdateInput();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetButtonPressed")]
-        public static void JniSetButtonPressed(JEnvRef jEnv, JObjectLocalRef jObj, JInt button, JInt id)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetButtonPressed")]
+        public static void JnaSetButtonPressed(int button, int id)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            SetButtonPressed((GamepadButtonInputId)(int)button, id);
+            SetButtonPressed((GamepadButtonInputId)button, id);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetButtonReleased")]
-        public static void JniSetButtonReleased(JEnvRef jEnv, JObjectLocalRef jObj, JInt button, JInt id)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetButtonReleased")]
+        public static void JnaSetButtonReleased(int button, int id)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            SetButtonReleased((GamepadButtonInputId)(int)button, id);
+            SetButtonReleased((GamepadButtonInputId)button, id);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetAccelerometerData")]
-        public static void JniSetAccelerometerData(JEnvRef jEnv, JObjectLocalRef jObj, JFloat x, JFloat y, JFloat z, JInt id)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetAccelerometerData")]
+        public static void JniSetAccelerometerData(float x, float y, float z, int id)
         {
             var accel = new Vector3(x, y, z);
             SetAccelerometerData(accel, id);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetGyroData")]
-        public static void JniSetGyroData(JEnvRef jEnv, JObjectLocalRef jObj, JFloat x, JFloat y, JFloat z, JInt id)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetGyroData")]
+        public static void JniSetGyroData(float x, float y, float z, int id)
         {
             var gryo = new Vector3(x, y, z);
             SetGryoData(gryo, id);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputSetStickAxis")]
-        public static void JniSetStickAxis(JEnvRef jEnv, JObjectLocalRef jObj, JInt stick, JFloat x, JFloat y, JInt id)
+        [UnmanagedCallersOnly(EntryPoint = "inputSetStickAxis")]
+        public static void JnaSetStickAxis(int stick, float x, float y, int id)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            SetStickAxis((StickInputId)(int)stick, new Vector2(float.IsNaN(x) ? 0 : x, float.IsNaN(y) ? 0 : y), id);
+            SetStickAxis((StickInputId)stick, new Vector2(float.IsNaN(x) ? 0 : x, float.IsNaN(y) ? 0 : y), id);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_inputConnectGamepad")]
-        public static JInt JniConnectGamepad(JEnvRef jEnv, JObjectLocalRef jObj, JInt index)
+        [UnmanagedCallersOnly(EntryPoint = "inputConnectGamepad")]
+        public static int JnaConnectGamepad(int index)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             return ConnectGamepad(index);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetOpenedUser")]
-        public static JLong JniGetOpenedUser(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "userGetOpenedUser")]
+        public static IntPtr JniGetOpenedUser()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var userId = GetOpenedUser();
+            var ptr = Marshal.StringToHGlobalAnsi(userId);
 
-            return storeString(userId);
+            return ptr;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetUserPicture")]
-        public static JLong JniGetUserPicture(JEnvRef jEnv, JObjectLocalRef jObj, JLong userIdPtr)
+        [UnmanagedCallersOnly(EntryPoint = "userGetUserPicture")]
+        public static IntPtr JniGetUserPicture(IntPtr userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetStoredString(userIdPtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
-            return storeString(GetUserPicture(userId));
+            return Marshal.StringToHGlobalAnsi(GetUserPicture(userId));
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userSetUserPicture")]
-        public static void JniGetUserPicture(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr, JStringLocalRef picturePtr)
+        [UnmanagedCallersOnly(EntryPoint = "userSetUserPicture")]
+        public static void JniGetUserPicture(IntPtr userIdPtr, IntPtr picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetString(jEnv, userIdPtr) ?? "";
-            var picture = GetString(jEnv, picturePtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             SetUserPicture(userId, picture);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetUserName")]
-        public static JLong JniGetUserName(JEnvRef jEnv, JObjectLocalRef jObj, JLong userIdPtr)
+        [UnmanagedCallersOnly(EntryPoint = "userGetUserName")]
+        public static IntPtr JniGetUserName(IntPtr userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetStoredString(userIdPtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
-            return storeString(GetUserName(userId));
+            return Marshal.StringToHGlobalAnsi(GetUserName(userId));
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userSetUserName")]
-        public static void JniSetUserName(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr, JStringLocalRef userNamePtr)
+        [UnmanagedCallersOnly(EntryPoint = "userSetUserName")]
+        public static void JniSetUserName(IntPtr userIdPtr, IntPtr userNamePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetString(jEnv, userIdPtr) ?? "";
-            var userName = GetString(jEnv, userNamePtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
+            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
 
             SetUserName(userId, userName);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userGetAllUsers")]
-        public static JArrayLocalRef JniGetAllUsers(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "userGetAllUsers")]
+        public static IntPtr JniGetAllUsers()
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             var users = GetAllUsers();
 
-            return CreateStringArray(jEnv, users.ToList());
+            return CreateStringArray(users.ToList());
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userAddUser")]
-        public static void JniAddUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userNamePtr, JStringLocalRef picturePtr)
+        [UnmanagedCallersOnly(EntryPoint = "userAddUser")]
+        public static void JniAddUser(IntPtr userNamePtr, IntPtr picturePtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userName = GetString(jEnv, userNamePtr) ?? "";
-            var picture = GetString(jEnv, picturePtr) ?? "";
+            var userName = Marshal.PtrToStringAnsi(userNamePtr) ?? "";
+            var picture = Marshal.PtrToStringAnsi(picturePtr) ?? "";
 
             AddUser(userName, picture);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userDeleteUser")]
-        public static void JniDeleteUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        [UnmanagedCallersOnly(EntryPoint = "userDeleteUser")]
+        public static void JniDeleteUser(IntPtr userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetString(jEnv, userIdPtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             DeleteUser(userId);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_uiHandlerSetup")]
-        public static void JniSetupUiHandler(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "uiHandlerSetup")]
+        public static void JniSetupUiHandler()
         {
             SetupUiHandler();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_uiHandlerWait")]
-        public static void JniWaitUiHandler(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "uiHandlerWait")]
+        public static void JniWaitUiHandler()
         {
             WaitUiHandler();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_uiHandlerStopWait")]
-        public static void JniStopUiHandlerWait(JEnvRef jEnv, JObjectLocalRef jObj)
+        [UnmanagedCallersOnly(EntryPoint = "uiHandlerStopWait")]
+        public static void JniStopUiHandlerWait()
         {
             StopUiHandlerWait();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_uiHandlerSetResponse")]
-        public static void JniSetUiHandlerResponse(JEnvRef jEnv, JObjectLocalRef jObj, JBoolean isOkPressed, JLong input)
+        [UnmanagedCallersOnly(EntryPoint = "uiHandlerSetResponse")]
+        public static void JniSetUiHandlerResponse(bool isOkPressed, long input)
         {
             SetUiHandlerResponse(isOkPressed, input);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userOpenUser")]
-        public static void JniOpenUser(JEnvRef jEnv, JObjectLocalRef jObj, JLong userIdPtr)
+        [UnmanagedCallersOnly(EntryPoint = "userOpenUser")]
+        public static void JniOpenUser(IntPtr userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetStoredString(userIdPtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             OpenUser(userId);
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_userCloseUser")]
-        public static void JniCloseUser(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef userIdPtr)
+        [UnmanagedCallersOnly(EntryPoint = "userCloseUser")]
+        public static void JniCloseUser(IntPtr userIdPtr)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            var userId = GetString(jEnv, userIdPtr) ?? "";
+            var userId = Marshal.PtrToStringAnsi(userIdPtr) ?? "";
 
             CloseUser(userId);
         }

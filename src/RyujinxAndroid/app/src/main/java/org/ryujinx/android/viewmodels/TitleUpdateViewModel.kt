@@ -53,8 +53,11 @@ class TitleUpdateViewModel(val titleId: String) {
                 if (requestCode == UpdateRequestCode) {
                     val file = files.firstOrNull()
                     file?.apply {
-                        if(file.extension == "nsp"){
-                            storageHelper.storage.context.contentResolver.takePersistableUriPermission(file.uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        if (file.extension == "nsp") {
+                            storageHelper.storage.context.contentResolver.takePersistableUriPermission(
+                                file.uri,
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
                             currentPaths.add(file.uri.toString())
                         }
                     }
@@ -72,7 +75,7 @@ class TitleUpdateViewModel(val titleId: String) {
             currentPaths.forEach {
                 val uri = Uri.parse(it)
                 val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
-                if(file?.exists() == true){
+                if (file?.exists() == true) {
                     existingPaths.add(it)
                 }
             }
@@ -108,20 +111,19 @@ class TitleUpdateViewModel(val titleId: String) {
             currentPaths.forEach {
                 val uri = Uri.parse(it)
                 val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
-                if(file?.exists() == true){
+                if (file?.exists() == true) {
                     savedUpdates.add(it)
                 }
             }
             metadata.paths = savedUpdates
 
-            if(selected.isNotEmpty()){
+            if (selected.isNotEmpty()) {
                 val uri = Uri.parse(selected)
                 val file = DocumentFile.fromSingleUri(storageHelper.storage.context, uri)
-                if(file?.exists() == true){
+                if (file?.exists() == true) {
                     metadata.selected = selected
                 }
-            }
-            else {
+            } else {
                 metadata.selected = selected
             }
 

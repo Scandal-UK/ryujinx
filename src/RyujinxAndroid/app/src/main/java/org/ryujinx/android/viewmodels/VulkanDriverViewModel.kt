@@ -18,7 +18,7 @@ class VulkanDriverViewModel(val activity: MainActivity) {
         const val DriverFolder: String = "drivers"
     }
 
-    private fun getAppPath() : String {
+    private fun getAppPath(): String {
         var appPath =
             MainActivity.AppPath
         appPath += "/"
@@ -26,29 +26,29 @@ class VulkanDriverViewModel(val activity: MainActivity) {
         return appPath
     }
 
-    fun ensureDriverPath() : File {
+    fun ensureDriverPath(): File {
         val driverPath = getAppPath() + DriverFolder
 
         val driverFolder = File(driverPath)
 
-        if(!driverFolder.exists())
+        if (!driverFolder.exists())
             driverFolder.mkdirs()
 
         return driverFolder
     }
 
-    fun getAvailableDrivers() : MutableList<DriverMetadata> {
+    fun getAvailableDrivers(): MutableList<DriverMetadata> {
         val driverFolder = ensureDriverPath()
 
         val folders = driverFolder.walkTopDown()
 
         val drivers = mutableListOf<DriverMetadata>()
-        
+
         val selectedDriverFile = File(driverFolder.absolutePath + "/selected")
-        if(selectedDriverFile.exists()){
+        if (selectedDriverFile.exists()) {
             selected = selectedDriverFile.readText()
 
-            if(!File(selected).exists()) {
+            if (!File(selected).exists()) {
                 selected = ""
                 saveSelected()
             }
@@ -56,13 +56,13 @@ class VulkanDriverViewModel(val activity: MainActivity) {
 
         val gson = Gson()
 
-        for (folder in folders){
-            if(folder.isDirectory && folder.parent == driverFolder.absolutePath){
+        for (folder in folders) {
+            if (folder.isDirectory && folder.parent == driverFolder.absolutePath) {
                 val meta = File(folder.absolutePath + "/meta.json")
 
-                if(meta.exists()){
+                if (meta.exists()) {
                     val metadata = gson.fromJson(meta.readText(), DriverMetadata::class.java)
-                    if(metadata.name.isNotEmpty()) {
+                    if (metadata.name.isNotEmpty()) {
                         val driver = folder.absolutePath + "/${metadata.libraryName}"
                         metadata.driverPath = driver
                         if (File(driver).exists())
@@ -82,10 +82,10 @@ class VulkanDriverViewModel(val activity: MainActivity) {
         selectedDriverFile.writeText(selected)
     }
 
-    fun removeSelected(){
-        if(selected.isNotEmpty()){
+    fun removeSelected() {
+        if (selected.isNotEmpty()) {
             val sel = File(selected)
-            if(sel.exists()) {
+            if (sel.exists()) {
                 sel.parentFile?.deleteRecursively()
             }
             selected = ""
@@ -102,12 +102,11 @@ class VulkanDriverViewModel(val activity: MainActivity) {
             onFileSelected = { requestCode, files ->
                 run {
                     onFileSelected = callBack
-                    if(requestCode == DriverRequestCode)
-                    {
+                    if (requestCode == DriverRequestCode) {
                         val file = files.firstOrNull()
                         file?.apply {
                             val path = file.getAbsolutePath(storage.context)
-                            if (path.isNotEmpty()){
+                            if (path.isNotEmpty()) {
                                 val name = file.name?.removeSuffix("." + file.extension) ?: ""
                                 val driverFolder = ensureDriverPath()
                                 val extractionFolder = File(driverFolder.absolutePath + "/${name}")
@@ -117,14 +116,18 @@ class VulkanDriverViewModel(val activity: MainActivity) {
                                     zip.entries().asSequence().forEach { entry ->
 
                                         zip.getInputStream(entry).use { input ->
-                                            val filePath = extractionFolder.absolutePath + File.separator + entry.name
+                                            val filePath =
+                                                extractionFolder.absolutePath + File.separator + entry.name
 
                                             if (!entry.isDirectory) {
                                                 File(filePath).delete()
-                                                val bos = BufferedOutputStream(FileOutputStream(filePath))
+                                                val bos =
+                                                    BufferedOutputStream(FileOutputStream(filePath))
                                                 val bytesIn = ByteArray(4096)
                                                 var read: Int
-                                                while (input.read(bytesIn).also { read = it } != -1) {
+                                                while (input.read(bytesIn)
+                                                        .also { read = it } != -1
+                                                ) {
                                                     bos.write(bytesIn, 0, read)
                                                 }
                                                 bos.close()
@@ -144,7 +147,8 @@ class VulkanDriverViewModel(val activity: MainActivity) {
                     }
                 }
             }
-            openFilePicker(DriverRequestCode,
+            openFilePicker(
+                DriverRequestCode,
                 filterMimeTypes = arrayOf("application/zip")
             )
         }
@@ -152,14 +156,14 @@ class VulkanDriverViewModel(val activity: MainActivity) {
 }
 
 data class DriverMetadata(
-    var schemaVersion : Int = 0,
-    var name : String = "",
-    var description : String = "",
-    var author : String = "",
-    var packageVersion : String = "",
-    var vendor : String = "",
-    var driverVersion : String = "",
-    var minApi : Int = 0,
-    var libraryName : String = "",
-    var driverPath : String = ""
+    var schemaVersion: Int = 0,
+    var name: String = "",
+    var description: String = "",
+    var author: String = "",
+    var packageVersion: String = "",
+    var vendor: String = "",
+    var driverVersion: String = "",
+    var minApi: Int = 0,
+    var libraryName: String = "",
+    var driverPath: String = ""
 )

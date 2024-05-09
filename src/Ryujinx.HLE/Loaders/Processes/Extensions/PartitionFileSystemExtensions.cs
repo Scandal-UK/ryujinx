@@ -121,10 +121,13 @@ namespace Ryujinx.HLE.Loaders.Processes.Extensions
                 string addOnContentMetadataPath = System.IO.Path.Combine(AppDataManager.GamesDirPath, mainNca.GetProgramIdBase().ToString("x16"), "dlc.json");
                 if (File.Exists(addOnContentMetadataPath))
                 {
+                    Logger.Info?.Print(LogClass.Loader, $"DLC Found : {addOnContentMetadataPath}");
                     List<DownloadableContentContainer> dlcContainerList = JsonHelper.DeserializeFromFile(addOnContentMetadataPath, _contentSerializerContext.ListDownloadableContentContainer);
+                    Logger.Info?.Print(LogClass.Loader, $"DLC Found : {addOnContentMetadataPath}. Available: {dlcContainerList.Count}");
 
                     foreach (DownloadableContentContainer downloadableContentContainer in dlcContainerList)
                     {
+                        Logger.Info?.Print(LogClass.Loader, $"DLC Contents Available: {downloadableContentContainer.DownloadableContentNcaList.Count}");
                         foreach (DownloadableContentNca downloadableContentNca in downloadableContentContainer.DownloadableContentNcaList)
                         {
                             if (File.Exists(downloadableContentContainer.ContainerPath))

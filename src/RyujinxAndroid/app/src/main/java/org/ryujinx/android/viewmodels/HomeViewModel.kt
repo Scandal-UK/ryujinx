@@ -46,37 +46,38 @@ class HomeViewModel(
         }
     }
 
-    fun filter(query : String){
+    fun filter(query: String) {
         gameList.clear()
-        gameList.addAll(loadedCache.filter { it.titleName != null && it.titleName!!.isNotEmpty() && (query.trim()
-            .isEmpty() || it.titleName!!.lowercase(Locale.getDefault())
-            .contains(query)) })
+        gameList.addAll(loadedCache.filter {
+            it.titleName != null && it.titleName!!.isNotEmpty() && (query.trim()
+                .isEmpty() || it.titleName!!.lowercase(Locale.getDefault())
+                .contains(query))
+        })
     }
 
-    fun requestReload(){
+    fun requestReload() {
         shouldReload = true
     }
 
-    fun reloadGameList() {
-        var storage = activity?.storageHelper ?: return
-        
-        if(isLoading)
+    private fun reloadGameList() {
+        activity?.storageHelper ?: return
+
+        if (isLoading)
             return
         val folder = gameFolderPath ?: return
 
         gameList.clear()
-        
+
         isLoading = true
         thread {
             try {
                 loadedCache.clear()
-                val files = mutableListOf<GameModel>()
                 for (file in folder.search(false, DocumentFileType.FILE)) {
                     if (file.extension == "xci" || file.extension == "nsp" || file.extension == "nro")
                         activity.let {
                             val item = GameModel(file, it)
 
-                            if(item.titleId?.isNotEmpty() == true && item.titleName?.isNotEmpty() == true) {
+                            if (item.titleId?.isNotEmpty() == true && item.titleName?.isNotEmpty() == true && item.titleName != "Unknown") {
                                 loadedCache.add(item)
                                 gameList.add(item)
                             }

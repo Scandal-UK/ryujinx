@@ -6,6 +6,7 @@ class NativeHelpers {
 
     companion object {
         val instance = NativeHelpers()
+
         init {
             System.loadLibrary("ryujinxjni")
         }
@@ -27,18 +28,18 @@ class NativeHelpers {
     external fun getMaxSwapInterval(nativeWindow: Long): Int
     external fun getMinSwapInterval(nativeWindow: Long): Int
     external fun setSwapInterval(nativeWindow: Long, swapInterval: Int): Int
-    external fun getProgressInfo() : String
-    external fun getProgressValue() : Float
-    external fun storeStringJava(string: String) : Long
-    external fun getStringJava(id: Long) : String
+    external fun getProgressInfo(): String
+    external fun getProgressValue(): Float
+    external fun storeStringJava(string: String): Long
+    external fun getStringJava(id: Long): String
     external fun setIsInitialOrientationFlipped(isFlipped: Boolean)
-    external fun getUiHandlerRequestType() : Int
-    external fun getUiHandlerRequestTitle() : Long
-    external fun getUiHandlerRequestMessage() : Long
-    external fun getUiHandlerMinLength() : Int
-    external fun getUiHandlerMaxLength() : Int
-    external fun getUiHandlerKeyboardMode() : Int
-    external fun getUiHandlerRequestWatermark() : Long
-    external fun getUiHandlerRequestInitialText() : Long
-    external fun getUiHandlerRequestSubtitle() : Long
+    external fun getUiHandlerRequestType(): Int
+    external fun getUiHandlerRequestTitle(): Long
+    external fun getUiHandlerRequestMessage(): Long
+    external fun getUiHandlerMinLength(): Int
+    external fun getUiHandlerMaxLength(): Int
+    external fun getUiHandlerKeyboardMode(): Int
+    external fun getUiHandlerRequestWatermark(): Long
+    external fun getUiHandlerRequestInitialText(): Long
+    external fun getUiHandlerRequestSubtitle(): Long
 }

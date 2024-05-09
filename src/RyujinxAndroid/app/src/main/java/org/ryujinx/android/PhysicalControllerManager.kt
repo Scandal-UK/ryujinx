@@ -7,72 +7,116 @@ import org.ryujinx.android.viewmodels.QuickSettings
 
 class PhysicalControllerManager(val activity: MainActivity) {
     private var controllerId: Int = -1
-    private var ryujinxNative: RyujinxNative = RyujinxNative.instance
 
-    fun onKeyEvent(event: KeyEvent) : Boolean{
+    fun onKeyEvent(event: KeyEvent): Boolean {
         val id = getGamePadButtonInputId(event.keyCode)
-        if(id != GamePadButtonInputId.None) {
+        if (id != GamePadButtonInputId.None) {
             val isNotFallback = (event.flags and KeyEvent.FLAG_FALLBACK) == 0
             if (/*controllerId != -1 &&*/ isNotFallback) {
                 when (event.action) {
                     KeyEvent.ACTION_UP -> {
-                        ryujinxNative.inputSetButtonReleased(id.ordinal, controllerId)
+                        RyujinxNative.jnaInstance.inputSetButtonReleased(id.ordinal, controllerId)
                     }
 
                     KeyEvent.ACTION_DOWN -> {
-                        ryujinxNative.inputSetButtonPressed(id.ordinal, controllerId)
+                        RyujinxNative.jnaInstance.inputSetButtonPressed(id.ordinal, controllerId)
                     }
                 }
                 return true
-            }
-            else if(!isNotFallback){
+            } else if (!isNotFallback) {
                 return true
             }
         }
 
-        return  false
+        return false
     }
 
     fun onMotionEvent(ev: MotionEvent) {
-        if(true) {
-            if(ev.action == MotionEvent.ACTION_MOVE) {
+        if (true) {
+            if (ev.action == MotionEvent.ACTION_MOVE) {
                 val leftStickX = ev.getAxisValue(MotionEvent.AXIS_X)
                 val leftStickY = ev.getAxisValue(MotionEvent.AXIS_Y)
                 val rightStickX = ev.getAxisValue(MotionEvent.AXIS_Z)
                 val rightStickY = ev.getAxisValue(MotionEvent.AXIS_RZ)
-                ryujinxNative.inputSetStickAxis(1, leftStickX, -leftStickY ,controllerId)
-                ryujinxNative.inputSetStickAxis(2, rightStickX, -rightStickY ,controllerId)
+                RyujinxNative.jnaInstance.inputSetStickAxis(
+                    1,
+                    leftStickX,
+                    -leftStickY,
+                    controllerId
+                )
+                RyujinxNative.jnaInstance.inputSetStickAxis(
+                    2,
+                    rightStickX,
+                    -rightStickY,
+                    controllerId
+                )
 
                 ev.device?.apply {
-                    if(sources and InputDevice.SOURCE_DPAD != InputDevice.SOURCE_DPAD){
+                    if (sources and InputDevice.SOURCE_DPAD != InputDevice.SOURCE_DPAD) {
                         // Controller uses HAT
                         val dPadHor = ev.getAxisValue(MotionEvent.AXIS_HAT_X)
                         val dPadVert = ev.getAxisValue(MotionEvent.AXIS_HAT_Y)
-                        if(dPadVert == 0.0f){
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadUp.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadDown.ordinal, controllerId)
+                        if (dPadVert == 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadUp.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadDown.ordinal,
+                                controllerId
+                            )
                         }
-                        if(dPadHor == 0.0f){
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadLeft.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadRight.ordinal, controllerId)
+                        if (dPadHor == 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadLeft.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadRight.ordinal,
+                                controllerId
+                            )
                         }
 
-                        if(dPadVert < 0.0f){
-                            ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadUp.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadDown.ordinal, controllerId)
+                        if (dPadVert < 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonPressed(
+                                GamePadButtonInputId.DpadUp.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadDown.ordinal,
+                                controllerId
+                            )
                         }
-                        if(dPadHor < 0.0f){
-                            ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadLeft.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadRight.ordinal, controllerId)
+                        if (dPadHor < 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonPressed(
+                                GamePadButtonInputId.DpadLeft.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadRight.ordinal,
+                                controllerId
+                            )
                         }
 
-                        if(dPadVert > 0.0f){
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadUp.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadDown.ordinal, controllerId)
+                        if (dPadVert > 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadUp.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonPressed(
+                                GamePadButtonInputId.DpadDown.ordinal,
+                                controllerId
+                            )
                         }
-                        if(dPadHor > 0.0f){
-                            ryujinxNative.inputSetButtonReleased(GamePadButtonInputId.DpadLeft.ordinal, controllerId)
-                            ryujinxNative.inputSetButtonPressed(GamePadButtonInputId.DpadRight.ordinal, controllerId)
+                        if (dPadHor > 0.0f) {
+                            RyujinxNative.jnaInstance.inputSetButtonReleased(
+                                GamePadButtonInputId.DpadLeft.ordinal,
+                                controllerId
+                            )
+                            RyujinxNative.jnaInstance.inputSetButtonPressed(
+                                GamePadButtonInputId.DpadRight.ordinal,
+                                controllerId
+                            )
                         }
                     }
                 }
@@ -80,12 +124,12 @@ class PhysicalControllerManager(val activity: MainActivity) {
         }
     }
 
-    fun connect() : Int {
-        controllerId = ryujinxNative.inputConnectGamepad(0)
+    fun connect(): Int {
+        controllerId = RyujinxNative.jnaInstance.inputConnectGamepad(0)
         return controllerId
     }
 
-    fun disconnect(){
+    fun disconnect() {
         controllerId = -1
     }
 
