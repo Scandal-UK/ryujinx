@@ -322,11 +322,15 @@ class MainViewModel(val activity: MainActivity) {
     fun setStatStates(
         fifo: MutableState<Double>,
         gameFps: MutableState<Double>,
-        gameTime: MutableState<Double>
+        gameTime: MutableState<Double>,
+        mem: MutableList<Int>,
+        frequencies: MutableList<Double>
     ) {
         fifoState = fifo
         gameFpsState = gameFps
         gameTimeState = gameTime
+        MainActivity.performanceMonitor.getMemoryUsage(mem)
+        MainActivity.performanceMonitor.getFrequencies(frequencies)
     }
 
     fun updateStats(

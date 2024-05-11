@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import java.io.RandomAccessFile
@@ -15,8 +17,8 @@ import java.io.RandomAccessFile
 class PerformanceMonitor {
     val numberOfCores = Runtime.getRuntime().availableProcessors()
 
-    fun getFrequencies(): List<Double> {
-        val frequencies = mutableListOf<Double>()
+    fun getFrequencies(frequencies: MutableList<Double>){
+        frequencies.clear()
         for (i in 0..<numberOfCores) {
             var freq = 0.0
             try {
@@ -33,12 +35,10 @@ class PerformanceMonitor {
 
             frequencies.add(freq)
         }
-
-        return frequencies.toList()
     }
 
-    fun getMemoryUsage(): List<Int> {
-        val mem = mutableListOf<Int>()
+    fun getMemoryUsage(mem: MutableList<Int>){
+        mem.clear()
         MainActivity.mainViewModel?.activity?.apply {
             val actManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
             val memInfo = ActivityManager.MemoryInfo()
@@ -48,42 +48,6 @@ class PerformanceMonitor {
 
             mem.add((totalMemory - availMemory).toInt())
             mem.add(totalMemory.toInt())
-        }
-        return mem.toList()
-    }
-
-    @Composable
-    fun RenderUsage() {
-        LazyColumn {
-            val frequencies = getFrequencies()
-            val mem = getMemoryUsage()
-
-            for (i in 0..<numberOfCores) {
-                item {
-                    Row {
-                        Text(modifier = Modifier.padding(2.dp), text = "CPU ${i}")
-                        Spacer(Modifier.weight(1f))
-                        Text(text = "${frequencies[i]} MHz")
-                    }
-                }
-            }
-
-            if (mem.isNotEmpty()) {
-                item {
-                    Row {
-                        Text(modifier = Modifier.padding(2.dp), text = "Used")
-                        Spacer(Modifier.weight(1f))
-                        Text(text = "${mem[0]} MB")
-                    }
-                }
-                item {
-                    Row {
-                        Text(modifier = Modifier.padding(2.dp), text = "Total")
-                        Spacer(Modifier.weight(1f))
-                        Text(text = "${mem[1]} MB")
-                    }
-                }
-            }
         }
     }
 }
