@@ -5,13 +5,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -27,6 +30,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -333,13 +337,19 @@ class GameViews {
         @Composable
         fun GameStats(mainViewModel: MainViewModel) {
             val fifo = remember {
-                mutableStateOf(0.0)
+                mutableDoubleStateOf(0.0)
             }
             val gameFps = remember {
-                mutableStateOf(0.0)
+                mutableDoubleStateOf(0.0)
             }
             val gameTime = remember {
-                mutableStateOf(0.0)
+                mutableDoubleStateOf(0.0)
+            }
+            val mem = remember {
+                mutableListOf<Int>(0,0)
+            }
+            val frequencies = remember {
+                mutableListOf<Double>()
             }
 
             Surface(
@@ -354,14 +364,37 @@ class GameViews {
                         Text(text = "${String.format("%.3f", fifo.value)} %")
                         Text(text = "${String.format("%.3f", gameFps.value)} FPS")
                         Text(text = "${String.format("%.3f", gameTimeVal)} ms")
-                        Box(modifier = Modifier.width(84.dp)) {
-                            MainActivity.performanceMonitor.RenderUsage()
+                        Box(modifier = Modifier.width(96.dp)) {
+                            Column {
+                                LazyColumn {
+                                    itemsIndexed(frequencies) { i, t ->
+                                        Row {
+                                            Text(
+                                                modifier = Modifier.padding(2.dp),
+                                                text = "CPU $i"
+                                            )
+                                            Spacer(Modifier.weight(1f))
+                                            Text(text = "$t MHz")
+                                        }
+                                    }
+                                }
+                                Row {
+                                    Text(modifier = Modifier.padding(2.dp), text = "Used")
+                                    Spacer(Modifier.weight(1f))
+                                    Text(text = "${mem[0]} MB")
+                                }
+                                Row {
+                                    Text(modifier = Modifier.padding(2.dp), text = "Total")
+                                    Spacer(Modifier.weight(1f))
+                                    Text(text = "${mem[1]} MB")
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            mainViewModel.setStatStates(fifo, gameFps, gameTime)
+            mainViewModel.setStatStates(fifo, gameFps, gameTime, mem, frequencies)
         }
     }
 }
