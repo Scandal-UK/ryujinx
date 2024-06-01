@@ -97,6 +97,9 @@ class MainActivity : BaseActivity() {
             LogLevel.Trace.ordinal,
             quickSettings.enableTraceLogs
         )
+        RyujinxNative.jnaInstance.loggingEnabledGraphicsLog(
+            quickSettings.enableTraceLogs
+        )
         val success =
             RyujinxNative.jnaInstance.javaInitialize(appPath)
 

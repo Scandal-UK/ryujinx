@@ -271,19 +271,20 @@ namespace LibRyujinx
             var stream = OpenFile(descriptor);
 
             IntPtr stringHandle = 0;
+            string? version = "0.0";
 
             try
             {
-                var version = VerifyFirmware(stream, isXci);
-
-                if (version != null)
-                {
-                    stringHandle = Marshal.StringToHGlobalAnsi(version.VersionString);
-                }
+                version = VerifyFirmware(stream, isXci)?.VersionString;
             }
-            catch(Exception _)
+            catch (Exception _)
             {
                 Logger.Error?.Print(LogClass.Service, $"Unable to verify firmware. Exception: {_}");
+            }
+
+            if (version != null)
+            {
+                stringHandle = Marshal.StringToHGlobalAnsi(version);
             }
 
             return stringHandle;
@@ -304,15 +305,8 @@ namespace LibRyujinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
 
-            var version = GetInstalledFirmwareVersion();
-            IntPtr stringHandle = 0;
-
-            if (version != String.Empty)
-            {
-                stringHandle = Marshal.StringToHGlobalAnsi(version);
-            }
-
-            return stringHandle;
+            var version = GetInstalledFirmwareVersion() ?? "0.0";
+            return Marshal.StringToHGlobalAnsi(version);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "graphicsInitialize")]
@@ -438,11 +432,16 @@ namespace LibRyujinx
             RunLoop();
         }
 
-
         [UnmanagedCallersOnly(EntryPoint = "loggingSetEnabled")]
         public static void JniSetLoggingEnabledNative(int logLevel, bool enabled)
         {
             Logger.SetEnable((LogLevel)logLevel, enabled);
+        }
+
+        [UnmanagedCallersOnly(EntryPoint = "loggingEnabledGraphicsLog")]
+        public static void JniSetLoggingEnabledGraphicsLog(bool enabled)
+        {
+            _enableGraphicsLogging = enabled;
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceGetGameInfo")]

@@ -80,6 +80,7 @@ interface RyujinxNativeJna : Library {
     fun deviceGetGameInfo(fileDescriptor: Int, extension: String, info: GameInfo)
     fun userGetAllUsers(): Array<String>
     fun deviceGetDlcContentList(path: String, titleId: Long): Array<String>
+    fun loggingEnabledGraphicsLog(enabled: Boolean)
 }
 
 class RyujinxNative {

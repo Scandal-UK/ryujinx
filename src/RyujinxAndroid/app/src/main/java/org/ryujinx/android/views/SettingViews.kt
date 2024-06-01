@@ -134,6 +134,7 @@ class SettingViews {
             val enableGuestLogs = remember { mutableStateOf(true) }
             val enableAccessLogs = remember { mutableStateOf(true) }
             val enableTraceLogs = remember { mutableStateOf(true) }
+            val enableGraphicsLogs = remember { mutableStateOf(true) }
 
             if (!loaded.value) {
                 settingsViewModel.initializeState(
@@ -155,7 +156,8 @@ class SettingViews {
                     enableErrorLogs,
                     enableGuestLogs,
                     enableAccessLogs,
-                    enableTraceLogs
+                    enableTraceLogs,
+                    enableGraphicsLogs
                 )
                 loaded.value = true
             }
@@ -189,7 +191,8 @@ class SettingViews {
                                     enableErrorLogs,
                                     enableGuestLogs,
                                     enableAccessLogs,
-                                    enableTraceLogs
+                                    enableTraceLogs,
+                                    enableGraphicsLogs
                                 )
                                 settingsViewModel.navController.popBackStack()
                             }) {
@@ -1054,6 +1057,21 @@ class SettingViews {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Text(
+                                    text = "Enable Graphics Debug Logs",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Switch(checked = enableGraphicsLogs.value, onCheckedChange = {
+                                    enableGraphicsLogs.value = !enableGraphicsLogs.value
+                                })
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Button(onClick = {
                                     mainViewModel.logging.requestExport()
                                 }) {
@@ -1083,7 +1101,8 @@ class SettingViews {
                         enableErrorLogs,
                         enableGuestLogs,
                         enableAccessLogs,
-                        enableTraceLogs
+                        enableTraceLogs,
+                        enableGraphicsLogs
                     )
                     settingsViewModel.navController.popBackStack()
                 }
