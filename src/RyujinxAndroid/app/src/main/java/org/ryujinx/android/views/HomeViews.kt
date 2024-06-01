@@ -489,6 +489,14 @@ class HomeViews {
                                             )
                                         })
                                         DropdownMenuItem(text = {
+                                            Text(text = "Delete All Cache")
+                                        }, onClick = {
+                                            showAppMenu.value = false
+                                            viewModel.mainViewModel?.deleteCache(
+                                                viewModel.mainViewModel.selected?.titleId ?: ""
+                                            )
+                                        })
+                                        DropdownMenuItem(text = {
                                             Text(text = "Manage Updates")
                                         }, onClick = {
                                             showAppMenu.value = false

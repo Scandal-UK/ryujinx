@@ -29,6 +29,7 @@ class QuickSettings(val activity: Activity) {
     var enableGuestLogs: Boolean
     var enableAccessLogs: Boolean
     var enableTraceLogs: Boolean
+    var enableGraphicsLogs: Boolean
 
     private var sharedPref: SharedPreferences =
         PreferenceManager.getDefaultSharedPreferences(activity)
@@ -57,6 +58,7 @@ class QuickSettings(val activity: Activity) {
         enableGuestLogs = sharedPref.getBoolean("enableGuestLogs", true)
         enableAccessLogs = sharedPref.getBoolean("enableAccessLogs", false)
         enableTraceLogs = sharedPref.getBoolean("enableStubLogs", false)
+        enableGraphicsLogs = sharedPref.getBoolean("enableGraphicsLogs", false)
     }
 
     fun save() {
@@ -85,6 +87,7 @@ class QuickSettings(val activity: Activity) {
         editor.putBoolean("enableGuestLogs", enableGuestLogs)
         editor.putBoolean("enableAccessLogs", enableAccessLogs)
         editor.putBoolean("enableTraceLogs", enableTraceLogs)
+        editor.putBoolean("enableGraphicsLogs", enableGraphicsLogs)
 
         editor.apply()
     }

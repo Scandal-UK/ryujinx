@@ -63,7 +63,8 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         enableErrorLogs: MutableState<Boolean>,
         enableGuestLogs: MutableState<Boolean>,
         enableAccessLogs: MutableState<Boolean>,
-        enableTraceLogs: MutableState<Boolean>
+        enableTraceLogs: MutableState<Boolean>,
+        enableGraphicsLogs: MutableState<Boolean>
     ) {
 
         isHostMapped.value = sharedPref.getBoolean("isHostMapped", true)
@@ -90,6 +91,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         enableGuestLogs.value = sharedPref.getBoolean("enableGuestLogs", true)
         enableAccessLogs.value = sharedPref.getBoolean("enableAccessLogs", false)
         enableTraceLogs.value = sharedPref.getBoolean("enableStubLogs", false)
+        enableGraphicsLogs.value = sharedPref.getBoolean("enableGraphicsLogs", false)
     }
 
     fun save(
@@ -114,7 +116,8 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         enableErrorLogs: MutableState<Boolean>,
         enableGuestLogs: MutableState<Boolean>,
         enableAccessLogs: MutableState<Boolean>,
-        enableTraceLogs: MutableState<Boolean>
+        enableTraceLogs: MutableState<Boolean>,
+        enableGraphicsLogs: MutableState<Boolean>
     ) {
         val editor = sharedPref.edit()
 
@@ -141,6 +144,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         editor.putBoolean("enableGuestLogs", enableGuestLogs.value)
         editor.putBoolean("enableAccessLogs", enableAccessLogs.value)
         editor.putBoolean("enableTraceLogs", enableTraceLogs.value)
+        editor.putBoolean("enableGraphicsLogs", enableGraphicsLogs.value)
 
         editor.apply()
         activity.storageHelper!!.onFolderSelected = previousFolderCallback
@@ -159,6 +163,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         )
         RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Guest.ordinal, enableGuestLogs.value)
         RyujinxNative.jnaInstance.loggingSetEnabled(LogLevel.Trace.ordinal, enableTraceLogs.value)
+        RyujinxNative.jnaInstance.loggingEnabledGraphicsLog(enableGraphicsLogs.value)
     }
 
     fun openGameFolder() {

@@ -319,6 +319,27 @@ class MainViewModel(val activity: MainActivity) {
         }
     }
 
+    fun deleteCache(titleId: String) {
+        fun deleteDirectory(directory: File) {
+            if (directory.exists() && directory.isDirectory) {
+                directory.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        deleteDirectory(file)
+                    } else {
+                        file.delete()
+                    }
+                }
+                directory.delete()
+            }
+        }
+        if (titleId.isNotEmpty()) {
+            val basePath = MainActivity.AppPath + "/games/$titleId/cache"
+            if (File(basePath).exists()) {
+                deleteDirectory(File(basePath))
+            }
+        }
+    }
+
     fun setStatStates(
         fifo: MutableState<Double>,
         gameFps: MutableState<Double>,
