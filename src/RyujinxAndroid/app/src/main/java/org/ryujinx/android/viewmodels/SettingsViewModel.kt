@@ -56,6 +56,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         useSwitchLayout: MutableState<Boolean>,
         enableMotion: MutableState<Boolean>,
         enablePerformanceMode: MutableState<Boolean>,
+        controllerStickSensitivity: MutableState<Float>,
         enableDebugLogs: MutableState<Boolean>,
         enableStubLogs: MutableState<Boolean>,
         enableInfoLogs: MutableState<Boolean>,
@@ -82,6 +83,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         useSwitchLayout.value = sharedPref.getBoolean("useSwitchLayout", true)
         enableMotion.value = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode.value = sharedPref.getBoolean("enablePerformanceMode", false)
+        controllerStickSensitivity.value = sharedPref.getFloat("controllerStickSensitivity", 1.0f)
 
         enableDebugLogs.value = sharedPref.getBoolean("enableDebugLogs", false)
         enableStubLogs.value = sharedPref.getBoolean("enableStubLogs", false)
@@ -109,6 +111,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         useSwitchLayout: MutableState<Boolean>,
         enableMotion: MutableState<Boolean>,
         enablePerformanceMode: MutableState<Boolean>,
+        controllerStickSensitivity: MutableState<Float>,
         enableDebugLogs: MutableState<Boolean>,
         enableStubLogs: MutableState<Boolean>,
         enableInfoLogs: MutableState<Boolean>,
@@ -135,6 +138,7 @@ class SettingsViewModel(var navController: NavHostController, val activity: Main
         editor.putBoolean("useSwitchLayout", useSwitchLayout.value)
         editor.putBoolean("enableMotion", enableMotion.value)
         editor.putBoolean("enablePerformanceMode", enablePerformanceMode.value)
+        editor.putFloat("controllerStickSensitivity", controllerStickSensitivity.value)
 
         editor.putBoolean("enableDebugLogs", enableDebugLogs.value)
         editor.putBoolean("enableStubLogs", enableStubLogs.value)

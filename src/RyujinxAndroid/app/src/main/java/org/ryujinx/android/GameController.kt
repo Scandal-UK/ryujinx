@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.math.MathUtils
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import com.swordfish.radialgamepad.library.RadialGamePad
@@ -193,19 +194,25 @@ class GameController(var activity: Activity) {
                         }
 
                         GamePadButtonInputId.LeftStick.ordinal -> {
+                            val setting = QuickSettings(activity)
+                            val x = MathUtils.clamp(ev.xAxis * setting.controllerStickSensitivity, -1f, 1f)
+                            val y = MathUtils.clamp(ev.yAxis * setting.controllerStickSensitivity, -1f, 1f)
                             RyujinxNative.jnaInstance.inputSetStickAxis(
                                 1,
-                                ev.xAxis,
-                                -ev.yAxis,
+                                x,
+                                -y,
                                 this
                             )
                         }
 
                         GamePadButtonInputId.RightStick.ordinal -> {
+                            val setting = QuickSettings(activity)
+                            val x = MathUtils.clamp(ev.xAxis * setting.controllerStickSensitivity, -1f, 1f)
+                            val y = MathUtils.clamp(ev.yAxis * setting.controllerStickSensitivity, -1f, 1f)
                             RyujinxNative.jnaInstance.inputSetStickAxis(
                                 2,
-                                ev.xAxis,
-                                -ev.yAxis,
+                                x,
+                                -y,
                                 this
                             )
                         }
@@ -226,7 +233,8 @@ suspend fun <T> Flow<T>.safeCollect(
 }
 
 private fun generateConfig(isLeft: Boolean): GamePadConfig {
-    val distance = 0.05f
+    val distance = 0.3f
+    val buttonScale = 1f
 
     if (isLeft) {
         return GamePadConfig(
@@ -240,9 +248,9 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
             ),
             listOf(
                 SecondaryDialConfig.Cross(
-                    9,
+                    10,
                     3,
-                    1.8f,
+                    2.5f,
                     distance,
                     CrossConfig(
                         GamePadButtonInputId.DpadUp.ordinal,
@@ -256,9 +264,9 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
                 SecondaryDialConfig.SingleButton(
-                    0,
-                    1f,
-                    0.05f,
+                    1,
+                    buttonScale,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.Minus.ordinal,
                         "-",
@@ -274,7 +282,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                 ),
                 SecondaryDialConfig.DoubleButton(
                     2,
-                    0.05f,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.LeftShoulder.ordinal,
                         "L",
@@ -289,9 +297,9 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                     SecondaryDialConfig.RotationProcessor()
                 ),
                 SecondaryDialConfig.SingleButton(
-                    8,
-                    1f,
-                    0.05f,
+                    9,
+                    buttonScale,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.LeftTrigger.ordinal,
                         "ZL",
@@ -362,8 +370,8 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                 SecondaryDialConfig.Stick(
                     7,
                     2,
-                    3f,
-                    0.05f,
+                    2f,
+                    distance,
                     GamePadButtonInputId.RightStick.ordinal,
                     GamePadButtonInputId.RightStickButton.ordinal,
                     null,
@@ -373,8 +381,8 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                 ),
                 SecondaryDialConfig.SingleButton(
                     6,
-                    1f,
-                    0.05f,
+                    buttonScale,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.Plus.ordinal,
                         "+",
@@ -390,7 +398,7 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                 ),
                 SecondaryDialConfig.DoubleButton(
                     3,
-                    0.05f,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.RightShoulder.ordinal,
                         "R",
@@ -406,8 +414,8 @@ private fun generateConfig(isLeft: Boolean): GamePadConfig {
                 ),
                 SecondaryDialConfig.SingleButton(
                     9,
-                    1f,
-                    0.05f,
+                    buttonScale,
+                    distance,
                     ButtonConfig(
                         GamePadButtonInputId.RightTrigger.ordinal,
                         "ZR",

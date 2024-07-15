@@ -3,6 +3,8 @@ package org.ryujinx.android.views
 import android.content.res.Resources
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
@@ -32,15 +34,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -61,8 +65,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -99,6 +107,9 @@ class HomeViews {
             val canClose = remember { mutableStateOf(true) }
             val openDlcDialog = remember { mutableStateOf(false) }
             var openAppBarExtra by remember { mutableStateOf(false) }
+            val showError = remember {
+                mutableStateOf("")
+            }
 
             val selectedModel = remember {
                 mutableStateOf(viewModel.mainViewModel?.selected)
@@ -108,6 +119,24 @@ class HomeViews {
             }
             var refreshUser by remember {
                 mutableStateOf(true)
+            }
+
+            var isFabVisible by remember {
+                mutableStateOf(true)
+            }
+
+            val nestedScrollConnection = remember {
+                object : NestedScrollConnection {
+                    override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                        if (available.y < -1) {
+                            isFabVisible = false
+                        }
+                        if (available.y > 1) {
+                            isFabVisible = true
+                        }
+                        return Offset.Zero
+                    }
+                }
             }
 
             Scaffold(
@@ -169,6 +198,21 @@ class HomeViews {
                         }
                     ) {
 
+                    }
+                },
+                floatingActionButton = {
+                    AnimatedVisibility(visible = isFabVisible,
+                        enter = slideInVertically(initialOffsetY = { it * 2 }),
+                        exit = slideOutVertically(targetOffsetY = { it * 2 })) {
+                        FloatingActionButton(
+                            onClick = {
+                                viewModel.requestReload()
+                                viewModel.ensureReloadIfNecessary()
+                            },
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = "refresh")
+                        }
                     }
                 }
 
@@ -309,56 +353,75 @@ class HomeViews {
                         val list = remember {
                             viewModel.gameList
                         }
+                        val isLoading = remember {
+                            viewModel.isLoading
+                        }
                         viewModel.filter(query.value)
 
                         if (!isPreview) {
                             var settings = QuickSettings(viewModel.activity!!)
 
-                            if (settings.isGrid) {
-                                val size =
-                                    GridImageSize / Resources.getSystem().displayMetrics.density
-                                LazyVerticalGrid(
-                                    columns = GridCells.Adaptive(minSize = (size + 4).dp),
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(4.dp),
-                                    horizontalArrangement = Arrangement.SpaceEvenly
-                                ) {
-                                    items(list) {
-                                        it.titleName?.apply {
-                                            if (this.isNotEmpty() && (query.value.trim()
-                                                    .isEmpty() || this.lowercase(Locale.getDefault())
-                                                    .contains(query.value))
-                                            )
-                                                GridGameItem(
-                                                    it,
-                                                    viewModel,
-                                                    showAppActions,
-                                                    showLoading,
-                                                    selectedModel
-                                                )
-                                        }
-                                    }
+                            if (isLoading.value) {
+                                Box(modifier = Modifier.fillMaxSize())
+                                {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier
+                                            .width(64.dp)
+                                            .align(Alignment.Center),
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
                                 }
                             } else {
-                                LazyColumn(Modifier.fillMaxSize()) {
-                                    items(list) {
-                                        it.titleName?.apply {
-                                            if (this.isNotEmpty() && (query.value.trim()
-                                                    .isEmpty() || this.lowercase(
-                                                    Locale.getDefault()
+                                if (settings.isGrid) {
+                                    val size =
+                                        GridImageSize / Resources.getSystem().displayMetrics.density
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Adaptive(minSize = (size + 4).dp),
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(4.dp)
+                                            .nestedScroll(nestedScrollConnection),
+                                        horizontalArrangement = Arrangement.SpaceEvenly
+                                    ) {
+                                        items(list) {
+                                            it.titleName?.apply {
+                                                if (this.isNotEmpty() && (query.value.trim()
+                                                        .isEmpty() || this.lowercase(Locale.getDefault())
+                                                        .contains(query.value))
                                                 )
-                                                    .contains(query.value))
-                                            )
-                                                Box(modifier = Modifier.animateItemPlacement()) {
-                                                    ListGameItem(
+                                                    GridGameItem(
                                                         it,
                                                         viewModel,
                                                         showAppActions,
                                                         showLoading,
                                                         selectedModel,
+                                                        showError
                                                     )
-                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    LazyColumn(Modifier.fillMaxSize()) {
+                                        items(list) {
+                                            it.titleName?.apply {
+                                                if (this.isNotEmpty() && (query.value.trim()
+                                                        .isEmpty() || this.lowercase(
+                                                        Locale.getDefault()
+                                                    )
+                                                        .contains(query.value))
+                                                )
+                                                    Box(modifier = Modifier.animateItemPlacement()) {
+                                                        ListGameItem(
+                                                            it,
+                                                            viewModel,
+                                                            showAppActions,
+                                                            showLoading,
+                                                            selectedModel,
+                                                            showError
+                                                        )
+                                                    }
+                                            }
                                         }
                                     }
                                 }
@@ -443,11 +506,14 @@ class HomeViews {
                                             showLoading.value = true
                                             val success =
                                                 viewModel.mainViewModel.loadGame(viewModel.mainViewModel.selected!!)
-                                            if (success) {
+                                            if (success == 1) {
                                                 launchOnUiThread {
                                                     viewModel.mainViewModel.navigateToGame()
                                                 }
                                             } else {
+                                                if (success == -2)
+                                                    showError.value =
+                                                        "Error loading update. Please re-add update file"
                                                 viewModel.mainViewModel.selected!!.close()
                                             }
                                             showLoading.value = false
@@ -527,7 +593,8 @@ class HomeViews {
             viewModel: HomeViewModel,
             showAppActions: MutableState<Boolean>,
             showLoading: MutableState<Boolean>,
-            selectedModel: MutableState<GameModel?>
+            selectedModel: MutableState<GameModel?>,
+            showError: MutableState<String>
         ) {
             remember {
                 selectedModel
@@ -555,11 +622,14 @@ class HomeViews {
                                     showLoading.value = true
                                     val success =
                                         viewModel.mainViewModel?.loadGame(gameModel) ?: false
-                                    if (success) {
+                                    if (success == 1) {
                                         launchOnUiThread {
                                             viewModel.mainViewModel?.navigateToGame()
                                         }
                                     } else {
+                                        if (success == -2)
+                                            showError.value =
+                                                "Error loading update. Please re-add update file"
                                         gameModel.close()
                                     }
                                     showLoading.value = false
@@ -618,7 +688,8 @@ class HomeViews {
             viewModel: HomeViewModel,
             showAppActions: MutableState<Boolean>,
             showLoading: MutableState<Boolean>,
-            selectedModel: MutableState<GameModel?>
+            selectedModel: MutableState<GameModel?>,
+            showError: MutableState<String>
         ) {
             remember {
                 selectedModel
@@ -646,11 +717,14 @@ class HomeViews {
                                     showLoading.value = true
                                     val success =
                                         viewModel.mainViewModel?.loadGame(gameModel) ?: false
-                                    if (success) {
+                                    if (success == 1) {
                                         launchOnUiThread {
                                             viewModel.mainViewModel?.navigateToGame()
                                         }
                                     } else {
+                                        if (success == -2)
+                                            showError.value =
+                                                "Error loading update. Please re-add update file"
                                         gameModel.close()
                                     }
                                     showLoading.value = false

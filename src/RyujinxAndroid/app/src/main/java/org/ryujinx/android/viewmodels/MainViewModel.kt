@@ -66,13 +66,18 @@ class MainViewModel(val activity: MainActivity) {
         firmwareVersion = RyujinxNative.jnaInstance.deviceGetInstalledFirmwareVersion()
     }
 
-    fun loadGame(game: GameModel): Boolean {
+    fun loadGame(game: GameModel): Int {
         val descriptor = game.open()
 
         if (descriptor == 0)
-            return false
+            return 0
 
         val update = game.openUpdate()
+
+        if(update == -2)
+        {
+            return -2
+        }
 
         gameModel = game
         isMiiEditorLaunched = false
@@ -87,7 +92,7 @@ class MainViewModel(val activity: MainActivity) {
         )
 
         if (!success)
-            return false
+            return 0
 
         val nativeHelpers = NativeHelpers.instance
         val nativeInterop = NativeGraphicsInterop()
@@ -141,7 +146,7 @@ class MainViewModel(val activity: MainActivity) {
             driverHandle
         )
         if (!success)
-            return false
+            return 0
 
         val semaphore = Semaphore(1, 0)
         runBlocking {
@@ -168,12 +173,12 @@ class MainViewModel(val activity: MainActivity) {
         }
 
         if (!success)
-            return false
+            return 0
 
         success =
             RyujinxNative.jnaInstance.deviceLoadDescriptor(descriptor, game.type.ordinal, update)
 
-        return success
+        return if (success) 1 else 0
     }
 
     fun loadMiiEditor(): Boolean {

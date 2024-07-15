@@ -11,8 +11,8 @@ android {
         applicationId "org.ryujinx.android"
         minSdk 30
         targetSdk 34
-        versionCode 10032
-        versionName '1.0.32'
+        versionCode 10039
+        versionName '1.0.39'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

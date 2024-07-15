@@ -19,8 +19,8 @@ class TitleUpdateViewModel(val titleId: String) {
     private var basePath: String
     private var updateJsonName = "updates.json"
     private var storageHelper: SimpleStorageHelper
-    var currentPaths: MutableList<String> = mutableListOf()
-    var pathsState: SnapshotStateList<String>? = null
+    private var currentPaths: MutableList<String> = mutableListOf()
+    private var pathsState: SnapshotStateList<String>? = null
 
     companion object {
         const val UpdateRequestCode = 1002
