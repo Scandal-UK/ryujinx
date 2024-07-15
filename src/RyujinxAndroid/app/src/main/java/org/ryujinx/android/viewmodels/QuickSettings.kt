@@ -19,6 +19,7 @@ class QuickSettings(val activity: Activity) {
     var useSwitchLayout: Boolean
     var enableMotion: Boolean
     var enablePerformanceMode: Boolean
+    var controllerStickSensitivity: Float
 
     // Logs
     var enableDebugLogs: Boolean
@@ -49,6 +50,7 @@ class QuickSettings(val activity: Activity) {
         useSwitchLayout = sharedPref.getBoolean("useSwitchLayout", true)
         enableMotion = sharedPref.getBoolean("enableMotion", true)
         enablePerformanceMode = sharedPref.getBoolean("enablePerformanceMode", true)
+        controllerStickSensitivity = sharedPref.getFloat("controllerStickSensitivity", 1.0f)
 
         enableDebugLogs = sharedPref.getBoolean("enableDebugLogs", false)
         enableStubLogs = sharedPref.getBoolean("enableStubLogs", false)
@@ -78,6 +80,7 @@ class QuickSettings(val activity: Activity) {
         editor.putBoolean("useSwitchLayout", useSwitchLayout)
         editor.putBoolean("enableMotion", enableMotion)
         editor.putBoolean("enablePerformanceMode", enablePerformanceMode)
+        editor.putFloat("enablePerformanceMode", controllerStickSensitivity)
 
         editor.putBoolean("enableDebugLogs", enableDebugLogs)
         editor.putBoolean("enableStubLogs", enableStubLogs)

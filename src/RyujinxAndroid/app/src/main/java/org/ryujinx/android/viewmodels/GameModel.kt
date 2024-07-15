@@ -59,9 +59,14 @@ class GameModel(var file: DocumentFile, val context: Context) {
                 val uri = Uri.parse(vm.data?.selected)
                 val file = DocumentFile.fromSingleUri(context, uri)
                 if (file?.exists() == true) {
-                    updateDescriptor = context.contentResolver.openFileDescriptor(file.uri, "rw")
+                    try {
+                        updateDescriptor =
+                            context.contentResolver.openFileDescriptor(file.uri, "rw")
 
-                    return updateDescriptor?.fd ?: -1
+                        return updateDescriptor?.fd ?: -1
+                    } catch (e: Exception) {
+                        return -2
+                    }
                 }
             }
         }

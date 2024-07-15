@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -24,6 +25,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
@@ -31,16 +35,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Label
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -125,6 +131,7 @@ class SettingViews {
             val useSwitchLayout = remember { mutableStateOf(true) }
             val enableMotion = remember { mutableStateOf(true) }
             val enablePerformanceMode = remember { mutableStateOf(true) }
+            val controllerStickSensitivity = remember { mutableStateOf(1.0f) }
 
             val enableDebugLogs = remember { mutableStateOf(true) }
             val enableStubLogs = remember { mutableStateOf(true) }
@@ -149,6 +156,7 @@ class SettingViews {
                     useSwitchLayout,
                     enableMotion,
                     enablePerformanceMode,
+                    controllerStickSensitivity,
                     enableDebugLogs,
                     enableStubLogs,
                     enableInfoLogs,
@@ -184,6 +192,7 @@ class SettingViews {
                                     useSwitchLayout,
                                     enableMotion,
                                     enablePerformanceMode,
+                                    controllerStickSensitivity,
                                     enableDebugLogs,
                                     enableStubLogs,
                                     enableInfoLogs,
@@ -926,6 +935,49 @@ class SettingViews {
                                     useSwitchLayout.value = !useSwitchLayout.value
                                 })
                             }
+
+                            val interactionSource: MutableInteractionSource = remember { MutableInteractionSource() }
+
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Controller Stick Sensitivity",
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
+                                Slider(modifier = Modifier.width(250.dp), value = controllerStickSensitivity.value, onValueChange = {
+                                    controllerStickSensitivity.value = it
+                                }, valueRange = 0.1f..2f,
+                                    steps = 20,
+                                    interactionSource = interactionSource,
+                                    thumb = {
+                                        Label(
+                                            label = {
+                                                PlainTooltip(modifier = Modifier
+                                                    .sizeIn(45.dp, 25.dp)
+                                                    .wrapContentWidth()) {
+                                                    Text("%.2f".format(controllerStickSensitivity.value))
+                                                }
+                                            },
+                                            interactionSource = interactionSource
+                                        ) {
+                                            Icon(
+                                                imageVector = org.ryujinx.android.Icons.circle(
+                                                    color = MaterialTheme.colorScheme.primary
+                                                ),
+                                                contentDescription = null,
+                                                modifier = Modifier.size(ButtonDefaults.IconSize),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+
                         }
                     }
                     ExpandableView(onCardArrowClick = { }, title = "Log") {
@@ -1094,6 +1146,7 @@ class SettingViews {
                         useSwitchLayout,
                         enableMotion,
                         enablePerformanceMode,
+                        controllerStickSensitivity,
                         enableDebugLogs,
                         enableStubLogs,
                         enableInfoLogs,

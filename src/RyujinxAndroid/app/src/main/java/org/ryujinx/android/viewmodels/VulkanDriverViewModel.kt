@@ -2,13 +2,13 @@ package org.ryujinx.android.viewmodels
 
 import androidx.compose.runtime.MutableState
 import com.anggrayudi.storage.file.extension
-import com.anggrayudi.storage.file.getAbsolutePath
+import com.anggrayudi.storage.file.openInputStream
 import com.google.gson.Gson
 import org.ryujinx.android.MainActivity
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 
 class VulkanDriverViewModel(val activity: MainActivity) {
     var selected: String = ""
@@ -105,39 +105,37 @@ class VulkanDriverViewModel(val activity: MainActivity) {
                     if (requestCode == DriverRequestCode) {
                         val file = files.firstOrNull()
                         file?.apply {
-                            val path = file.getAbsolutePath(storage.context)
-                            if (path.isNotEmpty()) {
+                            val stream = file.openInputStream(storage.context)
+                            stream?.apply {
                                 val name = file.name?.removeSuffix("." + file.extension) ?: ""
                                 val driverFolder = ensureDriverPath()
                                 val extractionFolder = File(driverFolder.absolutePath + "/${name}")
                                 extractionFolder.deleteRecursively()
                                 extractionFolder.mkdirs()
-                                ZipFile(path).use { zip ->
-                                    zip.entries().asSequence().forEach { entry ->
+                                ZipInputStream(stream).use { zip ->
+                                    var entry = zip.nextEntry
+                                    while (entry != null) {
+                                        val filePath =
+                                            extractionFolder.absolutePath + File.separator + entry.name
 
-                                        zip.getInputStream(entry).use { input ->
-                                            val filePath =
-                                                extractionFolder.absolutePath + File.separator + entry.name
-
-                                            if (!entry.isDirectory) {
-                                                File(filePath).delete()
-                                                val bos =
-                                                    BufferedOutputStream(FileOutputStream(filePath))
-                                                val bytesIn = ByteArray(4096)
-                                                var read: Int
-                                                while (input.read(bytesIn)
-                                                        .also { read = it } != -1
-                                                ) {
-                                                    bos.write(bytesIn, 0, read)
-                                                }
-                                                bos.close()
-                                            } else {
-                                                val dir = File(filePath)
-                                                dir.mkdir()
+                                        if (!entry.isDirectory) {
+                                            File(filePath).delete()
+                                            val bos =
+                                                BufferedOutputStream(FileOutputStream(filePath))
+                                            val bytesIn = ByteArray(4096)
+                                            var read: Int
+                                            while (zip.read(bytesIn)
+                                                    .also { read = it } != -1
+                                            ) {
+                                                bos.write(bytesIn, 0, read)
                                             }
-
+                                            bos.close()
+                                        } else {
+                                            val dir = File(filePath)
+                                            dir.mkdir()
                                         }
 
+                                        entry = zip.nextEntry
                                     }
                                 }
                             }
