@@ -94,9 +94,9 @@ namespace Ryujinx.HLE
             return Processes.LoadNxo(fileName);
         }
 
-        public bool LoadXci(Stream xciStream, Stream updateStream = null)
+        public bool LoadXci(Stream xciStream, ulong applicationId = 0, Stream updateStream = null)
         {
-            return Processes.LoadXci(xciStream);
+            return Processes.LoadXci(xciStream, applicationId, updateStream);
         }
 
         public bool LoadNca(Stream ncaStream)
@@ -104,9 +104,9 @@ namespace Ryujinx.HLE
             return Processes.LoadNca(ncaStream);
         }
 
-        public bool LoadNsp(Stream nspStream, Stream updateStream = null)
+        public bool LoadNsp(Stream nspStream, ulong applicationId = 0, Stream updateStream = null)
         {
-            return Processes.LoadNsp(nspStream, updateStream);
+            return Processes.LoadNsp(nspStream, applicationId, updateStream);
         }
 
         public bool LoadProgram(Stream stream, bool isNro, string name)
