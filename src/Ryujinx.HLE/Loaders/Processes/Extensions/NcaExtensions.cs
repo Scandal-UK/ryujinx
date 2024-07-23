@@ -158,16 +158,19 @@ namespace Ryujinx.HLE.Loaders.Processes.Extensions
                 updatePartitionFileSystem = PartitionFileSystemUtils.OpenApplicationFileSystem(updateStream, false, fileSystem);
             }
 
-            foreach ((ulong applicationTitleId, ContentMetaData content) in updatePartitionFileSystem.GetContentData(ContentMetaType.Patch, fileSystem, checkLevel))
+            if (updatePartitionFileSystem != null)
             {
-                if ((applicationTitleId & ~0x1FFFUL) != titleIdBase)
+                foreach ((ulong applicationTitleId, ContentMetaData content) in updatePartitionFileSystem.GetContentData(ContentMetaType.Patch, fileSystem, checkLevel))
                 {
-                    continue;
-                }
+                    if ((applicationTitleId & ~0x1FFFUL) != titleIdBase)
+                    {
+                        continue;
+                    }
 
-                updatePatchNca = content.GetNcaByType(fileSystem.KeySet, ContentType.Program, programIndex);
-                updateControlNca = content.GetNcaByType(fileSystem.KeySet, ContentType.Control, programIndex);
-                break;
+                    updatePatchNca = content.GetNcaByType(fileSystem.KeySet, ContentType.Program, programIndex);
+                    updateControlNca = content.GetNcaByType(fileSystem.KeySet, ContentType.Control, programIndex);
+                    break;
+                }
             }
 
             return (updatePatchNca, updateControlNca);
