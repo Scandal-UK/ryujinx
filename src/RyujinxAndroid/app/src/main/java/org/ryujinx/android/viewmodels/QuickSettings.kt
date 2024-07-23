@@ -80,7 +80,7 @@ class QuickSettings(val activity: Activity) {
         editor.putBoolean("useSwitchLayout", useSwitchLayout)
         editor.putBoolean("enableMotion", enableMotion)
         editor.putBoolean("enablePerformanceMode", enablePerformanceMode)
-        editor.putFloat("enablePerformanceMode", controllerStickSensitivity)
+        editor.putFloat("controllerStickSensitivity", controllerStickSensitivity)
 
         editor.putBoolean("enableDebugLogs", enableDebugLogs)
         editor.putBoolean("enableStubLogs", enableStubLogs)
