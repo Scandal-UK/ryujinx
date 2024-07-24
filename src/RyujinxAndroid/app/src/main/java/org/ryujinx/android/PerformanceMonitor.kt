@@ -2,16 +2,7 @@ package org.ryujinx.android
 
 import android.app.ActivityManager
 import android.content.Context.ACTIVITY_SERVICE
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import java.io.RandomAccessFile
 
 class PerformanceMonitor {
@@ -37,8 +28,9 @@ class PerformanceMonitor {
         }
     }
 
-    fun getMemoryUsage(mem: MutableList<Int>){
-        mem.clear()
+    fun getMemoryUsage(
+        usedMem: MutableState<Int>,
+        totalMem: MutableState<Int>) {
         MainActivity.mainViewModel?.activity?.apply {
             val actManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
             val memInfo = ActivityManager.MemoryInfo()
@@ -46,8 +38,8 @@ class PerformanceMonitor {
             val availMemory = memInfo.availMem.toDouble() / (1024 * 1024)
             val totalMemory = memInfo.totalMem.toDouble() / (1024 * 1024)
 
-            mem.add((totalMemory - availMemory).toInt())
-            mem.add(totalMemory.toInt())
+            usedMem.value = (totalMemory - availMemory).toInt()
+            totalMem.value = totalMemory.toInt()
         }
     }
 }
