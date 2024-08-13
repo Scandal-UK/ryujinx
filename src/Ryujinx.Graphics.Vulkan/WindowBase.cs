@@ -1,4 +1,5 @@
 using Ryujinx.Graphics.GAL;
+using Silk.NET.Vulkan;
 using System;
 
 namespace Ryujinx.Graphics.Vulkan
@@ -6,6 +7,8 @@ namespace Ryujinx.Graphics.Vulkan
     internal abstract class WindowBase : IWindow
     {
         public bool ScreenCaptureRequested { get; set; }
+
+        public SurfaceTransformFlagsKHR CurrentTransform { get; set; }
 
         public abstract void Dispose();
         public abstract void Present(ITexture texture, ImageCrop crop, Action swapBuffersCallback);

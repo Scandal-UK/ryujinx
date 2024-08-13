@@ -74,6 +74,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public IWindow Window => _window;
 
+        public SurfaceTransformFlagsKHR CurrentTransform => _window.CurrentTransform;
+
         private readonly Func<Instance, Vk, SurfaceKHR> _getSurface;
         private readonly Func<string[]> _getRequiredExtensions;
         private readonly string _preferredGpuId;
@@ -996,6 +998,15 @@ namespace Ryujinx.Graphics.Vulkan
         public bool SupportsRenderPassBarrier(PipelineStageFlags flags)
         {
             return !(IsMoltenVk || IsQualcommProprietary);
+        }
+
+        internal unsafe void RecreateSurface()
+        {
+            SurfaceApi.DestroySurface(_instance.Instance, _surface, null);
+
+            _surface = _getSurface(_instance.Instance, Api);
+
+            (_window as Window)?.SetSurface(_surface);
         }
 
         public unsafe void Dispose()
