@@ -73,8 +73,6 @@ namespace LibRyujinx
                 return false;
             }
 
-            Logger.SetEnable(LogLevel.Trace, false);
-
             return true;
         }
 
