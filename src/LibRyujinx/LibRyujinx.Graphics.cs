@@ -32,12 +32,6 @@ namespace LibRyujinx
 
         public static IRenderer? Renderer { get; set; }
         public static GraphicsConfiguration GraphicsConfiguration { get; private set; }
-
-        [UnmanagedCallersOnly(EntryPoint = "graphics_initialize")]
-        public static bool InitializeGraphicsNative(GraphicsConfiguration graphicsConfiguration)
-        {
-            return InitializeGraphics(graphicsConfiguration);
-        }
         
         public static bool InitializeGraphics(GraphicsConfiguration graphicsConfiguration)
         {
@@ -55,30 +49,7 @@ namespace LibRyujinx
             return true;
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "graphics_initialize_renderer")]
-        public unsafe static bool InitializeGraphicsRendererNative(GraphicsBackend graphicsBackend, NativeGraphicsInterop nativeGraphicsInterop)
-        {
-            _nativeGraphicsInterop = nativeGraphicsInterop;
-            if (Renderer != null)
-            {
-                return false;
-            }
-
-            List<string> extensions = new List<string>();
-            var size = Marshal.SizeOf<IntPtr>();
-            var extPtr = (IntPtr*)nativeGraphicsInterop.VkRequiredExtensions;
-            for (int i = 0; i < nativeGraphicsInterop.VkRequiredExtensionsCount; i++)
-            {
-                var ptr = extPtr[i];
-                extensions.Add(Marshal.PtrToStringAnsi(ptr) ?? string.Empty);
-            }
-
-            CreateSurface createSurfaceFunc = nativeGraphicsInterop.VkCreateSurface == IntPtr.Zero ? default : Marshal.GetDelegateForFunctionPointer<CreateSurface>(nativeGraphicsInterop.VkCreateSurface);
-
-            return InitializeGraphicsRenderer(graphicsBackend, createSurfaceFunc, extensions.ToArray());
-        }
-
-        public static bool InitializeGraphicsRenderer(GraphicsBackend graphicsBackend, CreateSurface createSurfaceFunc, string?[] requiredExtensions)
+        public static bool InitializeGraphicsRenderer(GraphicsBackend graphicsBackend, CreateSurface? createSurfaceFunc, string?[] requiredExtensions)
         {
             if (Renderer != null)
             {
@@ -91,7 +62,7 @@ namespace LibRyujinx
             }
             else if (graphicsBackend == GraphicsBackend.Vulkan)
             {
-                Renderer = new VulkanRenderer(Vk.GetApi(), (instance, vk) => new SurfaceKHR((ulong?)createSurfaceFunc(instance.Handle)),
+                Renderer = new VulkanRenderer(Vk.GetApi(), (instance, vk) => new SurfaceKHR(createSurfaceFunc == null ? null : (ulong?)createSurfaceFunc(instance.Handle)),
                     () => requiredExtensions,
                     null);
             }
@@ -103,33 +74,9 @@ namespace LibRyujinx
             return true;
         }
 
-
-        [UnmanagedCallersOnly(EntryPoint = "graphics_renderer_set_size")]
-        public static void SetRendererSizeNative(int width, int height)
-        {
-            SetRendererSize(width, height);
-        }
-
         public static void SetRendererSize(int width, int height)
         {
             Renderer?.Window?.SetSize(width, height);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "graphics_renderer_run_loop")]
-        public static void RunLoopNative()
-        {
-            if (Renderer is OpenGLRenderer)
-            {
-                var proc = Marshal.GetDelegateForFunctionPointer<GetProcAddress>(_nativeGraphicsInterop.GlGetProcAddress);
-                GL.LoadBindings(new OpenTKBindingsContext(x => proc!.Invoke(x)));
-            }
-            RunLoop();
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "graphics_renderer_set_vsync")]
-        public static void SetVsyncStateNative(bool enabled)
-        {
-            SetVsyncState(enabled);
         }
 
         public static void SetVsyncState(bool enabled)
@@ -247,12 +194,6 @@ namespace LibRyujinx
                 default:
                     throw new ArgumentException($"Unknown Progress Handler type {typeof(T)}");
             }
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "graphics_renderer_set_swap_buffer_callback")]
-        public static void SetSwapBuffersCallbackNative(IntPtr swapBuffersCallback)
-        {
-            _swapBuffersCallback = Marshal.GetDelegateForFunctionPointer<SwapBuffersCallback>(swapBuffersCallback);
         }
         
         public static void SetSwapBuffersCallback(SwapBuffersCallback swapBuffersCallback)
