@@ -44,18 +44,6 @@ namespace LibRyujinx
         private static readonly TitleUpdateMetadataJsonSerializerContext _titleSerializerContext = new(JsonHelper.GetDefaultSerializerOptions());
         public static SwitchDevice? SwitchDevice { get; set; }
 
-        [UnmanagedCallersOnly(EntryPoint = "initialize")]
-        public static bool Initialize(IntPtr basePathPtr)
-        {
-            var path = Marshal.PtrToStringAnsi(basePathPtr);
-
-            var res = Initialize(path);
-
-            InitializeAudio();
-
-            return res;
-        }
-
         public static bool Initialize(string? basePath)
         {
             if (SwitchDevice != null)
@@ -84,6 +72,8 @@ namespace LibRyujinx
                 Console.WriteLine(ex);
                 return false;
             }
+
+            Logger.SetEnable(LogLevel.Trace, false);
 
             return true;
         }
@@ -121,17 +111,6 @@ namespace LibRyujinx
             using var stream = File.Open(file, FileMode.Open);
 
             return GetGameInfo(stream, new FileInfo(file).Extension.Remove('.'));
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "get_game_info")]
-        public static GameInfoNative GetGameInfoNative(int descriptor, IntPtr extensionPtr)
-        {
-            var extension = Marshal.PtrToStringAnsi(extensionPtr);
-            var stream = OpenFile(descriptor);
-
-            var gameInfo = GetGameInfo(stream, extension);
-
-            return new GameInfoNative(gameInfo.FileSize, gameInfo.TitleName, gameInfo.TitleId, gameInfo.Developer, gameInfo.Version, gameInfo.Icon);
         }
 
         public static GameInfo? GetGameInfo(Stream gameStream, string extension)

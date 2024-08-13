@@ -12,36 +12,6 @@ namespace LibRyujinx
 {
     public static partial class LibRyujinx
     {
-        [UnmanagedCallersOnly(EntryPoint = "device_initialize")]
-        public static bool InitializeDeviceNative(bool isHostMapped,
-                                                  bool useHypervisor,
-                                                  SystemLanguage systemLanguage,
-                                                  RegionCode regionCode,
-                                                  bool enableVsync,
-                                                  bool enableDockedMode,
-                                                  bool enablePtc,
-                                                  bool enableInternetAccess,
-                                                  IntPtr timeZone,
-                                                  bool ignoreMissingServices)
-        {
-            return InitializeDevice(isHostMapped,
-                                    useHypervisor,
-                                    systemLanguage,
-                                    regionCode,
-                                    enableVsync,
-                                    enableDockedMode,
-                                    enablePtc,
-                                    enableInternetAccess,
-                                    Marshal.PtrToStringAnsi(timeZone),
-                                    ignoreMissingServices);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "device_reloadFilesystem")]
-        public static void ReloadFileSystem()
-        {
-            SwitchDevice?.ReloadFileSystem();
-        }
-
         public static bool InitializeDevice(bool isHostMapped,
                                             bool useHypervisor,
                                             SystemLanguage systemLanguage,
@@ -68,34 +38,6 @@ namespace LibRyujinx
                                                   enableInternetAccess,
                                                   timeZone,
                                                   ignoreMissingServices);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "device_load")]
-        public static bool LoadApplicationNative(IntPtr pathPtr)
-        {
-            if(SwitchDevice?.EmulationContext == null)
-            {
-                return false;
-            }
-
-            var path = Marshal.PtrToStringAnsi(pathPtr);
-
-            return LoadApplication(path);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "device_install_firmware")]
-        public static void InstallFirmwareNative(int descriptor, bool isXci)
-        {
-            var stream = OpenFile(descriptor);
-
-            InstallFirmware(stream, isXci);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "device_get_installed_firmware_version")]
-        public static IntPtr GetInstalledFirmwareVersionNative()
-        {
-            var result = GetInstalledFirmwareVersion();
-            return Marshal.StringToHGlobalAnsi(result);
         }
 
         public static void InstallFirmware(Stream stream, bool isXci)
