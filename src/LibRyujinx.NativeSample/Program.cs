@@ -1,4 +1,4 @@
-﻿using LibRyujinx.Sample;
+using LibRyujinx.Sample;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
@@ -15,8 +15,8 @@ namespace LibRyujinx.NativeSample
                 success = LibRyujinxInterop.InitializeGraphics(new GraphicsConfiguration());
                 var nativeWindowSettings = new NativeWindowSettings()
                 {
-                    Size = new Vector2i(800, 600),
-                    Title = "Ryujinx",
+                    ClientSize = new Vector2i(800, 600),
+                    Title = "Ryujinx Native",
                     API = ContextAPI.NoAPI,
                     IsEventDriven = false,
                     // This is needed to run on macos
