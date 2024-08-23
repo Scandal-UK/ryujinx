@@ -399,20 +399,6 @@ namespace LibRyujinx
             return InitializeGraphicsRenderer(GraphicsBackend.Vulkan, createSurfaceFunc, extensions.ToArray());
         }
 
-        private unsafe static IntPtr CreateStringArray(List<string> strings)
-        {
-            uint size = (uint)(Marshal.SizeOf<IntPtr>() * (strings.Count + 1));
-            var array = (char**)Marshal.AllocHGlobal((int)size);
-            Unsafe.InitBlockUnaligned(array, 0, size);
-
-            for (int i = 0; i < strings.Count; i++)
-            {
-                array[i] = (char*)Marshal.StringToHGlobalAnsi(strings[i]);
-            }
-
-            return (nint)array;
-        }
-
         [UnmanagedCallersOnly(EntryPoint = "graphicsRendererSetSize")]
         public static void JnaSetRendererSizeNative(int width, int height)
         {
