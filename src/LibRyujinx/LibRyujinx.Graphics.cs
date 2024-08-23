@@ -1,6 +1,7 @@
 using LibRyujinx.Shared;
 using OpenTK.Graphics.OpenGL;
 using Ryujinx.Common.Configuration;
+using Ryujinx.Common.Logging;
 using Ryujinx.Cpu;
 using Ryujinx.Graphics.GAL;
 using Ryujinx.Graphics.GAL.Multithreading;
@@ -133,7 +134,14 @@ namespace LibRyujinx
 
                         while (device.ConsumeFrameAvailable())
                         {
-                            device.PresentFrame(() =>_swapBuffersCallback?.Invoke());
+                            device.PresentFrame(() =>
+                            {
+                                if (device.Gpu.Renderer is ThreadedRenderer threaded && threaded.BaseRenderer is VulkanRenderer vulkanRenderer)
+                                {
+                                    setCurrentTransform(_window, (int)vulkanRenderer.CurrentTransform);
+                                }
+                                _swapBuffersCallback?.Invoke();
+                            });
                         }
                     }
 
