@@ -34,22 +34,22 @@
     <Message Importance="normal" Text="Found Xcode at $(XcodeSelect)" />
     <ItemGroup>
       <LinkerArg Include="-Wl,-ld_classic" />
-      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk%22" Condition=" $(RuntimeIdentifier.Contains('simulator')) "/>
-      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk%22" Condition=" !$(RuntimeIdentifier.Contains('simulator')) "/>
+      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk%22" Condition=" $(RuntimeIdentifier.Contains('simulator')) " />
+      <LinkerArg Include="-isysroot %22$(XcodePath)Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk%22" Condition=" !$(RuntimeIdentifier.Contains('simulator')) " />
     </ItemGroup>
   </Target>
   <Target Condition="'$(RuntimeIdentifier)'=='ios-arm64'" Name="FixDylib" AfterTargets="Publish">
     <Exec Command="install_name_tool -id @rpath/$(TargetName).dylib $(NativeBinary)" ConsoleToMSBuild="true" />
   </Target>
   <Target Condition="'$(RuntimeIdentifier)'=='ios-arm64'" Name="FixSymbols" AfterTargets="Publish">
-    <RemoveDir Directories="$(PublishDir)$(TargetName).framework.dSYM"/>
+    <RemoveDir Directories="$(PublishDir)$(TargetName).framework.dSYM" />
     <!-- create-xcframework (called from the export plugin wants the symbol files in a directory
     with a slightly different name from the one created by dotnet publish, so we copy them over
     to the correctly-named directory -->
     <ItemGroup>
-      <SymbolFiles Include="$(NativeBinary).dsym\**\*.*"/>
+      <SymbolFiles Include="$(NativeBinary).dsym\**\*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(SymbolFiles)" DestinationFolder="$(PublishDir)$(TargetName).framework.dSYM"/>
+    <Copy SourceFiles="@(SymbolFiles)" DestinationFolder="$(PublishDir)$(TargetName).framework.dSYM" />
   </Target>
   <!-- End iOS Linking Fixes -->
   <ItemGroup>
@@ -72,8 +72,5 @@
     <PackageReference Include="Silk.NET.Vulkan" />
     <PackageReference Include="Silk.NET.Vulkan.Extensions.KHR" />
     <LinkerArg Condition="'$(RuntimeIdentifier)'=='linux-bionic-arm64'" Include="-llog" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Jni\" />
   </ItemGroup>
 </Project>
