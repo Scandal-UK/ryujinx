@@ -1,8 +1,10 @@
 package org.ryujinx.android
 
+import com.sun.jna.JNIEnv
 import com.sun.jna.Library
 import com.sun.jna.Native
 import org.ryujinx.android.viewmodels.GameInfo
+import java.util.Collections
 
 interface RyujinxNativeJna : Library {
     fun deviceInitialize(
@@ -35,7 +37,7 @@ interface RyujinxNativeJna : Library {
         driver: Long
     ): Boolean
 
-    fun javaInitialize(appPath: String): Boolean
+    fun javaInitialize(appPath: String, env: JNIEnv): Boolean
     fun deviceLaunchMiiEditor(): Boolean
     fun deviceGetGameFrameRate(): Double
     fun deviceGetGameFrameTime(): Double
@@ -73,9 +75,7 @@ interface RyujinxNativeJna : Library {
     fun deviceInstallFirmware(fileDescriptor: Int, isXci: Boolean)
     fun deviceGetInstalledFirmwareVersion(): String
     fun uiHandlerSetup()
-    fun uiHandlerWait()
-    fun uiHandlerStopWait()
-    fun uiHandlerSetResponse(isOkPressed: Boolean, input: Long)
+    fun uiHandlerSetResponse(isOkPressed: Boolean, input: String)
     fun deviceGetDlcTitleId(path: String, ncaPath: String): String
     fun deviceGetGameInfo(fileDescriptor: Int, extension: String, info: GameInfo)
     fun userGetAllUsers(): Array<String>
@@ -88,7 +88,47 @@ class RyujinxNative {
     companion object {
         val jnaInstance: RyujinxNativeJna = Native.load(
             "ryujinx",
-            RyujinxNativeJna::class.java
+            RyujinxNativeJna::class.java,
+            Collections.singletonMap(Library.OPTION_ALLOW_OBJECTS, true)
         )
+
+        @JvmStatic
+        fun test()
+        {
+            val i = 0
+        }
+
+        @JvmStatic
+        fun updateUiHandler(
+            newTitlePointer: Long,
+            newMessagePointer: Long,
+            newWatermarkPointer: Long,
+            newType: Int,
+            min: Int,
+            max: Int,
+            nMode: Int,
+            newSubtitlePointer: Long,
+            newInitialTextPointer: Long
+        )
+        {
+            var uiHandler = MainActivity.mainViewModel?.activity?.uiHandler
+            uiHandler?.apply {
+                val newTitle = NativeHelpers.instance.getStringJava(newTitlePointer)
+                val newMessage = NativeHelpers.instance.getStringJava(newMessagePointer)
+                val newWatermark = NativeHelpers.instance.getStringJava(newWatermarkPointer)
+                val newSubtitle = NativeHelpers.instance.getStringJava(newSubtitlePointer)
+                val newInitialText = NativeHelpers.instance.getStringJava(newInitialTextPointer)
+                val newMode = KeyboardMode.entries[nMode]
+                update(newTitle,
+                    newMessage,
+                    newWatermark,
+                    newType,
+                    min,
+                    max,
+                    newMode,
+                    newSubtitle,
+                    newInitialText);
+            }
+        }
     }
 }

@@ -72,7 +72,7 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
         _isInit = false
         _isStarted = false
 
-        mainViewModel.activity.uiHandler.stop()
+        RyujinxNative.jnaInstance.uiHandlerSetResponse(false, "")
 
         _updateThread?.join()
         _renderingThreadWatcher?.join()
@@ -142,10 +142,6 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     }
 
     private fun runGame() {
-
-        thread {
-            mainViewModel.activity.uiHandler.listen()
-        }
         RyujinxNative.jnaInstance.graphicsRendererRunLoop()
 
         game?.close()
