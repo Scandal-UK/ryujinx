@@ -1,3 +1,4 @@
+using LibRyujinx.Android;
 using LibRyujinx.Shared;
 using OpenTK.Graphics.OpenGL;
 using Ryujinx.Common.Configuration;
@@ -113,7 +114,7 @@ namespace LibRyujinx
 
                     _isActive = true;
 
-                    if (Ryujinx.Common.SystemInfo.SystemInfo.IsBionic)
+                    if (Ryujinx.Common.PlatformInfo.IsBionic)
                     {
                         setRenderingThread();
                     }
@@ -164,13 +165,15 @@ namespace LibRyujinx
         {
             void SetInfo(string status, float value)
             {
-                var ptr = Marshal.StringToHGlobalAnsi(status);
-                // add setinfo callback
-
-                Marshal.FreeHGlobal(ptr);
+                if(Ryujinx.Common.PlatformInfo.IsBionic)
+                {
+                    Interop.UpdateProgress(status, value);
+                }
             }
             var status = $"{current} / {total}";
             var progress = current / (float)total;
+            if (float.IsNaN(progress))
+                progress = 0;
 
             switch (state)
             {

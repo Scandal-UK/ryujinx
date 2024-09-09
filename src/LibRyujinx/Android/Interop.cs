@@ -27,7 +27,9 @@ namespace LibRyujinx.Android
         private static (string name, string descriptor)[] _methods = new[]
         {
             ("test", "()V"),
-            ("updateUiHandler", "(JJJIIIIJJ)V")
+            ("updateUiHandler", "(JJJIIIIJJ)V"),
+            ("frameEnded", "()V"),
+            ("updateProgress", "(JF)V")
         };
 
         internal static void Initialize(JEnvRef jniEnv)
@@ -95,6 +97,21 @@ namespace LibRyujinx.Android
         public static void Test()
         {
             CallMethod("test", "()V");
+        }
+
+        public static void FrameEnded(double time)
+        {
+            CallMethod("frameEnded", "()V");
+        }
+
+        public static void UpdateProgress(string info, float progress)
+        {
+            using var infoPtr = new TempNativeString(info);
+            CallMethod("updateProgress", "(JF)V", new JValue[]
+            {
+                JValue.Create(infoPtr.AsBytes()),
+                JValue.Create(progress.AsBytes())
+            });
         }
 
         public static void UpdateUiHandler(string newTitle,

@@ -34,12 +34,6 @@ namespace LibRyujinx
         internal extern static void debug_break(int code);
 
         [DllImport("libryujinxjni")]
-        internal extern static void onFrameEnd(double time);
-
-        [DllImport("libryujinxjni")]
-        internal extern static void setProgressInfo(IntPtr info, float progress);
-
-        [DllImport("libryujinxjni")]
         internal extern static void setCurrentTransform(long native_window, int transform);
 
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
@@ -337,7 +331,7 @@ namespace LibRyujinx
             SetSwapBuffersCallback(() =>
             {
                 var time = SwitchDevice.EmulationContext.Statistics.GetGameFrameTime();
-                onFrameEnd(time);
+                Interop.FrameEnded(time);
             });
             RunLoop();
         }

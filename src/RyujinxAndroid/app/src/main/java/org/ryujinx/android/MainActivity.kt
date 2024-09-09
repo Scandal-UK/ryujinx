@@ -40,7 +40,7 @@ class MainActivity : BaseActivity() {
         val performanceMonitor = PerformanceMonitor()
 
         @JvmStatic
-        fun frameEnded(gameTime: Long) {
+        fun frameEnded() {
             mainViewModel?.activity?.apply {
                 if (isActive && QuickSettings(this).enablePerformanceMode) {
                     mainViewModel?.performanceManager?.setTurboMode(true)

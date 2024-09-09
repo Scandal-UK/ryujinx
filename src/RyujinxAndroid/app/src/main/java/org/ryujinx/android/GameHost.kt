@@ -38,6 +38,18 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     override fun surfaceCreated(holder: SurfaceHolder) {
     }
 
+    fun setProgress(info : String, progressVal: Float) {
+        showLoading?.apply {
+            progressValue?.apply {
+                this.value = progressVal
+            }
+
+            progress?.apply {
+                this.value = info
+            }
+        }
+    }
+
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         if (_isClosed)
             return
@@ -108,24 +120,9 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
             while (_isStarted) {
                 RyujinxNative.jnaInstance.inputUpdate()
                 Thread.sleep(1)
-
-                showLoading?.apply {
-                    if (value) {
-                        val value = helper.getProgressValue()
-
-                        if (value != -1f)
-                            progress?.apply {
-                                this.value = helper.getProgressInfo()
-                            }
-
-                        progressValue?.apply {
-                            this.value = value
-                        }
-                    }
-                }
                 c++
                 if (c >= 1000) {
-                    if (helper.getProgressValue() == -1f)
+                    if (progressValue?.value == -1f)
                         progress?.apply {
                             this.value =
                                 "Loading ${if (mainViewModel.isMiiEditorLaunched) "Mii Editor" else game!!.titleName}"
