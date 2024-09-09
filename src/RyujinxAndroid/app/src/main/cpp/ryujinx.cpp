@@ -25,8 +25,6 @@ JNIEnv *_rendererEnv = nullptr;
 
 std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> _currentTimePoint;
 
-std::string progressInfo = "";
-float progress = -1;
 
 JNIEnv *getEnv(bool isRenderer) {
     JNIEnv *env;
@@ -160,25 +158,6 @@ Java_org_ryujinx_android_MainActivity_initVm(JNIEnv *env, jobject thiz) {
     _mainActivityClass = env->GetObjectClass(thiz);
 }
 
-extern "C"
-void onFrameEnd(double time) {
-    auto env = getEnv(true);
-    auto cl = env->FindClass("org/ryujinx/android/MainActivity");
-    jmethodID frameEnd = env->GetStaticMethodID(cl, "frameEnded", "(J)V");
-
-    auto now = std::chrono::high_resolution_clock::now();
-    auto nano = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            now - _currentTimePoint).count();
-    env->CallStaticVoidMethod(cl, frameEnd,
-                              nano);
-}
-
-extern "C"
-void setProgressInfo(char *info, float progressValue) {
-    progressInfo = std::string(info);
-    progress = progressValue;
-}
-
 bool isInitialOrientationFlipped = true;
 
 extern "C"
@@ -297,18 +276,6 @@ Java_org_ryujinx_android_NativeHelpers_setSwapInterval(JNIEnv *env, jobject thiz
     auto nativeWindow = (ANativeWindow *) native_window;
 
     return nativeWindow->setSwapInterval(nativeWindow, swap_interval);
-}
-
-extern "C"
-JNIEXPORT jfloat JNICALL
-Java_org_ryujinx_android_NativeHelpers_getProgressValue(JNIEnv *env, jobject thiz) {
-    return progress;
-}
-
-extern "C"
-JNIEXPORT jstring JNICALL
-Java_org_ryujinx_android_NativeHelpers_getProgressInfo(JNIEnv *env, jobject thiz) {
-    return createStringFromStdString(env, progressInfo);
 }
 
 extern "C"

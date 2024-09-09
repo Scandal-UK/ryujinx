@@ -99,6 +99,19 @@ class RyujinxNative {
         }
 
         @JvmStatic
+        fun frameEnded()
+        {
+            MainActivity.frameEnded()
+        }
+
+        @JvmStatic
+        fun updateProgress(infoPtr : Long, progress: Float)
+        {
+            val info = NativeHelpers.instance.getStringJava(infoPtr);
+            MainActivity.mainViewModel?.gameHost?.setProgress(info, progress)
+        }
+
+        @JvmStatic
         fun updateUiHandler(
             newTitlePointer: Long,
             newMessagePointer: Long,
