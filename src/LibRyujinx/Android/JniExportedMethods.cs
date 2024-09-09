@@ -1,5 +1,5 @@
+using LibRyujinx.Android;
 using LibRyujinx.Jni.Pointers;
-using LibRyujinx.Jni.References;
 using Ryujinx.Audio.Backends.OpenAL;
 using Ryujinx.Common;
 using Ryujinx.Common.Configuration;
@@ -14,9 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 
 namespace LibRyujinx
@@ -28,56 +26,6 @@ namespace LibRyujinx
         private static long _window = 0;
 
         public static VulkanLoader? VulkanLoader { get; private set; }
-
-        [DllImport("libryujinxjni")]
-        private extern static IntPtr getStringPointer(JEnvRef jEnv, JStringLocalRef s);
-
-        [DllImport("libryujinxjni")]
-        private extern static JStringLocalRef createString(JEnvRef jEnv, IntPtr ch);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long storeString(string ch);
-
-        [DllImport("libryujinxjni")]
-        internal extern static IntPtr getString(long id);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerTitle(long title);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerMessage(long message);
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerWatermark(long watermark);
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerInitialText(long text);
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerSubtitle(long text);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerType(int type);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerKeyboardMode(int mode);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerMinLength(int lenght);
-
-        [DllImport("libryujinxjni")]
-        internal extern static long setUiHandlerMaxLength(int lenght);
-
-        internal static string GetStoredString(long id)
-        {
-            var pointer = getString(id);
-            if (pointer != IntPtr.Zero)
-            {
-                var str = Marshal.PtrToStringAnsi(pointer) ?? "";
-
-                Marshal.FreeHGlobal(pointer);
-                return str;
-            }
-
-            return "";
-        }
 
         [DllImport("libryujinxjni")]
         internal extern static void setRenderingThread();
@@ -97,7 +45,7 @@ namespace LibRyujinx
         public delegate IntPtr JniCreateSurface(IntPtr native_surface, IntPtr instance);
 
         [UnmanagedCallersOnly(EntryPoint = "javaInitialize")]
-        public static bool JniInitialize(IntPtr jpathId)
+        public unsafe static bool JniInitialize(IntPtr jpathId, IntPtr jniEnv)
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             PlatformInfo.IsBionic = true;
@@ -113,20 +61,15 @@ namespace LibRyujinx
 
             var init = Initialize(path);
 
+            Interop.Initialize(new JEnvRef(jniEnv));
+
+            Interop.Test();
+
             _surfaceEvent?.Set();
 
             _surfaceEvent = new ManualResetEvent(false);
 
             return init;
-        }
-
-        private static string? GetString(JEnvRef jEnv, JStringLocalRef jString)
-        {
-            var stringPtr = getStringPointer(jEnv, jString);
-
-            var s = Marshal.PtrToStringAnsi(stringPtr);
-            Marshal.FreeHGlobal(stringPtr);
-            return s;
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceReloadFilesystem")]
@@ -190,20 +133,6 @@ namespace LibRyujinx
             var stats = SwitchDevice?.EmulationContext?.Statistics.GetGameFrameRate() ?? 0;
 
             return stats;
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_deviceLoad")]
-        public static bool JniLoadApplicationNative(JEnvRef jEnv, JObjectLocalRef jObj, JStringLocalRef pathPtr)
-        {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            if (SwitchDevice?.EmulationContext == null)
-            {
-                return false;
-            }
-
-            var path = GetString(jEnv, pathPtr);
-
-            return LoadApplication(path);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "deviceLaunchMiiEditor")]
@@ -336,11 +265,6 @@ namespace LibRyujinx
             });
         }
 
-        private static CCharSequence GetCCharSequence(string s)
-        {
-            return Encoding.UTF8.GetBytes(s).AsSpan();
-        }
-
         [UnmanagedCallersOnly(EntryPoint = "graphicsSetSurface")]
         public static void JniSetSurface(long surfacePtr, long window)
         {
@@ -453,13 +377,6 @@ namespace LibRyujinx
         {
             Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
             SetVsyncState(enabled);
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "Java_org_ryujinx_android_RyujinxNative_graphicsRendererSetSwapBufferCallback")]
-        public static void JniSetSwapBuffersCallbackNative(JEnvRef jEnv, JObjectLocalRef jObj, IntPtr swapBuffersCallback)
-        {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            _swapBuffersCallback = Marshal.GetDelegateForFunctionPointer<SwapBuffersCallback>(swapBuffersCallback);
         }
 
         [UnmanagedCallersOnly(EntryPoint = "inputInitialize")]
@@ -621,22 +538,10 @@ namespace LibRyujinx
             SetupUiHandler();
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "uiHandlerWait")]
-        public static void JniWaitUiHandler()
-        {
-            WaitUiHandler();
-        }
-
-        [UnmanagedCallersOnly(EntryPoint = "uiHandlerStopWait")]
-        public static void JniStopUiHandlerWait()
-        {
-            StopUiHandlerWait();
-        }
-
         [UnmanagedCallersOnly(EntryPoint = "uiHandlerSetResponse")]
-        public static void JniSetUiHandlerResponse(bool isOkPressed, long input)
+        public static void JniSetUiHandlerResponse(bool isOkPressed, IntPtr input)
         {
-            SetUiHandlerResponse(isOkPressed, input);
+            SetUiHandlerResponse(isOkPressed, Marshal.PtrToStringAnsi(input) ?? "");
         }
 
         [UnmanagedCallersOnly(EntryPoint = "userOpenUser")]

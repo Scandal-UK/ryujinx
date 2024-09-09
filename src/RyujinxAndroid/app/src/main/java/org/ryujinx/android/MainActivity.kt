@@ -16,6 +16,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.anggrayudi.storage.SimpleStorageHelper
+import com.sun.jna.JNIEnv
 import org.ryujinx.android.ui.theme.RyujinxAndroidTheme
 import org.ryujinx.android.viewmodels.MainViewModel
 import org.ryujinx.android.viewmodels.QuickSettings
@@ -101,7 +102,7 @@ class MainActivity : BaseActivity() {
             quickSettings.enableTraceLogs
         )
         val success =
-            RyujinxNative.jnaInstance.javaInitialize(appPath)
+            RyujinxNative.jnaInstance.javaInitialize(appPath, JNIEnv.CURRENT)
 
         uiHandler = UiHandler()
         _isInit = success

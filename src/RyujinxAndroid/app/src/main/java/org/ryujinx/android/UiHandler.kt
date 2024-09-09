@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
@@ -32,7 +31,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.halilibo.richtext.markdown.Markdown
 import com.halilibo.richtext.ui.material3.RichText
 
-internal enum class KeyboardMode {
+enum class KeyboardMode {
     Default, Numeric, ASCII, FullLatin, Alphabet, SimplifiedChinese, TraditionalChinese, Korean, LanguageSet2, LanguageSet2Latin
 }
 
@@ -48,39 +47,34 @@ class UiHandler {
     val inputText = mutableStateOf("")
     var title: String = ""
     var message: String = ""
-    var shouldListen = true
 
     init {
         RyujinxNative.jnaInstance.uiHandlerSetup()
     }
 
-    fun listen() {
-        showMessage.value = false
-        while (shouldListen) {
-            RyujinxNative.jnaInstance.uiHandlerWait()
-
-            title =
-                NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestTitle())
-            message =
-                NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestMessage())
-            watermark =
-                NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestWatermark())
-            type = NativeHelpers.instance.getUiHandlerRequestType()
-            minLength = NativeHelpers.instance.getUiHandlerMinLength()
-            maxLength = NativeHelpers.instance.getUiHandlerMaxLength()
-            mode = KeyboardMode.values()[NativeHelpers.instance.getUiHandlerKeyboardMode()]
-            subtitle =
-                NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestSubtitle())
-            initialText =
-                NativeHelpers.instance.getStringJava(NativeHelpers.instance.getUiHandlerRequestInitialText())
-            inputText.value = initialText
-            showMessage.value = type > 0
-        }
-    }
-
-    fun stop() {
-        shouldListen = false
-        RyujinxNative.jnaInstance.uiHandlerStopWait()
+    fun update(
+        newTitle: String,
+        newMessage: String,
+        newWatermark: String,
+        newType: Int,
+        min: Int,
+        max: Int,
+        newMode: KeyboardMode,
+        newSubtitle: String,
+        newInitialText: String
+    )
+    {
+        title = newTitle
+        message = newMessage
+        watermark = newWatermark
+        type = newType
+        minLength = min
+        maxLength = max
+        mode = newMode
+        subtitle = newSubtitle
+        initialText = newInitialText
+        inputText.value = initialText
+        showMessage.value = type > 0
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -119,15 +113,15 @@ class UiHandler {
         }
 
         fun submit() {
-            var input: Long = -1
             if (type == 2) {
                 if (inputListener.value.length < minLength || inputListener.value.length > maxLength)
                     return
-                input =
-                    NativeHelpers.instance.storeStringJava(inputListener.value)
             }
+            RyujinxNative.jnaInstance.uiHandlerSetResponse(
+                true,
+                if (type == 2) inputListener.value else ""
+            )
             showMessageListener.value = false
-            RyujinxNative.jnaInstance.uiHandlerSetResponse(true, input)
         }
 
         if (showMessageListener.value) {
