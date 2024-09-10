@@ -12,6 +12,7 @@ import kotlin.concurrent.thread
 @SuppressLint("ViewConstructor")
 class GameHost(context: Context?, private val mainViewModel: MainViewModel) : SurfaceView(context),
     SurfaceHolder.Callback {
+    private var _currentWindow: Long = -1
     private var isProgressHidden: Boolean = false
     private var progress: MutableState<String>? = null
     private var progressValue: MutableState<Float>? = null
@@ -25,12 +26,22 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     private var _guestThread: Thread? = null
     private var _isInit: Boolean = false
     private var _isStarted: Boolean = false
-    private val nativeWindow: NativeWindow
+    private val _nativeWindow: NativeWindow
+
+    val currentSurface:Long
+        get() {
+            return _currentWindow
+        }
+
+    val currentWindowhandle: Long
+        get() {
+            return _nativeWindow.nativePointer
+        }
 
     init {
         holder.addCallback(this)
 
-        nativeWindow = NativeWindow(this)
+        _nativeWindow = NativeWindow(this)
 
         mainViewModel.gameHost = this
     }
@@ -53,17 +64,17 @@ class GameHost(context: Context?, private val mainViewModel: MainViewModel) : Su
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
         if (_isClosed)
             return
-        start(holder)
 
         if (_width != width || _height != height) {
-            val window = nativeWindow.requeryWindowHandle()
-            RyujinxNative.jnaInstance.graphicsSetSurface(window, nativeWindow.nativePointer)
+            _currentWindow = _nativeWindow.requeryWindowHandle()
 
-            nativeWindow.swapInterval = 0
+            _nativeWindow.swapInterval = 0
         }
 
         _width = width
         _height = height
+
+        start(holder)
 
         RyujinxNative.jnaInstance.graphicsRendererSetSize(
             width,

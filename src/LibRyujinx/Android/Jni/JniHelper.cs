@@ -220,6 +220,20 @@ internal static class JniHelper
 		JObjectLocalRef jObject = callStaticObjectMethod(jEnv, jClass, jMethodId, fArgs.ValuePointer);
 		return !JniHelper.ExceptionCheck(jEnv) ? jObject : null;
 	}
+	public static JLong? CallStaticLongMethod(JEnvRef jEnv, JClassLocalRef jClass, JMethodId jMethodId,
+		params JValue[] args)
+	{
+		ref readonly JEnvValue value = ref jEnv.Environment;
+		ref JNativeInterface jInterface = ref value.Functions;
+
+		IntPtr callStaticLongMethodPtr = jInterface.CallStaticLongMethodAPointer;
+		CallStaticLongMethodADelegate callStaticLongMethod =
+			callStaticLongMethodPtr.GetUnsafeDelegate<CallStaticLongMethodADelegate>()!;
+
+		using IReadOnlyFixedMemory<JValue>.IDisposable fArgs = args.AsMemory().GetFixedContext();
+		JLong jLong = callStaticLongMethod(jEnv, jClass, jMethodId, fArgs.ValuePointer);
+		return !JniHelper.ExceptionCheck(jEnv) ? jLong : null;
+	}
 	public static void CallVoidMethod(JEnvRef jEnv, JObjectLocalRef jObject, JMethodId jMethodId, params JValue[] args)
 	{
 		ref readonly JEnvValue value = ref jEnv.Environment;

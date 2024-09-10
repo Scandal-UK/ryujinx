@@ -29,7 +29,9 @@ namespace LibRyujinx.Android
             ("test", "()V"),
             ("updateUiHandler", "(JJJIIIIJJ)V"),
             ("frameEnded", "()V"),
-            ("updateProgress", "(JF)V")
+            ("updateProgress", "(JF)V"),
+            ("getSurfacePtr", "()J"),
+            ("getWindowHandle", "()J")
         };
 
         internal static void Initialize(JEnvRef jniEnv)
@@ -82,7 +84,7 @@ namespace LibRyujinx.Android
             }
         }
 
-        private static void CallMethod(string name, string descriptor, params JValue[] values)
+        private static void CallVoidMethod(string name, string descriptor, params JValue[] values)
         {
             using var env = JniEnv.Create();
             if (_methodCache.TryGetValue((name, descriptor), out var method))
@@ -94,24 +96,46 @@ namespace LibRyujinx.Android
             }
         }
 
+        private static JLong CallLongMethod(string name, string descriptor, params JValue[] values)
+        {
+            using var env = JniEnv.Create();
+            if (_methodCache.TryGetValue((name, descriptor), out var method))
+            {
+                if (descriptor.EndsWith("J"))
+                    return JniHelper.CallStaticLongMethod(env.Env, (JClassLocalRef)(_classId.Value.Value), method, values) ?? (JLong)(-1);
+            }
+
+            return (JLong)(-1);
+        }
+
         public static void Test()
         {
-            CallMethod("test", "()V");
+            CallVoidMethod("test", "()V");
         }
 
         public static void FrameEnded(double time)
         {
-            CallMethod("frameEnded", "()V");
+            CallVoidMethod("frameEnded", "()V");
         }
 
         public static void UpdateProgress(string info, float progress)
         {
             using var infoPtr = new TempNativeString(info);
-            CallMethod("updateProgress", "(JF)V", new JValue[]
+            CallVoidMethod("updateProgress", "(JF)V", new JValue[]
             {
                 JValue.Create(infoPtr.AsBytes()),
                 JValue.Create(progress.AsBytes())
             });
+        }
+
+        public static JLong GetSurfacePtr()
+        {
+            return CallLongMethod("getSurfacePtr", "()J");
+        }
+
+        public static JLong GetWindowsHandle()
+        {
+            return CallLongMethod("getWindowHandle", "()J");
         }
 
         public static void UpdateUiHandler(string newTitle,
@@ -129,7 +153,7 @@ namespace LibRyujinx.Android
             using var watermarkPointer = new TempNativeString(newWatermark);
             using var subtitlePointer = new TempNativeString(newSubtitle);
             using var newInitialPointer = new TempNativeString(newInitialText);
-            CallMethod("updateUiHandler", "(JJJIIIIJJ)V", new JValue[]
+            CallVoidMethod("updateUiHandler", "(JJJIIIIJJ)V", new JValue[]
             {
                 JValue.Create(titlePointer.AsBytes()),
                 JValue.Create(messagePointer.AsBytes()),
