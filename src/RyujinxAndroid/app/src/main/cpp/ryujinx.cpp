@@ -21,28 +21,8 @@
 #include <chrono>
 #include <csignal>
 
-JNIEnv *_rendererEnv = nullptr;
 
 std::chrono::time_point<std::chrono::steady_clock, std::chrono::nanoseconds> _currentTimePoint;
-
-
-JNIEnv *getEnv(bool isRenderer) {
-    JNIEnv *env;
-    if (isRenderer) {
-        env = _rendererEnv;
-    }
-
-    if (env != nullptr)
-        return env;
-
-    auto result = _vm->AttachCurrentThread(&env, NULL);
-
-    return env;
-}
-
-void detachEnv() {
-    auto result = _vm->DetachCurrentThread();
-}
 
 extern "C"
 {
@@ -64,28 +44,6 @@ Java_org_ryujinx_android_NativeHelpers_releaseNativeWindow(
 
     if (nativeWindow != NULL)
         ANativeWindow_release(nativeWindow);
-}
-
-JNIEXPORT void JNICALL
-Java_org_ryujinx_android_NativeHelpers_attachCurrentThread(
-        JNIEnv *env,
-        jobject instance) {
-    JavaVM *jvm = NULL;
-    env->GetJavaVM(&jvm);
-
-    if (jvm != NULL)
-        jvm->AttachCurrentThread(&env, NULL);
-}
-
-JNIEXPORT void JNICALL
-Java_org_ryujinx_android_NativeHelpers_detachCurrentThread(
-        JNIEnv *env,
-        jobject instance) {
-    JavaVM *jvm = NULL;
-    env->GetJavaVM(&jvm);
-
-    if (jvm != NULL)
-        jvm->DetachCurrentThread();
 }
 
 long createSurface(long native_surface, long instance) {

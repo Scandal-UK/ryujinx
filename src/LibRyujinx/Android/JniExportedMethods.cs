@@ -21,7 +21,6 @@ namespace LibRyujinx
 {
     public static partial class LibRyujinx
     {
-        private static ManualResetEvent _surfaceEvent;
         private static long _surfacePtr;
         private static long _window = 0;
 
@@ -58,10 +57,6 @@ namespace LibRyujinx
             Interop.Initialize(new JEnvRef(jniEnv));
 
             Interop.Test();
-
-            _surfaceEvent?.Set();
-
-            _surfaceEvent = new ManualResetEvent(false);
 
             return init;
         }
@@ -259,16 +254,6 @@ namespace LibRyujinx
             });
         }
 
-        [UnmanagedCallersOnly(EntryPoint = "graphicsSetSurface")]
-        public static void JniSetSurface(long surfacePtr, long window)
-        {
-            Logger.Trace?.Print(LogClass.Application, "Jni Function Call");
-            _surfacePtr = surfacePtr;
-            _window = window;
-
-            _surfaceEvent.Set();
-        }
-
         [UnmanagedCallersOnly(EntryPoint = "graphicsInitializeRenderer")]
         public unsafe static bool JnaGraphicsInitializeRenderer(char** extensionsArray,
                                                                           int extensionsLength,
@@ -294,8 +279,8 @@ namespace LibRyujinx
 
             CreateSurface createSurfaceFunc = instance =>
             {
-                _surfaceEvent.WaitOne();
-                _surfaceEvent.Reset();
+                _surfacePtr = Interop.GetSurfacePtr();
+                _window = Interop.GetWindowsHandle();
 
                 var api = VulkanLoader?.GetApi() ?? Vk.GetApi();
                 if (api.TryGetInstanceExtension(new Instance(instance), out KhrAndroidSurface surfaceExtension))

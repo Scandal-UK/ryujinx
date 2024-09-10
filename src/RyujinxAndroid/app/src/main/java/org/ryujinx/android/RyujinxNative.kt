@@ -58,7 +58,6 @@ interface RyujinxNativeJna : Library {
     fun inputSetStickAxis(stick: Int, x: Float, y: Float, id: Int)
     fun inputSetAccelerometerData(x: Float, y: Float, z: Float, id: Int)
     fun inputSetGyroData(x: Float, y: Float, z: Float, id: Int)
-    fun graphicsSetSurface(surface: Long, window: Long)
     fun deviceCloseEmulation()
     fun deviceSignalEmulationClose()
     fun userGetOpenedUser(): String
@@ -102,6 +101,18 @@ class RyujinxNative {
         fun frameEnded()
         {
             MainActivity.frameEnded()
+        }
+
+        @JvmStatic
+        fun getSurfacePtr() : Long
+        {
+            return MainActivity.mainViewModel?.gameHost?.currentSurface ?: -1
+        }
+
+        @JvmStatic
+        fun getWindowHandle() : Long
+        {
+            return MainActivity.mainViewModel?.gameHost?.currentWindowhandle ?: -1
         }
 
         @JvmStatic

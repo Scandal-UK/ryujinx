@@ -15,8 +15,6 @@ class NativeHelpers {
     external fun releaseNativeWindow(window: Long)
     external fun getCreateSurfacePtr(): Long
     external fun getNativeWindow(surface: Surface): Long
-    external fun attachCurrentThread()
-    external fun detachCurrentThread()
 
     external fun loadDriver(
         nativeLibPath: String,
