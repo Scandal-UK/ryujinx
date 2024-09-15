@@ -22,6 +22,7 @@ namespace LibRyujinx.Android
     internal unsafe static class Interop
     {
         internal const string BaseClassName = "org/ryujinx/android/RyujinxNative";
+
         private static JGlobalRef? _classId;
         private static ConcurrentDictionary<(string method, string descriptor), JMethodId> _methodCache = new ConcurrentDictionary<(string method, string descriptor), JMethodId>();
         private static (string name, string descriptor)[] _methods = new[]
