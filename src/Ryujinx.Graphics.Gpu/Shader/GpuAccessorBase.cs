@@ -227,6 +227,8 @@ namespace Ryujinx.Graphics.Gpu.Shader
 
         public bool QueryHostSupportsShaderBallot() => _context.Capabilities.SupportsShaderBallot;
 
+        public bool QueryHostSupportsShaderBallotDivergence() => _context.Capabilities.SupportsShaderBallotDivergence;
+
         public bool QueryHostSupportsShaderBarrierDivergence() => _context.Capabilities.SupportsShaderBarrierDivergence;
 
         public bool QueryHostSupportsShaderFloat64() => _context.Capabilities.SupportsShaderFloat64;

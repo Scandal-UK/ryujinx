@@ -177,6 +177,7 @@ namespace Ryujinx.Graphics.OpenGL
                 supportsQuads: HwCapabilities.SupportsQuads,
                 supportsSeparateSampler: false,
                 supportsShaderBallot: HwCapabilities.SupportsShaderBallot,
+                supportsShaderBallotDivergence: true,
                 supportsShaderBarrierDivergence: !(intelWindows || intelUnix),
                 supportsShaderFloat64: true,
                 supportsTextureGatherOffsets: true,

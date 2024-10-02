@@ -74,6 +74,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public IWindow Window => _window;
 
+        public SurfaceTransformFlagsKHR CurrentTransform => _window.CurrentTransform;
+
         private readonly Func<Instance, Vk, SurfaceKHR> _getSurface;
         private readonly Func<string[]> _getRequiredExtensions;
         private readonly string _preferredGpuId;
@@ -112,11 +114,11 @@ namespace Ryujinx.Graphics.Vulkan
             Textures = new HashSet<ITexture>();
             Samplers = new HashSet<SamplerHolder>();
 
-            if (OperatingSystem.IsMacOS())
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
                 MVKInitialization.Initialize();
 
-                // Any device running on MacOS is using MoltenVK, even Intel and AMD vendors.
+                // Any device running on Darwin is using MoltenVK, even Intel and AMD vendors.
                 IsMoltenVk = true;
             }
         }
@@ -756,6 +758,7 @@ namespace Ryujinx.Graphics.Vulkan
                 supportsQuads: false,
                 supportsSeparateSampler: true,
                 supportsShaderBallot: false,
+                supportsShaderBallotDivergence: Vendor != Vendor.Qualcomm,
                 supportsShaderBarrierDivergence: Vendor != Vendor.Intel,
                 supportsShaderFloat64: Capabilities.SupportsShaderFloat64,
                 supportsTextureGatherOffsets: features2.Features.ShaderImageGatherExtended && !IsMoltenVk,
@@ -996,6 +999,15 @@ namespace Ryujinx.Graphics.Vulkan
         public bool SupportsRenderPassBarrier(PipelineStageFlags flags)
         {
             return !(IsMoltenVk || IsQualcommProprietary);
+        }
+
+        internal unsafe void RecreateSurface()
+        {
+            SurfaceApi.DestroySurface(_instance.Instance, _surface, null);
+
+            _surface = _getSurface(_instance.Instance, Api);
+
+            (_window as Window)?.SetSurface(_surface);
         }
 
         public unsafe void Dispose()

@@ -27,6 +27,7 @@
     <PackageVersion Include="NetCoreServer" Version="8.0.7" />
     <PackageVersion Include="NUnit" Version="3.13.3" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.1.0" />
+    <PackageVersion Include="OpenTK" Version="4.8.2" />
     <PackageVersion Include="OpenTK.Core" Version="4.8.2" />
     <PackageVersion Include="OpenTK.Graphics" Version="4.8.2" />
     <PackageVersion Include="OpenTK.Audio.OpenAL" Version="4.8.2" />
@@ -48,5 +49,6 @@
     <PackageVersion Include="System.IO.Hashing" Version="8.0.0" />
     <PackageVersion Include="System.Management" Version="8.0.0" />
     <PackageVersion Include="UnicornEngine.Unicorn" Version="2.0.2-rc1-fb78016" />
+    <PackageVersion Include="Rxmxnx.PInvoke.Extensions" Version="1.5.0" />
   </ItemGroup>
 </Project>

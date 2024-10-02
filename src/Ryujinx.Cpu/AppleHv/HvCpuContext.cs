@@ -32,11 +32,13 @@ namespace Ryujinx.Cpu.AppleHv
         {
         }
 
+        /// <inheritdoc/>
         public IDiskCacheLoadState LoadDiskCache(string titleIdText, string displayVersion, bool enabled)
         {
-            return new DummyDiskCacheLoadState();
+            return new DiskCacheLoadState();
         }
 
+        /// <inheritdoc/>
         public void PrepareCodeRange(ulong address, ulong size)
         {
         }

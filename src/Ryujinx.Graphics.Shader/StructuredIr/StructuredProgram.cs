@@ -338,6 +338,9 @@ namespace Ryujinx.Graphics.Shader.StructuredIr
                 case Instruction.FSIEnd:
                     context.Info.HelperFunctionsMask |= HelperFunctionsMask.FSI;
                     break;
+                case Instruction.Ballot:
+                    context.Info.HelperFunctionsMask |= HelperFunctionsMask.Ballot;
+                    break;
             }
         }
 

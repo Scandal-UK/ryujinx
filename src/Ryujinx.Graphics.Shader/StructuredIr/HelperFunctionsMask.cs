@@ -9,5 +9,6 @@ namespace Ryujinx.Graphics.Shader.StructuredIr
         MultiplyHighU32 = 1 << 3,
         SwizzleAdd = 1 << 10,
         FSI = 1 << 11,
+        Ballot = 1 << 12,
     }
 }

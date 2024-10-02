@@ -45,7 +45,6 @@ build/
 *.vssscc
 .builds
 *.pidb
-*.log
 *.scc
 
 # Visual C++ cache files
@@ -173,3 +172,5 @@ PublishProfiles/
 
 # Glade backup files
 *.glade~
+/src/RyujinxAndroid/.idea
+/src/RyujinxAndroid/app/src/main/jniLibs/arm64-v8a

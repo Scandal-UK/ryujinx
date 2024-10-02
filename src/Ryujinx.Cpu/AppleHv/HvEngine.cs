@@ -14,7 +14,7 @@ namespace Ryujinx.Cpu.AppleHv
         }
 
         /// <inheritdoc/>
-        public ICpuContext CreateCpuContext(IMemoryManager memoryManager, bool for64Bit)
+        public ICpuContext CreateCpuContext(ICpuMemoryManager memoryManager, bool for64Bit)
         {
             return new HvCpuContext(_tickSource, memoryManager, for64Bit);
         }

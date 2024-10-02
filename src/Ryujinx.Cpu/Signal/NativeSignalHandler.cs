@@ -88,9 +88,15 @@ namespace Ryujinx.Cpu.Signal
 
                 ref SignalHandlerConfig config = ref GetConfigRef();
 
-                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+                if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || PlatformInfo.IsBionic || OperatingSystem.IsIOS())
                 {
                     _signalHandlerPtr = MapCode(NativeSignalHandlerGenerator.GenerateUnixSignalHandler(_handlerConfig, rangeStructSize));
+
+                    if (PlatformInfo.IsBionic)
+                    {
+                        config.StructAddressOffset = 16; // si_addr
+                        config.StructWriteOffset = 8; // si_code
+                    }
 
                     if (customSignalHandlerFactory != null)
                     {
@@ -119,6 +125,21 @@ namespace Ryujinx.Cpu.Signal
 
                 _initialized = true;
             }
+        }
+
+        public static void InstallUnixAlternateStackForCurrentThread(IntPtr stackPtr, ulong stackSize)
+        {
+            UnixSignalHandlerRegistration.RegisterAlternateStack(stackPtr, stackSize);
+        }
+
+        public static void UninstallUnixAlternateStackForCurrentThread()
+        {
+            UnixSignalHandlerRegistration.UnregisterAlternateStack();
+        }
+
+        public static void InstallUnixSignalHandler(int sigNum, IntPtr action)
+        {
+            UnixSignalHandlerRegistration.RegisterExceptionHandler(sigNum, action);
         }
 
         private static IntPtr MapCode(ReadOnlySpan<byte> code)

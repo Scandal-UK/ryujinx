@@ -362,6 +362,7 @@ namespace Ryujinx.Graphics.Shader.Translation
                 GpuAccessor.QueryHostSupportsFragmentShaderOrderingIntel(),
                 GpuAccessor.QueryHostSupportsGeometryShaderPassthrough(),
                 GpuAccessor.QueryHostSupportsShaderBallot(),
+                GpuAccessor.QueryHostSupportsShaderBallotDivergence(),
                 GpuAccessor.QueryHostSupportsShaderBarrierDivergence(),
                 GpuAccessor.QueryHostSupportsShaderFloat64(),
                 GpuAccessor.QueryHostSupportsTextureShadowLod(),

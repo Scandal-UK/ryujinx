@@ -270,7 +270,7 @@ namespace Ryujinx.HLE.HOS.Services.Ro
 
             int retryCount;
 
-            ulong addressSpacePageLimit = (memMgr.GetAddrSpaceSize() - size) >> 12;
+            ulong addressSpacePageLimit = ((memMgr.AslrRegionEnd - memMgr.AslrRegionStart) - size) >> 12;
 
             for (retryCount = 0; retryCount < MaxMapRetries; retryCount++)
             {
@@ -278,7 +278,7 @@ namespace Ryujinx.HLE.HOS.Services.Ro
                 {
                     ulong randomOffset = (ulong)(uint)Random.Shared.Next(0, (int)addressSpacePageLimit) << 12;
 
-                    targetAddress = memMgr.GetAddrSpaceBaseAddr() + randomOffset;
+                    targetAddress = memMgr.AslrRegionStart + randomOffset;
 
                     if (memMgr.InsideAddrSpace(targetAddress, size) && !memMgr.InsideHeapRegion(targetAddress, size) && !memMgr.InsideAliasRegion(targetAddress, size))
                     {

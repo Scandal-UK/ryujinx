@@ -14,16 +14,21 @@ namespace Ryujinx.HLE.Utilities
         {
             FileStream file = File.OpenRead(path);
 
+            return OpenApplicationFileSystem(file, Path.GetExtension(path).ToLower() == ".xci", fileSystem, throwOnFailure);
+        }
+
+        public static IFileSystem OpenApplicationFileSystem(Stream stream, bool isXci, VirtualFileSystem fileSystem, bool throwOnFailure = true)
+        {
             IFileSystem partitionFileSystem;
 
-            if (Path.GetExtension(path).ToLower() == ".xci")
+            if (isXci)
             {
-                partitionFileSystem = new Xci(fileSystem.KeySet, file.AsStorage()).OpenPartition(XciPartitionType.Secure);
+                partitionFileSystem = new Xci(fileSystem.KeySet, stream.AsStorage()).OpenPartition(XciPartitionType.Secure);
             }
             else
             {
                 var pfsTemp = new PartitionFileSystem();
-                Result initResult = pfsTemp.Initialize(file.AsStorage());
+                Result initResult = pfsTemp.Initialize(stream.AsStorage());
 
                 if (throwOnFailure)
                 {

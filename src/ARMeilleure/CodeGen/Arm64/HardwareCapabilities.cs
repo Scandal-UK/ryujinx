@@ -20,7 +20,7 @@ namespace ARMeilleure.CodeGen.Arm64
                 LinuxFeatureInfoHwCap2 = (LinuxFeatureFlagsHwCap2)getauxval(AT_HWCAP2);
             }
 
-            if (OperatingSystem.IsMacOS())
+            if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
                 for (int i = 0; i < _sysctlNames.Length; i++)
                 {
@@ -124,12 +124,13 @@ namespace ARMeilleure.CodeGen.Arm64
 
         #endregion
 
-        #region macOS
+        #region Darwin
 
         [LibraryImport("libSystem.dylib", SetLastError = true)]
         private static unsafe partial int sysctlbyname([MarshalAs(UnmanagedType.LPStr)] string name, out int oldValue, ref ulong oldSize, IntPtr newValue, ulong newValueSize);
 
         [SupportedOSPlatform("macos")]
+        [SupportedOSPlatform("ios")]
         private static bool CheckSysctlName(string name)
         {
             ulong size = sizeof(int);
