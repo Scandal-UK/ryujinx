@@ -1,6 +1,6 @@
 <h1 align="center">
   <br>
-  <a href="https://ryujinx.org/"><img src="https://raw.githubusercontent.com/Ryujinx/Ryujinx/master/distribution/misc/Logo.svg" alt="Ryujinx" width="150"></a>
+  <a href="https://ryujinx.org/"><img src="./master/distribution/misc/Logo.svg" alt="Ryujinx" width="150"></a>
   <br>
   <b>Ryujinx</b>
   <br>
@@ -12,13 +12,13 @@
   Ryujinx is an open-source Nintendo Switch emulator, created by gdkchan, written in C#.
   This emulator aims at providing excellent accuracy and performance, a user-friendly interface and consistent builds.
   It was written from scratch and development on the project began in September 2017.
-  Ryujinx is available on Github under the <a href="https://github.com/Ryujinx/Ryujinx/blob/master/LICENSE.txt" target="_blank">MIT license</a>.
+  Ryujinx is available on Github under the <a href="./blob/master/LICENSE.txt" target="_blank">MIT license</a>.
   <br />
 </p>
 
 <p align="center">
-    <a href="https://github.com/Ryujinx/Ryujinx/actions/workflows/release.yml">
-        <img src="https://github.com/Ryujinx/Ryujinx/actions/workflows/release.yml/badge.svg"
+    <a href="./actions/workflows/release.yml">
+        <img src="./actions/workflows/release.yml/badge.svg"
             alt="">
     </a>
     <a href="https://crwd.in/ryujinx">
@@ -50,10 +50,10 @@ Use the search function to see if a game has been tested already!
 To run this emulator, your PC must be equipped with at least 8GiB of RAM;
 failing to meet this requirement may result in a poor gameplay experience or unexpected crashes.
 
-See our [Setup & Configuration Guide](https://github.com/Ryujinx/Ryujinx/wiki/Ryujinx-Setup-&-Configuration-Guide) on how to set up the emulator.
+See our [Setup & Configuration Guide](./wiki/Ryujinx-Setup-&-Configuration-Guide) on how to set up the emulator.
 
 For our Local Wireless (LDN) builds, see our [Multiplayer: Local Play/Local Wireless Guide
-](https://github.com/Ryujinx/Ryujinx/wiki/Multiplayer-(LDN-Local-Wireless)-Guide).
+](./wiki/Multiplayer-(LDN-Local-Wireless)-Guide).
 
 Avalonia UI comes with translations for various languages. See [Crowdin](https://crwd.in/ryujinx) for more information.
 
@@ -138,7 +138,7 @@ This folder is located in the user folder, which can be accessed by clicking `Op
 ## Contact
 
 If you have contributions, suggestions, need emulator support or just want to get in touch with the team, join our [Discord server](https://discord.com/invite/Ryujinx).
-You may also review our [FAQ](https://github.com/Ryujinx/Ryujinx/wiki/Frequently-Asked-Questions).
+You may also review our [FAQ](./wiki/Frequently-Asked-Questions).
 
 ## Donations
 
