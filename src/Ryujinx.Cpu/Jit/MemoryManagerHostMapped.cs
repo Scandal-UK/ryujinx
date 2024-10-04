@@ -1,4 +1,4 @@
-using ARMeilleure.Memory;
+﻿using ARMeilleure.Memory;
 using Ryujinx.Memory;
 using Ryujinx.Memory.Range;
 using Ryujinx.Memory.Tracking;
@@ -13,7 +13,7 @@ namespace Ryujinx.Cpu.Jit
     /// <summary>
     /// Represents a CPU memory manager which maps guest virtual memory directly onto a host virtual region.
     /// </summary>
-    public sealed class MemoryManagerHostMapped : VirtualMemoryManagerRefCountedBase, IMemoryManager, IVirtualMemoryManagerTracked
+    public sealed class MemoryManagerHostMapped : VirtualMemoryManagerRefCountedBase, ICpuMemoryManager, IVirtualMemoryManagerTracked
     {
         private readonly InvalidAccessHandler _invalidAccessHandler;
         private readonly bool _unsafeMode;

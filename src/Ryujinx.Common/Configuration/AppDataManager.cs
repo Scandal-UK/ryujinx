@@ -49,7 +49,7 @@ namespace Ryujinx.Common.Configuration
 
         public static void Initialize(string baseDirPath)
         {
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string appDataPath = OperatingSystem.IsIOS() ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) :  Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
             if (appDataPath.Length == 0)
             {

@@ -15,7 +15,7 @@ namespace Ryujinx.Cpu.Jit
     /// <summary>
     /// Represents a CPU memory manager.
     /// </summary>
-    public sealed class MemoryManager : VirtualMemoryManagerRefCountedBase, IMemoryManager, IVirtualMemoryManagerTracked
+    public sealed class MemoryManager : VirtualMemoryManagerRefCountedBase, ICpuMemoryManager, IVirtualMemoryManagerTracked
     {
         private const int PteSize = 8;
 

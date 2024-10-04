@@ -7,6 +7,7 @@ namespace Ryujinx.HLE.HOS.Kernel.Process
     class ProcessContext : IProcessContext
     {
         public IVirtualMemoryManager AddressSpace { get; }
+        public ulong ReservedSize => 0UL;
 
         public ulong AddressSpaceSize { get; }
 

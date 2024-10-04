@@ -7,6 +7,7 @@ using System.Runtime.Versioning;
 namespace Ryujinx.Graphics.Vulkan.MoltenVK
 {
     [SupportedOSPlatform("macos")]
+    [SupportedOSPlatform("ios")]
     public static partial class MVKInitialization
     {
         private const string VulkanLib = "libvulkan.dylib";

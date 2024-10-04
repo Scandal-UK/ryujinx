@@ -130,9 +130,10 @@ namespace Ryujinx.Graphics.Vulkan
             UsePushDescriptors = usePushDescriptors;
 
             Stages = stages;
+            bool hasBatchedTextureSamplerBug = false;//gd.Vendor == Vendor.Qualcomm;
 
             ClearSegments = BuildClearSegments(sets);
-            BindingSegments = BuildBindingSegments(resourceLayout.SetUsages, out bool usesBufferTextures);
+            BindingSegments = BuildBindingSegments(resourceLayout.SetUsages, hasBatchedTextureSamplerBug, out bool usesBufferTextures);
             Templates = BuildTemplates(usePushDescriptors);
             (IncoherentBufferWriteStages, IncoherentTextureWriteStages) = BuildIncoherentStages(resourceLayout.SetUsages);
 
@@ -289,7 +290,7 @@ namespace Ryujinx.Graphics.Vulkan
             return segments;
         }
 
-        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, out bool usesBufferTextures)
+        private static ResourceBindingSegment[][] BuildBindingSegments(ReadOnlyCollection<ResourceUsageCollection> setUsages, bool hasBatchedTextureBug, out bool usesBufferTextures)
         {
             usesBufferTextures = false;
 
@@ -313,6 +314,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                     if (currentUsage.Binding + currentCount != usage.Binding ||
                         currentUsage.Type != usage.Type ||
+                        (IsReadOnlyTexture(currentUsage.Type) && hasBatchedTextureBug) ||
                         currentUsage.Stages != usage.Stages ||
                         currentUsage.ArrayLength > 1 ||
                         usage.ArrayLength > 1)
@@ -446,6 +448,12 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             return (buffer, texture);
+        }
+
+        private static bool IsReadOnlyTexture(ResourceType resourceType)
+        {
+            return resourceType == ResourceType.TextureAndSampler || resourceType == ResourceType.BufferTexture;
+
         }
 
         private async Task BackgroundCompilation()
