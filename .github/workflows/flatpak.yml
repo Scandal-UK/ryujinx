@@ -157,7 +157,7 @@ jobs:
               continue
             if (
               source["type"] == "git"
-              and source["url"] == "https://github.com/Ryujinx/Ryujinx.git"
+              and source["url"] == "https://github.com/Scandal-UK/Ryujinx.git"
             ):
               source["commit"] = os.environ['RYUJINX_GIT_HASH']
 
