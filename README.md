@@ -39,7 +39,7 @@
 As of May 2024, Ryujinx has been tested on approximately 4,300 titles;
 over 4,100 boot past menus and into gameplay, with roughly 3,550 of those being considered playable.
 
-You can check out the compatibility list [here](https://github.com/Ryujinx/Ryujinx-Games-List/issues).
+You can check out the compatibility list [here](../ryujinx-games-list/).
 
 Anyone is free to submit a new game test or update an existing game test entry;
 simply follow the new issue template and testing guidelines, or post as a reply to the applicable game issue.
@@ -62,7 +62,7 @@ Avalonia UI comes with translations for various languages. See [Crowdin](https:/
 These builds are compiled automatically for each commit on the master branch.
 While we strive to ensure optimal stability and performance prior to pushing an update, our automated builds **may be unstable or completely broken**.
 
-If you want to see details on updates to the emulator, you can visit our [Changelog](https://github.com/Ryujinx/Ryujinx/wiki/Changelog).
+If you want to see details on updates to the emulator, you can visit our [Changelog](./wiki/Changelog).
 
 The latest automatic build for Windows, macOS, and Linux can be found on the [Official Website](https://ryujinx.org/download).
 
@@ -139,22 +139,6 @@ This folder is located in the user folder, which can be accessed by clicking `Op
 
 If you have contributions, suggestions, need emulator support or just want to get in touch with the team, join our [Discord server](https://discord.com/invite/Ryujinx).
 You may also review our [FAQ](./wiki/Frequently-Asked-Questions).
-
-## Donations
-
-If you'd like to support the project financially, Ryujinx has an active Patreon campaign.
-
-<a href="https://www.patreon.com/ryujinx">
-    <img src="https://images.squarespace-cdn.com/content/v1/560c1d39e4b0b4fae0c9cf2a/1567548955044-WVD994WZP76EWF15T0L3/Patreon+Button.png?format=500w" width="150">
-</a>
-
-All developers working on the project do so in their free time, but the project has several expenses:
-* Hackable Nintendo Switch consoles to reverse-engineer the hardware
-* Additional computer hardware for testing purposes (e.g. GPUs to diagnose graphical bugs, etc.)
-* Licenses for various software development tools (e.g. Jetbrains, IDA)
-* Web hosting and infrastructure maintenance (e.g. LDN servers)
-
-All funds received through Patreon are considered a donation to support the project. Patrons receive early access to progress reports and exclusive access to developer interviews.
 
 ## License
 
